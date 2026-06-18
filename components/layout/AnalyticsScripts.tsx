@@ -2,9 +2,28 @@
 
 import { useEffect } from 'react'
 import { useOrgStore } from '@/store/orgStore'
+import { useAuthStore } from '@/store/authStore'
 
 export function AnalyticsScripts() {
   const organization = useOrgStore(s => s.organization)
+  const location     = useOrgStore(s => s.location)
+  const domain       = useOrgStore(s => s.domain)
+  const userToken    = useAuthStore(s => s.userToken)
+
+  // Expose window.__abbiStoreGetter so abbiEvents-nuxt3.js can read store data
+  // without Pinia (Nuxt: 06.eventsCaptureScript.client.js exposes this same shape)
+  useEffect(() => {
+    window.__abbiStoreGetter = () => ({
+      organization: organization ?? {},
+      location:     location     ?? {},
+      auth: {
+        loggedIn: !!userToken,
+        user: null,
+      },
+      domain:     domain ?? '',
+      domainName: organization?.canonical_domain || domain || '',
+    })
+  }, [organization, location, domain, userToken])
 
   // GTM
   useEffect(() => {
@@ -198,5 +217,12 @@ declare global {
     gtag: (...args: unknown[]) => void
     fbq: ((...args: unknown[]) => void) & { callMethod?: (...args: unknown[]) => void; queue: unknown[]; loaded: boolean; version: string; push: unknown }
     _fbq: Window['fbq']
+    __abbiStoreGetter?: () => {
+      organization: object
+      location: object
+      auth: { loggedIn: boolean; user: null }
+      domain: string
+      domainName: string
+    }
   }
 }
