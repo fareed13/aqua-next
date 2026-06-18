@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from '@/providers/Providers'
 import { StoreHydrator } from '@/providers/StoreHydrator'
@@ -9,6 +10,20 @@ import { getDomain } from '@/lib/utils/getDomain'
 import { buildGoogleFontsUrl } from '@/lib/utils/fonts'
 import { buildOrgColorStyle } from '@/lib/utils/orgColors'
 import { buildLocalBusinessSchema, buildFaqSchema, buildProductSchemas } from '@/lib/utils/metaTags'
+
+const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? 'https://d3k0lk57n8zw9s.cloudfront.net'
+
+// Global favicon — applies to all pages as default, page-level generateMetadata overrides per page
+export async function generateMetadata(): Promise<Metadata> {
+  const domain = getDomain()
+  const org = (await fetchOrganization(domain))[0]
+  const logo = org?.primary_logo?.uuid
+    ? `${MEDIA_URL}/${org.primary_logo.uuid}_350.${org.primary_logo.extension}`
+    : ''
+  return {
+    icons: logo ? { icon: logo, shortcut: logo, apple: logo } : undefined,
+  }
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const domain = getDomain()
