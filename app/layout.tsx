@@ -1,18 +1,14 @@
-import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from '@/providers/Providers'
 import { StoreHydrator } from '@/providers/StoreHydrator'
 import { HeaderRegistry } from '@/components/layout/HeaderRegistry'
 import { FooterRegistry } from '@/components/layout/FooterRegistry'
-import { fetchOrganization } from '@/lib/api/serverInit'
+import { AnalyticsScripts } from '@/components/layout/AnalyticsScripts'
+import { fetchOrganization, fetchCustomCss } from '@/lib/api/serverInit'
 import { getDomain } from '@/lib/utils/getDomain'
 import { buildGoogleFontsUrl } from '@/lib/utils/fonts'
 import { buildOrgColorStyle } from '@/lib/utils/orgColors'
-
-export const metadata: Metadata = {
-  title: 'ABBI.AI',
-  description: 'EFC Websites By ABBI.AI',
-}
+import { buildLocalBusinessSchema, buildFaqSchema, buildProductSchemas } from '@/lib/utils/metaTags'
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const domain = getDomain()
@@ -52,11 +48,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const orgStyle = [orgColorVars, orgFontVars].filter(Boolean).join(';')
 
   const fontsUrl = buildGoogleFontsUrl(fonts)
+  const customCss = await fetchCustomCss(domain)
+
+  const localBusinessSchema = buildLocalBusinessSchema(organization, location, domain)
+  const faqSchema = buildFaqSchema(organization)
+  const productSchemas = buildProductSchemas(organization, domain)
 
   return (
     <html lang="en">
       <head>
         {orgStyle && <style>{`:root{${orgStyle}}`}</style>}
+        {customCss && <style>{customCss}</style>}
+        {/* Preconnect to CDNs — matches Nuxt nuxt.config head.link */}
+        <link rel="preconnect" href="https://d3k0lk57n8zw9s.cloudfront.net" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://duvyeenkq0cxj.cloudfront.net" crossOrigin="anonymous" />
         {fontsUrl && (
           <>
             <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -64,6 +69,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <link href={fontsUrl} rel="stylesheet" />
           </>
         )}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+        {productSchemas.map((schema, i) => (
+          <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+        ))}
       </head>
       <body>
         <Providers>
@@ -88,6 +98,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               locations={locations}
               domain={domain}
             />
+            <AnalyticsScripts />
           </StoreHydrator>
         </Providers>
       </body>

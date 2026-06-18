@@ -1,19 +1,13 @@
 import { fetchOrganization } from '@/lib/api/serverInit'
 import { getDomain } from '@/lib/utils/getDomain'
+import { buildPageMetadata } from '@/lib/utils/metaTags'
 import { SectionRenderer } from '@/components/sections/SectionRenderer'
 import type { Metadata } from 'next'
 
 export async function generateMetadata(): Promise<Metadata> {
   const domain = getDomain()
-  const data = await fetchOrganization(domain)
-  const organization = data[0]
-  const location = organization.locations[0]
-  const homepage = location.pages.find((p) => p.slug === 'homepage')
-
-  return {
-    title: homepage?.title ?? organization.name,
-    description: homepage?.description ?? '',
-  }
+  const org    = (await fetchOrganization(domain))[0]
+  return buildPageMetadata({ org, domain, pageName: 'homepage' })
 }
 
 export default async function HomePage() {
