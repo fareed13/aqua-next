@@ -10,20 +10,19 @@ export function AnalyticsScripts() {
   const domain       = useOrgStore(s => s.domain)
   const userToken    = useAuthStore(s => s.userToken)
 
-  // Expose window.__abbiStoreGetter so abbiEvents-nuxt3.js can read store data
-  // without Pinia (Nuxt: 06.eventsCaptureScript.client.js exposes this same shape)
+  // abbiEvents-nuxt3.js reads window.__NUXT__.pinia.abbi.* directly (Nuxt SSR shape).
+  // We replicate that structure from Zustand so the script works without Pinia.
   useEffect(() => {
-    window.__abbiStoreGetter = () => ({
-      organization: organization ?? {},
-      location:     location     ?? {},
-      auth: {
-        loggedIn: !!userToken,
-        user: null,
+    window.__NUXT__ = {
+      pinia: {
+        abbi: {
+          organization: organization ?? {},
+          location:     location     ?? {},
+          domain:       domain ?? '',
+        },
       },
-      domain:     domain ?? '',
-      domainName: organization?.canonical_domain || domain || '',
-    })
-  }, [organization, location, domain, userToken])
+    }
+  }, [organization, location, domain])
 
   // GTM
   useEffect(() => {
@@ -217,12 +216,14 @@ declare global {
     gtag: (...args: unknown[]) => void
     fbq: ((...args: unknown[]) => void) & { callMethod?: (...args: unknown[]) => void; queue: unknown[]; loaded: boolean; version: string; push: unknown }
     _fbq: Window['fbq']
-    __abbiStoreGetter?: () => {
-      organization: object
-      location: object
-      auth: { loggedIn: boolean; user: null }
-      domain: string
-      domainName: string
+    __NUXT__?: {
+      pinia: {
+        abbi: {
+          organization: object
+          location: object
+          domain: string
+        }
+      }
     }
   }
 }

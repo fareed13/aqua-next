@@ -13,15 +13,28 @@ import { buildLocalBusinessSchema, buildFaqSchema, buildProductSchemas } from '@
 
 const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? 'https://d3k0lk57n8zw9s.cloudfront.net'
 
-// Global favicon — applies to all pages as default, page-level generateMetadata overrides per page
+const MIME_MAP: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg',
+  png: 'image/png', svg: 'image/svg+xml', webp: 'image/webp',
+}
+
+// Global favicon — page-level generateMetadata inherits from here
 export async function generateMetadata(): Promise<Metadata> {
   const domain = getDomain()
   const org = (await fetchOrganization(domain))[0]
+  const ext  = org?.primary_logo?.extension ?? ''
   const logo = org?.primary_logo?.uuid
-    ? `${MEDIA_URL}/${org.primary_logo.uuid}_350.${org.primary_logo.extension}`
+    ? `${MEDIA_URL}/${org.primary_logo.uuid}_350.${ext}`
     : ''
+  const mime = MIME_MAP[ext.toLowerCase()] ?? 'image/png'
   return {
-    icons: logo ? { icon: logo, shortcut: logo, apple: logo } : undefined,
+    icons: logo
+      ? {
+          icon:     [{ url: logo, type: mime }],
+          shortcut: [{ url: logo, type: mime }],
+          apple:    [{ url: logo, type: mime }],
+        }
+      : undefined,
   }
 }
 
@@ -69,11 +82,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const faqSchema = buildFaqSchema(organization)
   const productSchemas = buildProductSchemas(organization, domain)
 
+  const logoExt  = organization.primary_logo?.extension ?? ''
+  const logoUrl  = organization.primary_logo?.uuid
+    ? `${MEDIA_URL}/${organization.primary_logo.uuid}_350.${logoExt}`
+    : ''
+  const logoMime = MIME_MAP[logoExt.toLowerCase()] ?? 'image/png'
+
   return (
     <html lang="en">
       <head>
         {orgStyle && <style>{`:root{${orgStyle}}`}</style>}
         {customCss && <style>{customCss}</style>}
+        {/* Explicit favicon — prevents Next.js default /favicon.ico from winning */}
+        {logoUrl && <link rel="icon" href={logoUrl} type={logoMime} />}
+        {logoUrl && <link rel="apple-touch-icon" href={logoUrl} />}
         {/* Preconnect to CDNs — matches Nuxt nuxt.config head.link */}
         <link rel="preconnect" href="https://d3k0lk57n8zw9s.cloudfront.net" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://duvyeenkq0cxj.cloudfront.net" crossOrigin="anonymous" />
