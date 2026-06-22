@@ -8,7 +8,7 @@ import { ProgramDefault } from '@/components/programBlocks/ProgramDefault'
 export function ServiceClasses() {
   const { isAdminLoggedIn } = useAuth()
   const organization = useOrgStore(s => s.organization)
-  const services = useOrgStore(s => s.services)
+  const services = useOrgStore(s => s.organization?.services ?? [])
 
   const [backgroundImage, setBackgroundImage] = useState('bg_striped_orange.png')
 
@@ -45,7 +45,7 @@ export function ServiceClasses() {
         </div>
       )}
 
-      <ProgramDefault backgroundImage={backgroundImage} />
+      <ProgramDefault component="ProgramDefault" backgroundImage={backgroundImage} />
     </div>
   )
 }

@@ -13,7 +13,7 @@ interface ServiceIntroAddEditProps {
 export function ServiceIntroAddEdit({ introId }: ServiceIntroAddEditProps) {
   const router = useRouter()
   const { isAdminLoggedIn } = useAuth()
-  const services = useOrgStore(s => s.services)
+  const services = useOrgStore(s => s.organization?.services ?? [])
   const { getSecure, postSecure, putSecure } = useSecureCalls()
 
   const isNew = !introId

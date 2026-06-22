@@ -23,7 +23,7 @@ interface BasicAdForm {
 export function FacebookAddEdit({ adsId }: FacebookAddEditProps) {
   const router = useRouter()
   const { isAdminLoggedIn } = useAuth()
-  const services = useOrgStore(s => s.services)
+  const services = useOrgStore(s => s.organization?.services ?? [])
   const { getSecure, postSecure } = useSecureCalls()
 
   const [loading, setLoading] = useState(false)

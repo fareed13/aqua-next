@@ -5,6 +5,8 @@ import { StoreHydrator } from '@/providers/StoreHydrator'
 import { HeaderRegistry } from '@/components/layout/HeaderRegistry'
 import { FooterRegistry } from '@/components/layout/FooterRegistry'
 import { AnalyticsScripts } from '@/components/layout/AnalyticsScripts'
+import { Suspense } from 'react'
+import { PopupStepperCheckout } from '@/components/popupForm/PopupStepperCheckout'
 import { fetchOrganization, fetchCustomCss } from '@/lib/api/serverInit'
 import { getDomain } from '@/lib/utils/getDomain'
 import { buildGoogleFontsUrl } from '@/lib/utils/fonts'
@@ -128,6 +130,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               locations={locations}
             />
             <main>{children}</main>
+            <Suspense><PopupStepperCheckout /></Suspense>
             <FooterRegistry
               name={footerName}
               organization={organization}

@@ -34,7 +34,7 @@ const EDUCATION_OPTIONS = [
 export function TargetMarketAddEdit({ audienceId }: TargetMarketAddEditProps) {
   const router = useRouter()
   const { isAdminLoggedIn } = useAuth()
-  const services = useOrgStore(s => s.services)
+  const services = useOrgStore(s => s.organization?.services ?? [])
   const { getSecure, postSecure, putSecure } = useSecureCalls()
 
   const isNew = !audienceId

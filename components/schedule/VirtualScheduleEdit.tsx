@@ -53,7 +53,7 @@ interface VirtualScheduleEditProps {
 }
 
 export function VirtualScheduleEdit({ popup, toggleEditPopup, schedule, selectedLocationId }: VirtualScheduleEditProps) {
-  const services = useOrgStore(s => s.services)
+  const services = useOrgStore(s => s.organization?.services ?? [])
   const { postSecure, putSecure } = useSecureCalls()
 
   const isEdit = !!schedule?.id

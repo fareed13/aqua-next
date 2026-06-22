@@ -11,6 +11,8 @@ interface UIState {
   locationEditPopup: boolean
   settingsVisibleSection: string | null
   scheduleBookNowClicked: boolean
+  selectedPlan: Record<string, unknown> | null
+  interestedServiceId: number | null
 
   setDialog: (open: boolean, bookNowClick?: boolean) => void
   setReviewDialog: (open: boolean) => void
@@ -20,6 +22,8 @@ interface UIState {
   setServiceEditPopup: (open: boolean) => void
   setLocationEditPopup: (open: boolean) => void
   setSettingsVisibleSection: (section: string | null) => void
+  setSelectedPlan: (plan: Record<string, unknown> | null) => void
+  setInterestedServiceId: (id: number | null) => void
 }
 
 export const useUiStore = create<UIState>()(
@@ -33,6 +37,8 @@ export const useUiStore = create<UIState>()(
     locationEditPopup: false,
     settingsVisibleSection: null,
     scheduleBookNowClicked: false,
+    selectedPlan: null,
+    interestedServiceId: null,
 
     setDialog: (open, bookNowClick = false) => set((state) => {
       state.dialog = open
@@ -45,6 +51,8 @@ export const useUiStore = create<UIState>()(
     setServiceEditPopup: (open) => set((state) => { state.serviceEditPopup = open }),
     setLocationEditPopup: (open) => set((state) => { state.locationEditPopup = open }),
     setSettingsVisibleSection: (section) => set((state) => { state.settingsVisibleSection = section }),
+    setSelectedPlan: (plan) => set((state) => { state.selectedPlan = plan }),
+    setInterestedServiceId: (id) => set((state) => { state.interestedServiceId = id }),
   }))
 )
 

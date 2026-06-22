@@ -31,6 +31,8 @@ import { JHWavyBottomRightImage } from '@/components/carousel/JHWavyBottomRightI
 import { SalonCarousel } from '@/components/carousel/SalonCarousel'
 import { AccountCarousel } from '@/components/carousel/AccountCarousel'
 import { DentalBannerCarousel } from '@/components/carousel/DentalBannerCarousel'
+import { Carousel360 } from '@/components/carousel/Carousel360'
+import { VideoIntro } from '@/components/carousel/VideoIntro'
 
 // ── Offers ───────────────────────────────────────────────────────────
 import { OfferDefault } from '@/components/offers/OfferDefault'
@@ -53,6 +55,7 @@ import { BuyNow } from '@/components/sections/BuyNow'
 import { Calender } from '@/components/sections/Calender'
 import { ChangeProgram } from '@/components/sections/ChangeProgram'
 import { CounterCard } from '@/components/sections/CounterCard'
+import { CTAChecks } from '@/components/sections/CTAChecks'
 import { CTARightVideo } from '@/components/sections/CTARightVideo'
 import { DentalAboutUs } from '@/components/sections/DentalAboutUs'
 import { DentalRequestAppointment } from '@/components/sections/DentalRequestAppointment'
@@ -62,6 +65,7 @@ import { Ebook } from '@/components/sections/Ebook'
 import { FreeDiscount } from '@/components/sections/FreeDiscount'
 import { FitnessGoals } from '@/components/sections/FitnessGoals'
 import { FadedLeftImage } from '@/components/sections/FadedLeftImage'
+import { FadedNoImage } from '@/components/sections/FadedNoImage'
 import { FadedRightImage } from '@/components/sections/FadedRightImage'
 import { FullWidthHeading } from '@/components/sections/FullWidthHeading'
 import { GetStarted } from '@/components/sections/GetStarted'
@@ -75,6 +79,7 @@ import { HomeContact } from '@/components/sections/HomeContact'
 import { HomeSlider } from '@/components/sections/HomeSlider'
 import { ImproveWorkout } from '@/components/sections/ImproveWorkout'
 import { JoinclassesCard } from '@/components/sections/JoinclassesCard'
+import { LeftToRightArrow } from '@/components/sections/LeftToRightArrow'
 import { JHAboutUs } from '@/components/sections/JHAboutUs'
 import { JHCtaBanner } from '@/components/sections/JHCtaBanner'
 import { JHHowItWorks } from '@/components/sections/JHHowItWorks'
@@ -84,12 +89,17 @@ import { JHTestimonialsNew } from '@/components/sections/JHTestimonialsNew'
 import { JHRecoveredCaption } from '@/components/sections/JHRecoveredCaption'
 import { LetsGetStarted } from '@/components/sections/LetsGetStarted'
 import { Morefacilities } from '@/components/sections/Morefacilities'
+import { NoFadeRightImage } from '@/components/sections/NoFadeRightImage'
 import { OurUnique } from '@/components/sections/OurUnique'
 import { OurStory } from '@/components/sections/OurStory'
 import { OurClientServices } from '@/components/sections/OurClientServices'
+import { ProgramChildrenDefault } from '@/components/sections/ProgramChildrenDefault'
 import { ProvideServices } from '@/components/sections/ProvideServices'
+import { QuicklyCreateBeautiful } from '@/components/sections/QuicklyCreateBeautiful'
 import { QuoteWithParallax } from '@/components/sections/QuoteWithParallax'
 import { ReferralHero } from '@/components/sections/ReferralHero'
+import { RightToLeftArrow } from '@/components/sections/RightToLeftArrow'
+import { RowOfImages } from '@/components/sections/RowOfImages'
 import { SalonInfoCard } from '@/components/sections/SalonInfoCard'
 import { SalonCareCenter } from '@/components/sections/SalonCareCenter'
 import { SalonAppointment } from '@/components/sections/SalonAppointment'
@@ -101,7 +111,9 @@ import { StepsBoxed } from '@/components/sections/StepsBoxed'
 import { StepsIcons } from '@/components/sections/StepsIcons'
 import { StudentVideo } from '@/components/sections/StudentVideo'
 import { SuccessStories } from '@/components/sections/SuccessStories'
+import { Testimonials } from '@/components/sections/Testimonials'
 import { ThreeLargeBulletsRight } from '@/components/sections/ThreeLargeBulletsRight'
+import { VirtualClass } from '@/components/sections/VirtualClass'
 import { VirtualTour } from '@/components/sections/VirtualTour'
 import { WhatWeOffer } from '@/components/sections/WhatWeOffer'
 import { WhatWeOfferRightImage } from '@/components/sections/WhatWeOfferRightImage'
@@ -113,6 +125,9 @@ import { ReviewsDefault } from '@/components/reviews/ReviewsDefault'
 import { ReviewsSplash } from '@/components/reviews/ReviewsSplash'
 import { AccountTestimonials } from '@/components/reviews/AccountTestimonials'
 import { DentalOurReview } from '@/components/reviews/DentalOurReview'
+import { MovingTheirCompanies } from '@/components/reviews/MovingTheirCompanies'
+import { SingleReview } from '@/components/reviews/SingleReview'
+import { StudentReview } from '@/components/reviews/StudentReview'
 
 // ── Programs / Services ───────────────────────────────────────────────
 import { ProgramDefault } from '@/components/programBlocks/ProgramDefault'
@@ -184,6 +199,8 @@ export const SECTION_REGISTRY: Record<string, ComponentType<SectionProps>> = {
   SalonCarousel,
   AccountCarousel,
   DentalBannerCarousel,
+  Carousel360,
+  VideoIntro,
 
   // ── Offers ───────────────────────────────────────────────────────────
   NewMemberOffer,
@@ -204,6 +221,7 @@ export const SECTION_REGISTRY: Record<string, ComponentType<SectionProps>> = {
   BookNow,
   BuyNow,
   Calender,
+  CTAChecks,
   CTARightVideo,
   ChangeProgram,
   CounterCard,
@@ -213,6 +231,7 @@ export const SECTION_REGISTRY: Record<string, ComponentType<SectionProps>> = {
   DiscountSection,
   Ebook,
   FadedLeftImage,
+  FadedNoImage,
   FadedRightImage,
   FitnessGoals,
   FreeDiscount,
@@ -235,14 +254,20 @@ export const SECTION_REGISTRY: Record<string, ComponentType<SectionProps>> = {
   JHRemovalServices,
   JHTestimonialsNew,
   JoinclassesCard,
+  LeftToRightArrow,
   LetsGetStarted,
   Morefacilities,
+  NoFadeRightImage,
   OurClientServices,
   OurStory,
   OurUnique,
+  ProgramChildrenDefault,
   ProvideServices,
+  QuicklyCreateBeautiful,
   QuoteWithParallax,
   ReferralHero,
+  RightToLeftArrow,
+  RowOfImages,
   SalonAppointment,
   SalonCareCenter,
   SalonClients,
@@ -254,7 +279,9 @@ export const SECTION_REGISTRY: Record<string, ComponentType<SectionProps>> = {
   StepsIcons,
   StudentVideo,
   SuccessStories,
+  Testimonials,
   ThreeLargeBulletsRight,
+  VirtualClass,
   VirtualTour,
   WhatWeOffer,
   WhatWeOfferRightImage,
@@ -263,9 +290,12 @@ export const SECTION_REGISTRY: Record<string, ComponentType<SectionProps>> = {
   // ── Reviews ───────────────────────────────────────────────────────────
   AccountTestimonials,
   DentalOurReview,
+  MovingTheirCompanies,
   ReviewsClean,
   ReviewsDefault,
   ReviewsSplash,
+  SingleReview,
+  StudentReview,
 
   // ── Programs / Services ───────────────────────────────────────────────
   ProgramBlocksAbbi,

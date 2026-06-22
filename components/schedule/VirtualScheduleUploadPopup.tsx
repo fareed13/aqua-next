@@ -36,7 +36,7 @@ function isComplete(s: UploadedSchedule) {
 }
 
 export function VirtualScheduleUploadPopup({ popup, toggleUploadPopup, selectedLocationId }: VirtualScheduleUploadPopupProps) {
-  const services = useOrgStore(s => s.services)
+  const services = useOrgStore(s => s.organization?.services ?? [])
   const { postSecure } = useSecureCalls()
 
   const fileInputRef = useRef<HTMLInputElement>(null)

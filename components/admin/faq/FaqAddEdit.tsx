@@ -15,7 +15,7 @@ const TOPIC_OPTIONS = ['General', 'Membership', 'Schedule', 'Billing', 'Classes'
 export function FaqAddEdit({ faqId }: FaqAddEditProps) {
   const router = useRouter()
   const { isAdminLoggedIn } = useAuth()
-  const services = useOrgStore(s => s.services)
+  const services = useOrgStore(s => s.organization?.services ?? [])
   const { getSecure, postSecure, putSecure } = useSecureCalls()
 
   const isNew = !faqId

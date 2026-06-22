@@ -3,6 +3,7 @@ import { getDomain } from '@/lib/utils/getDomain'
 import { buildPageMetadata } from '@/lib/utils/metaTags'
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
 import { DynamicPage } from '@/components/pages/DynamicPage'
+import { ReviewsPageContent } from '@/components/reviews/ReviewsPageContent'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import type { Page } from '@/types/api'
@@ -42,20 +43,32 @@ export default async function CatchAllPage({ params }: PageProps) {
     foundPage = allPages.find(p => p.slug === slug)
   }
 
-  if (!foundPage) {
+  if (!foundPage && slug !== 'reviews') {
     notFound()
   }
 
   const headline = ['contact', 'reviews'].includes(slug)
-    ? (organization.name ?? foundPage.name)
-    : foundPage.name
+    ? (organization.name ?? foundPage?.name ?? '')
+    : foundPage!.name
+
+  if (slug === 'reviews') {
+    return (
+      <div>
+        <LandingPageBanner component="LandingPageBanner" headline={headline || organization.name || 'Reviews'} />
+        {foundPage && foundPage.content?.length > 0
+          ? <DynamicPage page={foundPage} headlineFromMeta={headline} />
+          : <ReviewsPageContent />
+        }
+      </div>
+    )
+  }
 
   return (
     <div>
-      {foundPage.show_header && (
+      {foundPage!.show_header && (
         <LandingPageBanner component="LandingPageBanner" headline={headline} />
       )}
-      <DynamicPage page={foundPage} headlineFromMeta={headline} />
+      <DynamicPage page={foundPage!} headlineFromMeta={headline} />
     </div>
   )
 }

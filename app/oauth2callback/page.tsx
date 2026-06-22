@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-export default function OAuth2CallbackPage() {
+function OAuth2CallbackContent() {
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [code, setCode] = useState<string | null>(null)
@@ -23,5 +23,13 @@ export default function OAuth2CallbackPage() {
         <p>Access Token: {code}</p>
       )}
     </div>
+  )
+}
+
+export default function OAuth2CallbackPage() {
+  return (
+    <Suspense>
+      <OAuth2CallbackContent />
+    </Suspense>
   )
 }

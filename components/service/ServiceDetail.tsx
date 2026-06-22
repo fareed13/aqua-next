@@ -87,7 +87,7 @@ export function ServiceDetail({ service, serviceName, showProgramChildren }: Ser
 
       <InstructorDefault component="InstructorDefault" />
       <FaqDefault component="FaqDefault" />
-      <ServicePlans component="ServicePlans" />
+      <ServicePlans component="ServicePlans" service={service} />
     </div>
   )
 }
