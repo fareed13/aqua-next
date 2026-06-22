@@ -1,4 +1,4 @@
-import { fetchOrganization } from '@/lib/api/serverInit'
+import { fetchOrganization, fetchDynamicRoutes } from '@/lib/api/serverInit'
 import { getDomain } from '@/lib/utils/getDomain'
 import { buildPageMetadata } from '@/lib/utils/metaTags'
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
@@ -6,6 +6,13 @@ import { ProgramDefault } from '@/components/programBlocks/ProgramDefault'
 import { ReviewsClean } from '@/components/reviews/ReviewsClean'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+
+export async function generateStaticParams() {
+  const routes = await fetchDynamicRoutes()
+  return routes
+    .filter(r => /^\/locations\/[^/]+$/.test(r))
+    .map(r => ({ slug: r.split('/')[2] }))
+}
 
 interface PageProps {
   params: Promise<{ slug: string }>

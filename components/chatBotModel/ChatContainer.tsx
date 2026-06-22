@@ -5,7 +5,22 @@ import Image from 'next/image'
 import { ChatBot } from './ChatBot'
 import { Message } from './Message'
 import { useOrgStore } from '@/store/orgStore'
-import { useNonSecureCalls } from '@/hooks/apiCalls/useApiCalls'
+import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? ''
+
+function getWsUrl(): string {
+  return BACKEND_URL.replace(/^https/, 'wss').replace(/^http/, 'ws')
+}
+
+function getUserSessionId(): string {
+  if (typeof document === 'undefined') return ''
+  const match = document.cookie.split('; ').find(c => c.startsWith('user_session_id='))
+  if (match) return match.split('=')[1]
+  const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)
+  document.cookie = `user_session_id=${id}; path=/; max-age=${60 * 60 * 24 * 365}`
+  return id
+}
 
 interface ChatMessage {
   sender: 'User' | 'Bot'

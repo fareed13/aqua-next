@@ -22,6 +22,10 @@ const EventPurchaseStep = dynamic(
   () => import('./EventPurchaseStep').then((m) => m.EventPurchaseStep),
   { ssr: false }
 )
+const ChatContainer = dynamic(
+  () => import('@/components/chatBotModel/ChatContainer').then((m) => m.ChatContainer),
+  { ssr: false }
+)
 
 export function Checkout() {
   const router = useRouter()
@@ -666,12 +670,8 @@ export function Checkout() {
 
           {/* Chatbot tab panel */}
           {activeTab === 'chatbot' && (
-            <div role="tabpanel" aria-labelledby="chatbot-tab" id="chatbot-panel">
-              <div className="max-w-lg mx-auto p-5">
-                <p className="text-center text-gray-500 py-8">
-                  Chat feature — connect your ChatBot component here.
-                </p>
-              </div>
+            <div role="tabpanel" aria-labelledby="chatbot-tab" id="chatbot-panel" className="h-[calc(100vh-55px)]">
+              <ChatContainer />
             </div>
           )}
         </div>

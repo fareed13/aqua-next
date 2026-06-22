@@ -39,6 +39,19 @@ export async function fetchMetaTags(
   }
 }
 
+export async function fetchDynamicRoutes(): Promise<string[]> {
+  const domain = process.env.NEXT_PUBLIC_DEFAULT_PAGE_DOMAIN ?? ''
+  // The dynamic-routes endpoint expects just the subdomain (e.g. "example" from "example.aquilagy.com")
+  const subdomain = domain.split('.')[0]
+  try {
+    const res = await fetch(`${BACKEND_URL}/website/dynamic-routes/?domain=${subdomain}`, SSG)
+    if (!res.ok) return []
+    return res.json()
+  } catch {
+    return []
+  }
+}
+
 export async function fetchCustomCss(domain: string): Promise<string> {
   try {
     const res = await fetch(`${BACKEND_URL}/website/css/?domain=${domain}`, SSG)

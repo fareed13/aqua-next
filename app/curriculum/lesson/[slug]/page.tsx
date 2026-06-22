@@ -1,10 +1,17 @@
-import { fetchOrganization } from '@/lib/api/serverInit'
+import { fetchOrganization, fetchDynamicRoutes } from '@/lib/api/serverInit'
 import { getDomain } from '@/lib/utils/getDomain'
 import { buildPageMetadata } from '@/lib/utils/metaTags'
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
 import { LessonDetail } from '@/components/curriculum/LessonDetail'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+
+export async function generateStaticParams() {
+  const routes = await fetchDynamicRoutes()
+  return routes
+    .filter(r => /^\/curriculum\/lesson\/[^/]+$/.test(r))
+    .map(r => ({ slug: r.split('/')[3] }))
+}
 
 interface PageProps {
   params: Promise<{ slug: string }>

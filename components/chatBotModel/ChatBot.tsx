@@ -26,7 +26,8 @@ export function ChatBot({ headerTitle = 'Chatbot', children, onNewMessage, onRec
   const recaptchaContainerRef = useRef<HTMLDivElement>(null)
   const recaptchaWidgetId = useRef<number | null>(null)
 
-  const hasValidRecaptcha = !recaptchaEnabled || !!recaptchaToken
+  const siteKey = getSiteKey()
+  const hasValidRecaptcha = !recaptchaEnabled || !siteKey || !!recaptchaToken
 
   useEffect(() => {
     if (recaptchaEnabled && !hasValidRecaptcha && !recaptchaReady) {
@@ -37,12 +38,13 @@ export function ChatBot({ headerTitle = 'Chatbot', children, onNewMessage, onRec
   useEffect(() => {
     if (!recaptchaReady || !recaptchaEnabled || !recaptchaContainerRef.current) return
     if (recaptchaWidgetId.current !== null) return
+    if (!siteKey) return
 
     const g = (window as any).grecaptcha
     if (!g) return
 
     recaptchaWidgetId.current = g.render(recaptchaContainerRef.current, {
-      sitekey: getSiteKey(),
+      sitekey: siteKey,
       callback: async (token: string) => {
         try {
           const res = await postPublic(nonSecureEndpoint.GOOGLERECAPTCHA, { token }) as any

@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SectionProps } from '@/components/sections/registry';
 import { useOrgStore } from '@/store/orgStore';
+import { useUiStore } from '@/store/uiStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useSchedule } from '@/hooks/useSchedule';
 import { useSecureCalls, SECURE_ENDPOINTS, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls';
@@ -34,6 +35,7 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
   const router = useRouter();
   const organization = useOrgStore(s => s.organization) as any;
   const { isAdminLoggedIn } = useAuth();
+  const setDialog = useUiStore(s => s.setDialog);
   const { schedule, scheduleFound, selectedLocationId, selectLocation, locations } = useSchedule();
   const { getSecure, postSecure, deleteSecure } = useSecureCalls();
 
@@ -222,6 +224,8 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
         </div>
       )}
 
+      <div className="max-w-6xl mx-auto px-4 py-6">
+
       {headline && <h2 className="text-center text-2xl font-semibold mb-4" style={{ fontFamily: 'Poppins, sans-serif' }}>{headline}</h2>}
 
       {/* Admin actions */}
@@ -294,7 +298,7 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
       </div>
 
       {/* Schedule list */}
-      <div className="px-4 space-y-0">
+      <div className="space-y-0">
         {availableDays.length === 0 && !overlay && (
           <p className="text-center text-gray-400 py-10">No classes scheduled for this week.</p>
         )}
@@ -325,7 +329,7 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
                       style={{ background: accentColor }}>Join Virtually</a>
                   )}
                   {sch.eligible_for_trial_class && !isCloseDate(dateStr, sch) && !isExpired(sch) && (
-                    <button className="px-4 py-2 rounded-full text-white text-sm font-semibold"
+                    <button onClick={() => setDialog(true, true)} className="px-4 py-2 rounded-full text-white text-sm font-semibold"
                       style={{ background: accentColor }}>BOOK NOW</button>
                   )}
                   {showReserveBtn(sch) && (
@@ -370,7 +374,7 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
                     </a>
                   )}
                   {sch.eligible_for_trial_class && !isCloseDate(dateStr, sch) && !isExpired(sch) && (
-                    <button className="px-4 py-2 rounded-lg text-white text-sm font-semibold bg-green-600">
+                    <button onClick={() => setDialog(true, true)} className="px-4 py-2 rounded-lg text-white text-sm font-semibold bg-green-600">
                       📅 Book Now
                     </button>
                   )}
@@ -394,6 +398,8 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
           </div>
         )}
       </div>
+
+      </div>{/* end max-w-6xl container */}
     </div>
   );
 }

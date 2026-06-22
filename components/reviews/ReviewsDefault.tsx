@@ -69,7 +69,7 @@ function ReviewCard({ review, isVideo, isImage }: ReviewCardProps) {
         <div className="w-full mb-3 relative aspect-video">
           <Image
             src={buildMediaUrl(review.media)}
-            alt={review.media.name || review.name}
+            alt={review.media.name || review.name || 'Review image'}
             fill
             className="object-cover"
           />
@@ -120,7 +120,7 @@ function MobileCarousel({ reviews, isVideo, isImage }: { reviews: any[]; isVideo
             <div className="w-full mb-3 relative aspect-video">
               <Image
                 src={buildMediaUrl(review.media)}
-                alt={review.media.name || review.name}
+                alt={review.media.name || review.name || 'Review image'}
                 fill
                 className="object-cover"
               />

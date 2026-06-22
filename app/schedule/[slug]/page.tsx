@@ -1,9 +1,16 @@
-import { fetchOrganization } from '@/lib/api/serverInit'
+import { fetchOrganization, fetchDynamicRoutes } from '@/lib/api/serverInit'
 import { getDomain } from '@/lib/utils/getDomain'
 import { buildPageMetadata } from '@/lib/utils/metaTags'
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
 import { ScheduleDetail } from '@/components/schedule/ScheduleDetail'
 import type { Metadata } from 'next'
+
+export async function generateStaticParams() {
+  const routes = await fetchDynamicRoutes()
+  return routes
+    .filter(r => /^\/schedule\/[^/]+$/.test(r))
+    .map(r => ({ slug: r.split('/')[2] }))
+}
 
 interface PageProps {
   params: Promise<{ slug: string }>

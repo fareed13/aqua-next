@@ -1,4 +1,4 @@
-import { fetchOrganization } from '@/lib/api/serverInit'
+import { fetchOrganization, fetchDynamicRoutes } from '@/lib/api/serverInit'
 import { getDomain } from '@/lib/utils/getDomain'
 import { buildPageMetadata, buildProductSchemas } from '@/lib/utils/metaTags'
 import { ServiceDetail } from '@/components/service/ServiceDetail'
@@ -7,6 +7,16 @@ import type { Metadata } from 'next'
 
 interface PageProps {
   params: Promise<{ slug: string; location: string }>
+}
+
+export async function generateStaticParams() {
+  const routes = await fetchDynamicRoutes()
+  return routes
+    .filter(r => /^\/classes\/[^/]+\/[^/]+$/.test(r))
+    .map(r => {
+      const parts = r.split('/')
+      return { slug: parts[2], location: parts[3] }
+    })
 }
 
 const KIDS_SLUGS = ['kids-karate', 'kids-krav-maga', 'kids-martial-arts', 'kids-taekwondo', 'kids-kung-fu']
