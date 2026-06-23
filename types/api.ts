@@ -284,6 +284,7 @@ export interface Organization {
   is_gift_card_enabled: boolean
   is_setup_completed: boolean
   is_analytics_enabled: boolean
+  country?: string
   is_booking_enabled: boolean
   is_aquila_booking_enabled: boolean
   is_banner_enabled: boolean

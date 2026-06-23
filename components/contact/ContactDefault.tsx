@@ -30,8 +30,9 @@ export function ContactDefault(_props: SectionProps) {
   const socialMedia: Array<{ platform: string; url: string }> = (location as any)?.social_media ?? [];
   const showEmail = organization?.is_email_show_enabled;
 
-  const mapSrc = placeId
-    ? `https://www.google.com/maps/embed/v1/place?q=place_id:${placeId}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''}`
+  const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''
+  const mapSrc = placeId && mapsKey
+    ? `https://www.google.com/maps/embed/v1/place?q=place_id:${placeId}&key=${mapsKey}`
     : '';
 
   return (
