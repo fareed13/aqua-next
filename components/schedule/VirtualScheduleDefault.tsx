@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { SectionProps } from '@/components/sections/registry';
 import { useOrgStore } from '@/store/orgStore';
@@ -12,6 +13,10 @@ import { useSecureCalls, SECURE_ENDPOINTS, NON_SECURE_ENDPOINTS } from '@/hooks/
 import { VirtualScheduleEdit } from '@/components/schedule/VirtualScheduleEdit';
 import { CloseDateAddEdit } from '@/components/schedule/CloseDateAddEdit';
 import { VirtualScheduleUploadPopup } from '@/components/schedule/VirtualScheduleUploadPopup';
+
+function buildScheduleSlug(name: string, id: number, locationId: number): string {
+  return name.replace(/[&/\\#, +()%.]/g, '-').toLowerCase() + '-' + id + '-loc-' + locationId;
+}
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? '';
 
@@ -36,7 +41,7 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
   const organization = useOrgStore(s => s.organization) as any;
   const { isAdminLoggedIn } = useAuth();
   const setDialog = useUiStore(s => s.setDialog);
-  const { schedule, scheduleFound, selectedLocationId, selectLocation, locations } = useSchedule();
+  const { schedule, scheduleFound, selectedLocationId, selectLocation, locations, filteredLocations } = useSchedule();
   const { getSecure, postSecure, deleteSecure } = useSecureCalls();
 
   const accentColor = organization?.colors?.['app-main-accent-color'] ?? '#d5242c';
@@ -324,9 +329,9 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
                 </div>
                 <div className="w-1/3 flex justify-end gap-2">
                   {showVirtualBtn(sch) && (
-                    <a href={sch.link} target="_blank" rel="noopener noreferrer"
+                    <Link href={`/schedule/${buildScheduleSlug(sch.name, sch.id, currentLocationId)}`}
                       className="px-4 py-2 rounded-full text-white text-sm font-semibold"
-                      style={{ background: accentColor }}>Join Virtually</a>
+                      style={{ background: accentColor }}>Join Virtually</Link>
                   )}
                   {sch.eligible_for_trial_class && !isCloseDate(dateStr, sch) && !isExpired(sch) && (
                     <button onClick={() => setDialog(true, true)} className="px-4 py-2 rounded-full text-white text-sm font-semibold"
@@ -368,10 +373,10 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
                 </div>
                 <div className="p-4 flex flex-wrap gap-2">
                   {showVirtualBtn(sch) && (
-                    <a href={sch.link} target="_blank" rel="noopener noreferrer"
+                    <Link href={`/schedule/${buildScheduleSlug(sch.name, sch.id, currentLocationId)}`}
                       className="px-4 py-2 rounded-lg text-white text-sm font-semibold bg-blue-600">
                       📹 Join Virtually
-                    </a>
+                    </Link>
                   )}
                   {sch.eligible_for_trial_class && !isCloseDate(dateStr, sch) && !isExpired(sch) && (
                     <button onClick={() => setDialog(true, true)} className="px-4 py-2 rounded-lg text-white text-sm font-semibold bg-green-600">
