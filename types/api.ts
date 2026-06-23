@@ -260,6 +260,7 @@ export interface Organization {
   timezone: string
   appointment_mode: boolean
   canonical_domain: string
+  domain: string
   org_reviews_count: number
   services: Service[]
   org_reviews: Review[]

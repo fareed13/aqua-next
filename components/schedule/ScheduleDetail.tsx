@@ -21,9 +21,10 @@ const DAYS_MAPPING: Record<string, number> = {
 interface ScheduleDetailProps {
   classId: string
   locationId: string
+  slug: string
 }
 
-export function ScheduleDetail({ classId, locationId }: ScheduleDetailProps) {
+export function ScheduleDetail({ classId, locationId, slug }: ScheduleDetailProps) {
   const router = useRouter()
   const organization = useOrgStore(s => s.organization)
   const locations = useOrgStore(s => s.locations)
@@ -63,10 +64,9 @@ export function ScheduleDetail({ classId, locationId }: ScheduleDetailProps) {
   }, [classData])
 
   const videoMedia = useMemo(() => {
-    if (!classData?.media) return null
-    const media = classData.media
-    if (media.media_type !== 'video') return null
-    return { name: `${VIDEO_URL}/${media.uuid}_700.mp4`, autoPlay: false }
+    const mediaDetail = (classData as any)?.media_detail ?? classData?.media
+    if (!mediaDetail?.uuid) return null
+    return { name: `${VIDEO_URL}${mediaDetail.uuid}_700.mp4`, autoPlay: false }
   }, [classData])
 
   const zoomLogo = `${MEDIA_URL}/videoPlay_700.png`
@@ -88,12 +88,12 @@ export function ScheduleDetail({ classId, locationId }: ScheduleDetailProps) {
             })
           } catch {}
         }
-        if (classData.link) window.open(classData.link, '_blank')
+        if (classData.link) window.location.href = classData.link
       } else {
-        router.push(`/login?redirect=/schedule/${classId}-${locationId}`)
+        router.push(`/login?redirect=/schedule/${slug}`)
       }
     } else {
-      if (classData.link) window.open(classData.link, '_blank')
+      if (classData.link) window.location.href = classData.link
     }
   }
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useOrgStore } from '@/store/orgStore'
 import { useUiStore } from '@/store/uiStore'
 import { useAuth } from '@/hooks/useAuth'
+import { PdfList } from '@/components/admin/pdfBuilder/PdfList'
 
 interface SettingsItem {
   id: number
@@ -257,8 +258,10 @@ export function AllSettings() {
                   {openSection === item.id && (
                     <div className="px-6 pb-4">
                       {item.component && (
-                        <div className="bg-gray-50 rounded p-4 text-gray-500 text-sm">
-                          {item.title} component placeholder
+                        <div className="bg-gray-50 rounded p-4">
+                          {item.id === 4018 ? <PdfList /> : (
+                            <div className="text-gray-500 text-sm">{item.title} component placeholder</div>
+                          )}
                         </div>
                       )}
                       {item.nested?.map(nested => (

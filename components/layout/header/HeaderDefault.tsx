@@ -29,6 +29,7 @@ export function HeaderDefault({ initialOrganization, initialLocation, initialLoc
   const storeOrg = useOrgStore((s) => s.organization)
   const storeLoc = useOrgStore((s) => s.location)
   const storeLocations = useOrgStore((s) => s.locations)
+  const storeDomain = useOrgStore((s) => s.domain)
 
   const organization = storeOrg ?? initialOrganization
   const location = storeLoc ?? initialLocation
@@ -57,8 +58,8 @@ export function HeaderDefault({ initialOrganization, initialLocation, initialLoc
   const underlineColor = (organization as any)?.colors?.['main-accent-text-underline'] || '#d5242c'
 
   const menuItems = useMemo(
-    () => buildMenuItems(organization, location, locations, isLoggedIn),
-    [organization, location, locations, isLoggedIn],
+    () => buildMenuItems(organization, location, locations, isLoggedIn, storeDomain),
+    [organization, location, locations, isLoggedIn, storeDomain],
   )
 
   useEffect(() => {

@@ -34,7 +34,7 @@ export default async function ScheduleDetailPage({ params }: PageProps) {
   return (
     <div>
       <LandingPageBanner component="LandingPageBanner" headline="Schedule" />
-      <ScheduleDetail classId={classId} locationId={locationId} />
+      <ScheduleDetail classId={classId} locationId={locationId} slug={slug} />
     </div>
   )
 }

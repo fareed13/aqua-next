@@ -29,6 +29,7 @@ export function HeaderAbbi({ initialOrganization, initialLocation, initialLocati
   const storeOrg = useOrgStore((s) => s.organization)
   const storeLoc = useOrgStore((s) => s.location)
   const storeLocations = useOrgStore((s) => s.locations)
+  const storeDomain = useOrgStore((s) => s.domain)
 
   const organization = storeOrg ?? initialOrganization
   const location = storeLoc ?? initialLocation
@@ -54,8 +55,8 @@ export function HeaderAbbi({ initialOrganization, initialLocation, initialLocati
     'https://abbiuser.auth.us-east-2.amazoncognito.com/login?client_id=5agqvgvq5qdon6v2tel0u0b0sa&response_type=token&scope=aws.cognito.signin.user.admin+openid+profile&redirect_uri=https://crm.abbi.ai'
 
   const menuItems = useMemo(
-    () => buildMenuItems(organization, location, locations, isLoggedIn),
-    [organization, location, locations, isLoggedIn],
+    () => buildMenuItems(organization, location, locations, isLoggedIn, storeDomain),
+    [organization, location, locations, isLoggedIn, storeDomain],
   )
 
   useEffect(() => {
