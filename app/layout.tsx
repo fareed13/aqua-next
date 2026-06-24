@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { Toaster } from 'sonner'
 import { Providers } from '@/providers/Providers'
 import { StoreHydrator } from '@/providers/StoreHydrator'
 import { HeaderRegistry } from '@/components/layout/HeaderRegistry'
@@ -116,6 +117,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <Providers>
+          <Toaster position="top-center" richColors closeButton />
           <StoreHydrator
             organization={organization}
             location={location}
