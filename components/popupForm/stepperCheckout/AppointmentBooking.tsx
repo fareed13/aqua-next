@@ -2,7 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useOrgStore } from '@/store/orgStore'
+import { useUiStore } from '@/store/uiStore'
 import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { getPublicAuthHeader } from '@/lib/utils/initializeSocket'
+import { toast } from 'sonner'
+import { parseApiError } from '@/lib/utils/parseApiError'
 
 interface Props {
   customerId: number
@@ -10,9 +14,110 @@ interface Props {
   selectedLocation: { id: number; schedules_count?: number }
 }
 
+const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+
+function InlineCalendar({
+  value,
+  onChange,
+  allowedDates,
+}: {
+  value: string
+  onChange: (date: string) => void
+  allowedDates: string[]
+}) {
+  const todayStr = new Date().toLocaleDateString('en-CA')
+
+  const initial = value ? new Date(value + 'T00:00:00') : new Date()
+  const [viewYear, setViewYear] = useState(initial.getFullYear())
+  const [viewMonth, setViewMonth] = useState(initial.getMonth())
+
+  const allowedSet = useMemo(() => new Set(allowedDates), [allowedDates])
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
+    else setViewMonth(m => m - 1)
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
+    else setViewMonth(m => m + 1)
+  }
+
+  const monthLabel = new Date(viewYear, viewMonth, 1)
+    .toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay()
+
+  const cells: (number | null)[] = []
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+
+  return (
+    <div className="w-full max-w-xs mx-auto select-none">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <button
+          type="button"
+          onClick={prevMonth}
+          className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 text-lg font-bold"
+        >
+          ‹
+        </button>
+        <span className="text-sm font-semibold text-gray-700">{monthLabel}</span>
+        <button
+          type="button"
+          onClick={nextMonth}
+          className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 text-lg font-bold"
+        >
+          ›
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 text-center mb-1">
+        {DAY_LABELS.map(d => (
+          <div key={d} className="text-xs text-gray-400 font-medium py-1">{d}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 text-center gap-y-1">
+        {cells.map((day, i) => {
+          if (!day) return <div key={i} />
+          const mm = String(viewMonth + 1).padStart(2, '0')
+          const dd = String(day).padStart(2, '0')
+          const dateStr = `${viewYear}-${mm}-${dd}`
+          const isAllowed = allowedSet.has(dateStr)
+          const isSelected = dateStr === value
+          const isToday = dateStr === todayStr
+          return (
+            <div key={i} className="flex justify-center">
+              <button
+                type="button"
+                disabled={!isAllowed}
+                onClick={() => onChange(dateStr)}
+                className={[
+                  'w-8 h-8 rounded-full text-xs transition-colors',
+                  isSelected
+                    ? 'bg-blue-600 text-white font-semibold'
+                    : isAllowed
+                    ? 'bg-blue-50 text-blue-700 hover:bg-blue-200 font-semibold border border-blue-200'
+                    : isToday
+                    ? 'text-gray-400 border border-dashed border-gray-300'
+                    : 'text-gray-300 cursor-not-allowed',
+                ].join(' ')}
+              >
+                {day}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function AppointmentBooking({ customerId, changeStep, selectedLocation }: Props) {
-  const orgId = useOrgStore((s) => s.organization?.id)
-  const { getPublic, postPublic } = useNonSecureCalls()
+  const organization = useOrgStore((s) => s.organization)
+  const orgId = organization?.id
+  const checkoutAuthToken = useUiStore((s) => s.checkoutAuthToken)
+  const { getPublic, postPublicProtected } = useNonSecureCalls()
 
   const [progressLoading, setProgressLoading] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -27,12 +132,27 @@ export function AppointmentBooking({ customerId, changeStep, selectedLocation }:
 
   const filteredSlots = useMemo(() => {
     if (selectedService === null) return availabilitySlotsData
-    return availabilitySlotsData.filter((slot: any) => slot.service_id === selectedService)
+    return availabilitySlotsData.filter((slot: any) => {
+      const svcId = slot.service?.id ?? slot.service_id
+      return svcId === selectedService
+    })
   }, [availabilitySlotsData, selectedService])
 
-  const allowedDates = useMemo<Date[]>(() => {
-    return filteredSlots.map((slot: any) => new Date(slot.date))
+  const allowedDateStrings = useMemo<string[]>(() => {
+    return filteredSlots.map((slot: any) => slot.date)
   }, [filteredSlots])
+
+  const slotsForDate = useMemo(() => {
+    if (!picker) return filteredSlots
+    return filteredSlots.filter((slot: any) => slot.date === picker)
+  }, [filteredSlots, picker])
+
+  // Auto-advance picker to the first available date when the service filter changes
+  useEffect(() => {
+    if (allowedDateStrings.length > 0 && !allowedDateStrings.includes(picker)) {
+      setPicker(allowedDateStrings[0])
+    }
+  }, [allowedDateStrings, picker])
 
   useEffect(() => {
     if ((selectedLocation.schedules_count ?? 0) < 1) {
@@ -51,7 +171,7 @@ export function AppointmentBooking({ customerId, changeStep, selectedLocation }:
       const today = new Date()
       const start_date = today.toLocaleDateString('en-CA')
       const futureDate = new Date(today)
-      futureDate.setMonth(futureDate.getMonth() + 3)
+      futureDate.setDate(futureDate.getDate() + 13)
       const end_date = futureDate.toLocaleDateString('en-CA')
 
       const result = await getPublic<any[]>(NON_SECURE_ENDPOINTS.SCHEDULE_SLOTS, {
@@ -78,20 +198,23 @@ export function AppointmentBooking({ customerId, changeStep, selectedLocation }:
     const seen = new Set<number>()
     const unique: any[] = []
     for (const slot of slots) {
-      if (!seen.has(slot.service_id)) {
-        seen.add(slot.service_id)
-        unique.push({ id: slot.service_id, name: slot.service_name ?? slot.name })
+      const svcId = slot.service?.id ?? slot.service_id
+      const svcName = slot.service?.name ?? slot.service_name ?? slot.name
+      if (svcId != null && !seen.has(svcId)) {
+        seen.add(svcId)
+        unique.push({ id: svcId, name: svcName })
       }
     }
     setServices(unique)
-    if (unique.length > 0) {
-      setSelectedService(unique[0].id)
-    }
+    if (unique.length > 0) setSelectedService(unique[0].id)
   }
 
   function toggleConfirmationPopup(slot: any) {
+    const mm = slot.date
+      ? new Date(slot.date + 'T00:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })
+      : slot.date
+    setMessage(`You will be booked for ${slot.name} at ${slot.pretty_start_time} on ${mm}.`)
     setSelectedSlot(slot)
-    setMessage(`Book "${slot.name}" on ${slot.date} from ${slot.pretty_start_time} to ${slot.pretty_end_time}?`)
     setBookedSlotDate(slot.date)
     setConfirmationPopup(true)
   }
@@ -104,32 +227,39 @@ export function AppointmentBooking({ customerId, changeStep, selectedLocation }:
     if (!selectedSlot) return
     setLoading(true)
     try {
-      await postPublic(NON_SECURE_ENDPOINTS.BOOKING_APPOINTMENT, {
-        customer_id: customerId,
-        slot_id: selectedSlot.id,
-        date: bookedSlotDate,
-        location_id: selectedLocation.id,
-      })
-    } catch {
-      // proceed to next step regardless
+      const authHeader = organization?.recaptcha_enabled
+        ? (sessionStorage.getItem('recaptcha_token') ?? '')
+        : (checkoutAuthToken || await getPublicAuthHeader(orgId!, false))
+
+      await postPublicProtected(
+        NON_SECURE_ENDPOINTS.BOOKING_APPOINTMENT,
+        {
+          schedule_id: selectedSlot.id,
+          booked_time: selectedSlot.start_time,
+          booked_date: bookedSlotDate,
+          customer_id: customerId,
+        },
+        authHeader
+      )
+      toast.success('Appointment booked successfully')
+      changeStep(4)
+    } catch (err) {
+      toast.error(parseApiError(err))
     } finally {
       setLoading(false)
       setConfirmationPopup(false)
-      changeStep(4)
     }
   }
 
   function formatCardDate(date: string): string {
     if (!date) return ''
-    const d = new Date(date)
+    const d = new Date(date + 'T00:00:00')
     if (isNaN(d.getTime())) return date
-    return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   }
 
-  const slotsForDate = filteredSlots.filter((slot: any) => slot.date === picker)
-
   return (
-    <div className="w-full px-4 py-6 space-y-6">
+    <div className="w-full py-6">
       {/* Confirmation popup */}
       {confirmationPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -154,28 +284,24 @@ export function AppointmentBooking({ customerId, changeStep, selectedLocation }:
         </div>
       )}
 
-      {/* Date picker */}
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">Select Date</label>
-        <input
-          type="date"
-          value={picker}
-          onChange={(e) => setPicker(e.target.value)}
-          className="border rounded px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        {picker && (
-          <p className="text-xs text-gray-500 pt-1">{formatCardDate(picker)}</p>
-        )}
-      </div>
+      {/* Inline calendar — shown once slots are loaded */}
+      {availabilitySlotsData.length > 0 && (
+        <div className="flex justify-center mb-5 mt-2 px-4">
+          <InlineCalendar
+            value={picker}
+            onChange={setPicker}
+            allowedDates={allowedDateStrings}
+          />
+        </div>
+      )}
 
-      {/* Service selector */}
+      {/* Program dropdown — below calendar, matching Nuxt layout */}
       {availabilitySlotsData.length > 0 && services.length > 0 && (
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">Select Service</label>
+        <div className="px-6 mb-4">
           <select
             value={selectedService ?? ''}
             onChange={(e) => setSelectedService(Number(e.target.value))}
-            className="w-full border rounded px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           >
             {services.map((service: any) => (
               <option key={service.id} value={service.id}>
@@ -186,45 +312,41 @@ export function AppointmentBooking({ customerId, changeStep, selectedLocation }:
         </div>
       )}
 
-      {/* Loading spinner */}
-      {progressLoading && (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin border-4 border-blue-500 border-t-transparent rounded-full w-10 h-10" />
-        </div>
-      )}
-
-      {/* Slot list */}
-      {!progressLoading && (
-        <div className="space-y-3">
-          {slotsForDate.length > 0 ? (
-            slotsForDate.map((slot: any, index: number) => (
+      {/* Slot cards — scrollable, below dropdown */}
+      <div className="overflow-y-auto px-4 pb-4" style={{ maxHeight: '440px' }}>
+        {progressLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin border-4 border-blue-500 border-t-transparent rounded-full w-10 h-10" />
+          </div>
+        ) : slotsForDate.length > 0 ? (
+          <div className="space-y-3">
+            {slotsForDate.map((slot: any, index: number) => (
               <div
                 key={slot.id ?? index}
-                className="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm hover:shadow-md transition-shadow bg-white"
+                className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => toggleConfirmationPopup(slot)}
               >
-                <div className="space-y-0.5">
-                  <p className="text-gray-900 font-semibold text-sm">{slot.name}</p>
-                  <p className="text-gray-500 text-xs">{formatCardDate(slot.date)}</p>
-                  <p className="text-gray-600 text-xs">
-                    {slot.pretty_start_time}
-                    {slot.pretty_end_time ? ` – ${slot.pretty_end_time}` : ''}
-                  </p>
-                </div>
+                <p className="text-gray-900 font-semibold text-base">{slot.name}</p>
+                <p className="text-gray-500 text-xs mt-1 mb-1">{formatCardDate(slot.date)}</p>
+                <p className="text-gray-600 text-xs">
+                  {slot.pretty_start_time}
+                  {slot.pretty_end_time ? ` – ${slot.pretty_end_time}` : ''}
+                </p>
                 <button
-                  onClick={() => toggleConfirmationPopup(slot)}
-                  className="shrink-0 px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold uppercase tracking-wide hover:bg-blue-700 transition-colors"
+                  type="button"
+                  className="mt-3 w-full py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold uppercase tracking-wide hover:bg-blue-700 transition-colors"
                 >
-                  Book Now
+                  BOOK NOW
                 </button>
               </div>
-            ))
-          ) : (
-            !loading && (
-              <p className="text-center text-gray-500 text-sm py-8">Slots are not available</p>
-            )
-          )}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : (
+          !progressLoading && (
+            <p className="text-center text-gray-500 text-sm py-8">Slots are not available</p>
+          )
+        )}
+      </div>
     </div>
   )
 }
