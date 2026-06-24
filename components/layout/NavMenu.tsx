@@ -38,7 +38,9 @@ function NavItem({ item, onNavigate }: { item: MenuItem; onNavigate?: () => void
 
   if (!item.url) return null
 
-  if (item.external) {
+  const isExternal = item.external && item.url.startsWith('http')
+
+  if (isExternal) {
     return (
       <a
         href={item.url}

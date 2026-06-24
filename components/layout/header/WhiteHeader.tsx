@@ -29,6 +29,7 @@ export function WhiteHeader({ initialOrganization, initialLocation, initialLocat
   const storeOrg = useOrgStore((s) => s.organization)
   const storeLoc = useOrgStore((s) => s.location)
   const storeLocations = useOrgStore((s) => s.locations)
+  const storeDomain = useOrgStore((s) => s.domain)
 
   const organization = storeOrg ?? initialOrganization
   const location = storeLoc ?? initialLocation
@@ -53,8 +54,8 @@ export function WhiteHeader({ initialOrganization, initialLocation, initialLocat
   const callToAction = location.call_to_action || 'Book Now'
 
   const menuItems = useMemo(
-    () => buildMenuItems(organization, location, locations, isLoggedIn),
-    [organization, location, locations, isLoggedIn],
+    () => buildMenuItems(organization, location, locations, isLoggedIn, storeDomain),
+    [organization, location, locations, isLoggedIn, storeDomain],
   )
 
   useEffect(() => {

@@ -16,13 +16,12 @@ export function PdfViewer({ slug }: PdfViewerProps) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!organization?.id) return
+
     async function fetchPdf() {
       try {
         setLoading(true)
-        const res: any = await getPublic(NON_SECURE_ENDPOINTS.PDF, {
-          organization_id: organization?.id,
-          slug,
-        })
+        const res: any = await getPublic(NON_SECURE_ENDPOINTS.PDF, { slug })
         setUrl(res?.pdf_file_url ?? '')
       } catch {
         /* handled */

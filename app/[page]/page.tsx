@@ -43,10 +43,11 @@ export default async function CatchAllPage({ params }: PageProps) {
   let foundPage: Page | undefined
 
   if (slug === 'events') {
+    const events = organization.locations.flatMap(l => l.location_events ?? [])
     return (
       <div>
         <LandingPageBanner component="LandingPageBanner" headline="Events" />
-        <EventDefault component="EventDefault" />
+        <EventDefault component="EventDefault" events={events} />
       </div>
     )
   }
@@ -56,8 +57,7 @@ export default async function CatchAllPage({ params }: PageProps) {
   } else if (slug === 'reviews') {
     foundPage = location.pages?.find(p => p.slug === 'reviews')
   } else {
-    const allPages = organization.locations.flatMap(l => l.pages ?? [])
-    foundPage = allPages.find(p => p.slug === slug)
+    foundPage = (organization.page ?? []).find(p => p.slug === slug)
   }
 
   if (!foundPage && slug !== 'reviews') {

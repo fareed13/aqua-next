@@ -10,6 +10,45 @@ import { VideoPlayer } from '@/components/media/VideoPlayer'
 import { formatDate, isoWeekday, setIsoWeekday, addDays } from '@/lib/utils/dateTime'
 import type { Schedule } from '@/types/api'
 
+function getTimeLeft(deadline: string) {
+  const diff = Math.max(0, new Date(deadline).getTime() - Date.now())
+  return {
+    days:    Math.floor(diff / 86400000),
+    hours:   Math.floor((diff % 86400000) / 3600000),
+    minutes: Math.floor((diff % 3600000) / 60000),
+    seconds: Math.floor((diff % 60000) / 1000),
+  }
+}
+
+function CountdownBox({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center mx-2">
+      <div className="bg-gray-800 text-white text-3xl font-bold w-16 h-16 flex items-center justify-center rounded">
+        {String(value).padStart(2, '0')}
+      </div>
+      <span className="text-xs text-gray-500 mt-1 uppercase">{label}</span>
+    </div>
+  )
+}
+
+function Countdown({ deadline }: { deadline: string }) {
+  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(deadline))
+
+  useEffect(() => {
+    const id = setInterval(() => setTimeLeft(getTimeLeft(deadline)), 1000)
+    return () => clearInterval(id)
+  }, [deadline])
+
+  return (
+    <div className="flex justify-center my-4">
+      <CountdownBox value={timeLeft.days}    label="Days" />
+      <CountdownBox value={timeLeft.hours}   label="Hours" />
+      <CountdownBox value={timeLeft.minutes} label="Minutes" />
+      <CountdownBox value={timeLeft.seconds} label="Seconds" />
+    </div>
+  )
+}
+
 const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? ''
 const VIDEO_URL = process.env.NEXT_PUBLIC_VIDEO_URL ?? MEDIA_URL
 
@@ -21,9 +60,10 @@ const DAYS_MAPPING: Record<string, number> = {
 interface ScheduleDetailProps {
   classId: string
   locationId: string
+  slug: string
 }
 
-export function ScheduleDetail({ classId, locationId }: ScheduleDetailProps) {
+export function ScheduleDetail({ classId, locationId, slug }: ScheduleDetailProps) {
   const router = useRouter()
   const organization = useOrgStore(s => s.organization)
   const locations = useOrgStore(s => s.locations)
@@ -63,10 +103,9 @@ export function ScheduleDetail({ classId, locationId }: ScheduleDetailProps) {
   }, [classData])
 
   const videoMedia = useMemo(() => {
-    if (!classData?.media) return null
-    const media = classData.media
-    if (media.media_type !== 'video') return null
-    return { name: `${VIDEO_URL}/${media.uuid}_700.mp4`, autoPlay: false }
+    const mediaDetail = (classData as any)?.media_detail ?? classData?.media
+    if (!mediaDetail?.uuid) return null
+    return { name: `${VIDEO_URL}${mediaDetail.uuid}_700.mp4`, autoPlay: false }
   }, [classData])
 
   const zoomLogo = `${MEDIA_URL}/videoPlay_700.png`
@@ -88,12 +127,12 @@ export function ScheduleDetail({ classId, locationId }: ScheduleDetailProps) {
             })
           } catch {}
         }
-        if (classData.link) window.open(classData.link, '_blank')
+        if (classData.link) window.location.href = classData.link
       } else {
-        router.push(`/login?redirect=/schedule/${classId}-${locationId}`)
+        router.push(`/login?redirect=/schedule/${slug}`)
       }
     } else {
-      if (classData.link) window.open(classData.link, '_blank')
+      if (classData.link) window.location.href = classData.link
     }
   }
 
@@ -113,11 +152,7 @@ export function ScheduleDetail({ classId, locationId }: ScheduleDetailProps) {
         <div className="max-w-6xl mx-auto px-4">
           <h3 className="mb-3 text-2xl font-bold">Class Begins at:</h3>
 
-          {isReady && (
-            <div className="bg-gray-100 rounded-lg p-6 max-w-md mx-auto mb-6">
-              <p className="text-lg font-mono">{deadline}</p>
-            </div>
-          )}
+          {isReady && deadline && <Countdown deadline={deadline} />}
 
           <div className="my-6">
             <h2 className="text-4xl font-bold">{classData.pretty_start_time}</h2>

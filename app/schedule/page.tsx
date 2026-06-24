@@ -2,7 +2,7 @@ import { fetchOrganization } from '@/lib/api/serverInit'
 import { getDomain } from '@/lib/utils/getDomain'
 import { buildPageMetadata } from '@/lib/utils/metaTags'
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
-import { VirtualSchedule } from '@/components/VirtualSchedule'
+import { SchedulePageContent } from '@/components/schedule/SchedulePageContent'
 import type { Metadata } from 'next'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -15,7 +15,7 @@ export default async function SchedulePage() {
   return (
     <div>
       <LandingPageBanner component="LandingPageBanner" headline="Schedule" />
-      <VirtualSchedule component="VirtualSchedule" />
+      <SchedulePageContent />
     </div>
   )
 }

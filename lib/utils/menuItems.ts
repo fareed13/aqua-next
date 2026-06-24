@@ -17,6 +17,7 @@ export function buildMenuItems(
   location: Location,
   locations: Location[],
   isLoggedIn = false,
+  domain = '',
 ): MenuItem[] {
   const menu: MenuItem[] = []
 
@@ -112,9 +113,9 @@ export function buildMenuItems(
   // Additional headers from admin
   if ((organization.additional_headers?.length ?? 0) > 0) {
     const siteHosts = new Set(
-      [organization.canonical_domain].filter(Boolean).map((h) =>
-        h.replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/^www\./, ''),
-      ),
+      [organization.canonical_domain, organization.domain, domain]
+        .filter(Boolean)
+        .map((h) => (h as string).replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/^www\./, '')),
     )
 
     const visibleHeaders = organization.additional_headers.filter(
@@ -134,7 +135,7 @@ export function buildMenuItems(
           /* leave as-is */
         }
       }
-      return { name: ah.text, url: link, external: ah.link?.startsWith('http') }
+      return { name: ah.text, url: link, external: link?.startsWith('http') }
     })
 
     return [...filtered, ...extra]
