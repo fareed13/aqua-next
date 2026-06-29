@@ -316,6 +316,11 @@ export function Checkout() {
     }
   }
 
+  // Reset step to 1 when dialog closes (backdrop click bypasses closeDialogue)
+  useEffect(() => {
+    if (!dialog) setStep(1)
+  }, [dialog])
+
   // ------- reCAPTCHA: load script when dialog opens on step 1 -------
   useEffect(() => {
     if (dialog && step === 1 && organization?.recaptcha_enabled) {

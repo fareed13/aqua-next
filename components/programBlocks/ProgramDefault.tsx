@@ -15,11 +15,10 @@ export function ProgramDefault({ headline = "LET'S FIND THE RIGHT PROGRAM FOR YO
   const cta = location?.call_to_action || 'Secure Your First Class'
   const services = organization?.services ?? []
 
-  const bgColor = organization?.colors?.['app-main-background'] ?? 'var(--org-bg)'
   const accentColor = organization?.colors?.['app-main-accent-color'] ?? 'var(--org-primary)'
 
   return (
-    <div className="py-20" style={{ background: bgColor }}>
+    <div className="py-20" style={{ background: 'var(--org-app-main-background, #ffffff)' }}>
       <div className="max-w-7xl mx-auto px-4 overflow-hidden">
         {headline && (
           <h2 className="block text-center my-10 text-2xl md:text-3xl font-bold uppercase">

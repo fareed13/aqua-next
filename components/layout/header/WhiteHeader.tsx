@@ -7,6 +7,7 @@ import { Menu, User, X } from 'lucide-react'
 import { useOrgStore } from '@/store/orgStore'
 import { useAuthStore } from '@/store/authStore'
 import { useUiStore } from '@/store/uiStore'
+import { useAuth } from '@/hooks/useAuth'
 import { buildMenuItems } from '@/lib/utils/menuItems'
 import { buildMediaUrl } from '@/lib/utils/media'
 import { NavMenu } from '@/components/layout/NavMenu'
@@ -39,9 +40,15 @@ export function WhiteHeader({ initialOrganization, initialLocation, initialLocat
   const banner = useUiStore((s) => s.banner)
   const dialog = useUiStore((s) => s.dialog)
   const setDialog = useUiStore((s) => s.setDialog)
+  const { isMemberLoggedIn, getUser, isLoggedIn: isLoggedInFn, logOut } = useAuth()
 
   const showBanner = organization.is_banner_enabled && banner && !dialog
-  const isLoggedIn = !!userToken
+  const isLoggedIn = isLoggedInFn()
+
+  const memberUser = isMemberLoggedIn() ? getUser() : null
+  const avatarLogo = memberUser
+    ? `${memberUser.first_name?.[0] ?? ''}${memberUser.last_name?.[0] ?? ''}`.toUpperCase()
+    : ''
   const enableLogin = organization.enable_login
   const isGiftCardEnabled = (organization as any)?.is_gift_card_enabled ?? false
   const underMaintenance = organization.under_maintenance
@@ -156,12 +163,16 @@ export function WhiteHeader({ initialOrganization, initialLocation, initialLocat
                   style={{ borderColor: loginColor, color: loginColor }}
                   aria-label="User account menu"
                 >
-                  <User size={18} />
+                  {avatarLogo ? (
+                    <span className="text-sm font-bold uppercase leading-none">{avatarLogo}</span>
+                  ) : (
+                    <User size={18} />
+                  )}
                 </button>
                 {userMenuOpen && (
                   <div className="absolute right-0 top-12 z-50 min-w-[140px] rounded bg-white shadow-lg">
                     <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setUserMenuOpen(false)}>Profile</Link>
-                    <button className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50" onClick={() => setUserMenuOpen(false)}>Logout</button>
+                    <button className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50" onClick={() => { setUserMenuOpen(false); logOut() }}>Logout</button>
                   </div>
                 )}
               </div>

@@ -7,6 +7,7 @@ import { Menu, X, User } from 'lucide-react'
 import { useOrgStore } from '@/store/orgStore'
 import { useAuthStore } from '@/store/authStore'
 import { useUiStore } from '@/store/uiStore'
+import { useAuth } from '@/hooks/useAuth'
 import { buildMenuItems } from '@/lib/utils/menuItems'
 import { buildMediaUrl } from '@/lib/utils/media'
 import { NavMenu } from '@/components/layout/NavMenu'
@@ -38,15 +39,20 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
   const banner    = useUiStore((s) => s.banner)
   const dialog    = useUiStore((s) => s.dialog)
   const setDialog = useUiStore((s) => s.setDialog)
+  const { isMemberLoggedIn, getUser, isLoggedIn: isLoggedInFn, logOut } = useAuth()
 
   // Mirror the Banner component's visibility logic to offset the header
   const showBanner = organization.is_banner_enabled && banner && !dialog
 
+  const isLoggedIn = isLoggedInFn()
+  const memberUser = isMemberLoggedIn() ? getUser() : null
+  const avatarLogo = memberUser
+    ? `${memberUser.first_name?.[0] ?? ''}${memberUser.last_name?.[0] ?? ''}`.toUpperCase()
+    : ''
+
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-
-  const isLoggedIn = !!userToken
   const logoUrl = buildMediaUrl(organization?.primary_logo)
   const callToAction = location.call_to_action || 'Secure Your First Class'
   const socialMedia = location.social_media ?? []
@@ -171,7 +177,11 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
                       className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-500 text-white hover:border-gray-300 transition-colors"
                       aria-label="User account menu"
                     >
-                      <User size={18} />
+                      {avatarLogo ? (
+                        <span className="text-sm font-bold uppercase leading-none">{avatarLogo}</span>
+                      ) : (
+                        <User size={18} />
+                      )}
                     </button>
                     {userMenuOpen && (
                       <div className="absolute right-0 top-12 z-50 min-w-[140px] rounded bg-white shadow-lg">
@@ -184,7 +194,7 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
                         </Link>
                         <button
                           className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                          onClick={() => setUserMenuOpen(false)}
+                          onClick={() => { setUserMenuOpen(false); logOut() }}
                         >
                           Logout
                         </button>

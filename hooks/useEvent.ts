@@ -15,6 +15,7 @@ export function useEvent() {
   const organization = useOrgStore(s => s.organization)
   const location = useOrgStore(s => s.location)
   const setDialog = useUiStore(s => s.setDialog)
+  const setSelectedEvent = useUiStore(s => s.setSelectedEvent)
   const { isStatusMember, isAdminLoggedIn } = useAuth()
 
   const locationEvents = location?.location_events ?? []
@@ -46,8 +47,9 @@ export function useEvent() {
   }, [loadEvents])
 
   const buyEvent = useCallback((event: LocationEvent) => {
+    setSelectedEvent(event as unknown as Record<string, unknown>)
     setDialog(true)
-  }, [setDialog])
+  }, [setDialog, setSelectedEvent])
 
   const arrangeEventPrice = useCallback((event: LocationEvent | null) => {
     const result = { price: '', disability: false }
@@ -71,5 +73,6 @@ export function useEvent() {
     buyEvent,
     arrangeEventPrice,
     setDialog,
+    setSelectedEvent,
   }
 }

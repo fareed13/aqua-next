@@ -13,6 +13,7 @@
 export const ORG_COLOR_MAP: Record<string, string> = {
   'app-main-accent-color': '--org-primary',
   'app-main-accent-dark': '--org-primary-dark',
+  'app-main-background': '--org-app-main-background',
   'app-darker-background': '--org-bg',
   'main-accent-text-underline': '--org-underline',
   'app-main-accent-with-transparent': '--org-primary-light',

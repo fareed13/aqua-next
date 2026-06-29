@@ -214,45 +214,28 @@ export function InstagramFeed({ headline }: SectionProps) {
                       visibility: showHover === post.id ? 'visible' : 'hidden',
                       filter: showHover === post.id ? 'grayscale(1)' : 'none',
                       transition: '0.5s ease',
-                      backgroundColor:
-                        showHover === post.id ? 'rgba(0,0,0,0.8)' : 'transparent',
+                      backgroundColor: showHover === post.id ? 'rgba(0,0,0,0.8)' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    <div
-                      className="insta-content-inside"
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        margin: 'auto',
-                        height: 'fit-content',
-                        width: 'fit-content',
-                        color: 'white',
-                      }}
-                    >
-                      <div className="flex flex-row post-reach">
-                        <div className="flex flex-row justify-end items-center px-2">
+                    <div style={{ color: 'white', textAlign: 'center' }}>
+                      <div className="flex flex-row justify-center post-reach">
+                        <div className="flex flex-row items-center px-2">
                           <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
                             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                           </svg>
-                          <span>{kFormatter(post.like_count)}</span>
+                          <span className="ml-1">{kFormatter(post.like_count)}</span>
                         </div>
                         <div className="flex flex-row items-center px-2">
-                          <svg
-                            viewBox="0 0 24 24"
-                            width="24"
-                            height="24"
-                            fill="none"
-                            stroke="white"
-                            strokeWidth="2"
-                          >
+                          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" strokeWidth="2">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                           </svg>
-                          <span>{kFormatter(post.comments_count)}</span>
+                          <span className="ml-1">{kFormatter(post.comments_count)}</span>
                         </div>
                       </div>
-                      <div className="flex justify-center post-description">
-                        <p className="text-center text-sm">{post.caption?.slice(0, 40)}</p>
-                      </div>
+                      <p className="text-center text-sm mt-1 px-2">{post.caption?.slice(0, 40)}</p>
                     </div>
                   </div>
                 </div>
@@ -291,7 +274,7 @@ export function InstagramFeed({ headline }: SectionProps) {
               >
                 <div
                   className="insta-feed-posts"
-                  style={{ width: '100%', margin: 'auto', height: '100%' }}
+                  style={{ width: '100%', margin: 'auto', height: '100%', backgroundColor: 'white' }}
                 >
                   <div className="flex flex-row">
                     <div className="relative">

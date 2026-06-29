@@ -161,10 +161,16 @@ export function useCheckoutDetails() {
   }, [services, selectedPlan])
 
   const setPrice = useCallback(() => {
+    if (selectedEvent) {
+      const evtPrice = isStatusMember()
+        ? parseFloat((selectedEvent as any).member_price ?? 0)
+        : parseFloat((selectedEvent as any).price ?? 0)
+      return evtPrice * quantity
+    }
     return plan.discounted_price
       ? parseFloat(parseFloat(plan.discounted_price).toFixed(2) as string) * quantity * students.length
       : parseFloat(plan.price) * students.length * quantity
-  }, [plan, quantity, students])
+  }, [selectedEvent, isStatusMember, plan, quantity, students])
 
   const removePreviousIframes = useCallback(() => {
     ;['card-number', 'cvv', 'expiration-date'].forEach(id => {
@@ -498,9 +504,13 @@ export function useCheckoutDetails() {
       setLoading(true)
       const result = await squareCard.tokenize()
       if (result.status !== 'OK') throw new Error(result.errors?.[0]?.detail ?? 'Square payment failed')
+      // Extract expiry from Square result synchronously — React state (setForm) batches
+      // updates and won't be readable by sendPayment's closure in the same tick.
       const { expMonth, expYear } = result.details?.card ?? {}
-      if (expMonth) setForm((p: any) => ({ ...p, card_expiration_month: String(expMonth) }))
-      if (expYear) setForm((p: any) => ({ ...p, card_expiration_year: String(expYear) }))
+      const expMonthStr = expMonth ? String(expMonth) : form.card_expiration_month
+      const expYearStr = expYear ? String(expYear) : form.card_expiration_year
+      if (expMonth) setForm((p: any) => ({ ...p, card_expiration_month: expMonthStr }))
+      if (expYear) setForm((p: any) => ({ ...p, card_expiration_year: expYearStr }))
 
       const allLocations = useOrgStore.getState().locations
       const verificationDetails = {
@@ -517,7 +527,7 @@ export function useCheckoutDetails() {
       const verificationResult = await squarePayment.verifyBuyer(result.token, verificationDetails)
       setSquarePaymentToken(result.token)
       setSquareVerificationToken(verificationResult.token)
-      await sendPayment(changeStep, null, null, result.token, verificationResult.token)
+      await sendPayment(changeStep, null, null, result.token, verificationResult.token, expMonthStr, expYearStr)
     } catch (err) {
       setLoading(false)
       console.error('Square payment failed:', err)
@@ -530,6 +540,8 @@ export function useCheckoutDetails() {
     overrideNonce?: string | null,
     overrideSquareToken?: string | null,
     overrideSquareVerification?: string | null,
+    overrideExpMonth?: string | null,
+    overrideExpYear?: string | null,
   ) => {
     setLoading(true)
     const org = organization!
@@ -611,8 +623,8 @@ export function useCheckoutDetails() {
     if (method === 'square') {
       const sqToken = overrideSquareToken ?? squarePaymentToken
       const sqVerif = overrideSquareVerification ?? squareVerificationToken
-      data.card_expiration_year = form.card_expiration_year
-      data.card_expiration_month = form.card_expiration_month
+      data.card_expiration_year = overrideExpYear ?? form.card_expiration_year
+      data.card_expiration_month = overrideExpMonth ?? form.card_expiration_month
       data.card_token = sqToken
       data.verification_token = sqVerif
     }
@@ -633,9 +645,11 @@ export function useCheckoutDetails() {
         } else {
           await postPublicProtected(NON_SECURE_ENDPOINTS.EVENT_PURCHASE, data, authHeader)
         }
+        toast.success('Payment confirmed')
         changeStep(4)
       } else {
         await postPublicProtected(NON_SECURE_ENDPOINTS.CUSTOMER_PURCHASE, data, authHeader)
+        toast.success('Payment confirmed')
         changeStep(isBookingEnabled ? 3 : 4)
       }
     } catch (err) {

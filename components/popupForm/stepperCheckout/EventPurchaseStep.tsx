@@ -207,7 +207,7 @@ export function EventPurchaseStep({ selectedLocation, changeStep }: Props) {
       )}
 
       {/* Square */}
-      {isSquare && <div className="mb-4"><div id="square-payment-form" /></div>}
+      {isSquare && <div className="mb-4"><div id="square-payment-form" style={{ minHeight: '100px' }} /></div>}
 
       {/* Braintree */}
       {isBraintree && (
