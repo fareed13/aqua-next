@@ -7,9 +7,9 @@ import { useOrgStore } from '@/store/orgStore'
 import { useUiStore } from '@/store/uiStore'
 
 export function AbbiLeftImage({ headline, content, bullets, media }: SectionProps) {
-  const loc = useOrgStore(s => s.location)
+  const org = useOrgStore(s => s.organization)
   const setDialog = useUiStore(s => s.setDialog)
-  const cta = loc?.call_to_action || 'Secure Your First Class'
+  const accentColor = (org as any)?.colors?.['app-main-accent-color'] || '#575cec'
 
   const bulletList = Array.isArray(bullets) ? bullets : bullets ? [bullets] : []
   const imgUrl = media && media.length ? buildMediaUrl(media[0]) : ''
@@ -83,7 +83,7 @@ export function AbbiLeftImage({ headline, content, bullets, media }: SectionProp
               <button
                 onClick={() => setDialog(true)}
                 className="mt-3 px-6 py-3 rounded-full text-white font-bold text-lg w-[280px] text-center"
-                style={{ background: 'var(--org-primary)' }}
+                style={{ background: accentColor }}
                 aria-label="Secure your spot"
               >
                 Secure your spot!

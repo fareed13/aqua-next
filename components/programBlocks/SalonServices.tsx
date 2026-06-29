@@ -38,7 +38,9 @@ export function SalonServices({ headline = "LET'S FIND THE RIGHT PROGRAM FOR YOU
             className="text-xl mb-1.5 block"
             style={{ color: accentColor }}
           >
-            Salon Services
+            {(organization as any)?.promoCode?.discount
+              ? `Save ${Math.round((organization as any).promoCode.discount)}% On Hair Salon`
+              : 'Salon Services'}
           </strong>
           <div className="flex items-baseline gap-2.5">
             <h3 className="uppercase text-[30px] md:text-[40px] font-normal">
@@ -96,18 +98,19 @@ export function SalonServices({ headline = "LET'S FIND THE RIGHT PROGRAM FOR YOU
                   style={{ scrollSnapAlign: 'start' }}
                 >
                   {/* Image */}
-                  <div className="overflow-hidden w-full h-[260px]">
+                  <div className="overflow-hidden w-full" style={{ height: 'auto', width: 360 }}>
                     {imgUrl ? (
                       <Image
                         src={imgUrl}
                         alt={service.name || 'Service image'}
                         width={360}
                         height={200}
-                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                        className="w-full object-cover transition-transform duration-500 hover:scale-110"
+                        style={{ objectFit: 'cover' }}
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray-200" />
+                      <div className="bg-gray-200" style={{ height: 200, width: 360 }} />
                     )}
                   </div>
 

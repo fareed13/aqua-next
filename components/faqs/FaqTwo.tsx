@@ -2,35 +2,24 @@
 
 import { useState } from 'react';
 import type { SectionProps } from '@/components/sections/registry';
-import { buildMediaUrl } from '@/lib/utils/media';
 import { useOrgStore } from '@/store/orgStore';
+import { useFaqs } from '@/hooks/useFaqs';
 
-interface FaqItem {
-  question: string;
-  answer: string;
-}
-
-interface FaqTwoProps extends SectionProps {
-  faqs?: FaqItem[];
-}
-
-export function FaqTwo({ headline, backgroundImage, media, faqs }: FaqTwoProps) {
+export function FaqTwo({ headline, plan }: SectionProps) {
   const organization = useOrgStore((s) => s.organization);
-  const location = useOrgStore((s) => s.location);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const accentColor = organization?.colors?.['app-main-accent-color'] ?? 'var(--org-primary)';
   const accentDark = organization?.colors?.['app-main-accent-dark'] ?? 'var(--org-primary-dark)';
-  const faqList: FaqItem[] = faqs ?? (location as any)?.faqs ?? [];
 
-  const bgImg = backgroundImage ?? (media && media.length > 0 ? buildMediaUrl(media[0]) : '');
+  const { faq, backgroundImage } = useFaqs({ id: plan ?? undefined, headline });
 
-  if (!faqList || faqList.length === 0) return null;
+  if (!faq || faq.length === 0) return null;
 
   return (
     <div
       className="pb-[100px] relative overflow-hidden bg-no-repeat bg-cover bg-center"
-      style={bgImg ? { backgroundImage: `url(${bgImg})` } : {}}
+      style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : {}}
     >
       <div className="max-w-5xl mx-auto px-4">
         <div className="flex flex-col md:flex-row gap-6">
@@ -42,11 +31,11 @@ export function FaqTwo({ headline, backgroundImage, media, faqs }: FaqTwoProps) 
               </h2>
             )}
             <div className="space-y-3 mb-6">
-              {faqList.map((item, i) => (
+              {faq.map((item, i) => (
                 <div
                   key={i}
                   className="border border-[#ddd] rounded-sm shadow-none"
-                  style={openIndex === i ? { borderTop: `4px solid ${accentDark}` } : {}}
+                  style={openIndex === i ? { borderTop: `4px solid ${accentDark}`, color: accentDark } : {}}
                 >
                   <button
                     className="w-full flex justify-between items-center text-left px-4 py-3 text-[20px] font-medium text-black"
@@ -54,7 +43,7 @@ export function FaqTwo({ headline, backgroundImage, media, faqs }: FaqTwoProps) 
                     aria-expanded={openIndex === i}
                     aria-label={`Question: ${item.question}`}
                   >
-                    <span>{item.question}</span>
+                    <span style={openIndex === i ? { color: accentDark } : {}}>{item.question}</span>
                     <span
                       className="ml-2 transition-transform duration-200 flex-shrink-0"
                       style={{

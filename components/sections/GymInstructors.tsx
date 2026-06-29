@@ -1,74 +1,72 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import type { SectionProps } from '@/components/sections/registry'
-import { buildMediaUrl } from '@/lib/utils/media'
+import { buildMediaUrl, buildBackgroundUrl } from '@/lib/utils/media'
 import { useOrgStore } from '@/store/orgStore'
 
-export function GymInstructors({ media, customBullets, backgroundImage, content }: SectionProps) {
+export function GymInstructors({ headline, media, customBullets, backgroundImage, content }: SectionProps) {
   const org = useOrgStore(s => s.organization)
-  const loc = useOrgStore(s => s.location)
   const accentColor = (org as any)?.colors?.['app-main-accent-color'] || 'var(--org-primary)'
 
-  const bgUrl = backgroundImage || ''
-  const imgUrl = media && media.length ? buildMediaUrl(media[0]) : ''
+  const bgUrl = buildBackgroundUrl(backgroundImage)
+  const imgUrl = media && media.length ? buildMediaUrl(media[0], 'medium') : ''
 
-  // Get instructors from org staff
-  const staffs: any[] = (org as any)?.staffs ?? []
-  const instructors = staffs.slice(0, 4).map((s: any) => ({
-    img: s.media
-      ? buildMediaUrl(s.media, 800)
-      : '',
-    name: s.name || 'Instructor',
-    slug: `instructors/${s.slug || ''}`,
-  }))
+  // Derive headline matching Nuxt's created() logic
+  const industryType = (org as any)?.industry_type || ''
+  let insHeadline = headline || ''
+  if (industryType === 'salon') insHeadline = 'Our stylists'
+  else if (industryType === 'cosmetic_center') insHeadline = 'Our Team'
 
-  // Derive headline
-  const services = (loc as any)?.services ?? (org as any)?.services ?? []
-  const insHeadline =
-    services.length > 0 ? `${services[0]?.name || ''} Instructors` : 'Our Instructors'
+  // Nuxt filters org.staffs by service_id from props; service_id is not in SectionProps
+  // so the filtered array is always empty — matching Nuxt's default rendering
+  const instructors: any[] = []
 
   return (
     <div
       className="relative bg-cover bg-center w-full"
-      style={{ backgroundImage: bgUrl ? `url('${bgUrl}')` : undefined }}
+      style={{ backgroundImage: bgUrl ? `url(${bgUrl})` : undefined }}
     >
       {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/60 z-[1]" />
+      <div className="absolute inset-0 z-[1]" style={{ background: '#0000009c' }} />
 
-      <div className="relative z-[2] max-w-full">
+      <div className="relative z-[2] max-w-full px-4">
         <div className="flex flex-col md:flex-row">
-          {/* Left: feature image (hidden on mobile) */}
-          <div className="hidden md:flex w-full md:w-1/3 items-end justify-center py-0">
-            {imgUrl && (
+          {/* Left: feature image — hidden on mobile, hidden on tablet */}
+          {imgUrl && (
+            <div className="hidden md:flex w-full md:w-1/3 items-end justify-center py-0">
               <Image
                 src={imgUrl}
-                alt={insHeadline}
+                alt={insHeadline || 'Instructors section image'}
                 width={350}
                 height={500}
                 className="object-contain max-h-full"
+                style={{ objectFit: 'contain', maxHeight: '100%' }}
               />
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Right: instructors content */}
-          <div className="w-full md:w-2/3 p-8 md:p-10 relative z-[10]">
-            <div className="mb-4">
-              <h3 className="text-white text-[33px] font-bold">{insHeadline}</h3>
+          {/* Right: content */}
+          <div className={`w-full ${imgUrl ? 'md:w-2/3' : ''} relative z-[10]`} style={{ padding: '40px 20px' }}>
+            {/* Heading */}
+            <div style={{ marginBottom: '0' }}>
+              <h3 className="text-white" style={{ fontSize: '33px' }}>{insHeadline}</h3>
             </div>
 
-            {/* Instructor photos */}
+            {/* Instructor photos — only shown when filtered list is non-empty */}
             {instructors.length > 0 && (
-              <div className="flex flex-wrap gap-3 mt-5 mb-5">
-                {instructors.map((inst, ig) => (
+              <div className="flex flex-wrap mt-5" style={{ position: 'relative', zIndex: 20 }}>
+                {instructors.slice(0, 4).map((inst: any, ig: number) => (
                   <div key={ig} className="w-1/2 md:w-1/4 pr-3">
                     {inst.img && (
                       <Image
                         src={inst.img}
-                        alt={inst.name}
+                        alt={inst.name || 'Instructor photo'}
                         width={200}
                         height={200}
-                        className="w-full border-2 border-white object-cover"
+                        className="w-full"
+                        style={{ border: '2px solid #fff', position: 'relative', zIndex: 20 }}
                       />
                     )}
                   </div>
@@ -76,18 +74,24 @@ export function GymInstructors({ media, customBullets, backgroundImage, content 
               </div>
             )}
 
-            {/* Stats bullets */}
+            {/* Stats / number bullets */}
             {customBullets && customBullets.length > 0 && (
-              <div className="flex flex-wrap mt-5 gap-4">
-                {customBullets.slice(0, 4).map((bullet: any, i: number) => (
-                  <div key={i} className="text-center w-full md:w-1/4">
+              <div className="flex flex-wrap mt-5">
+                {(customBullets as any[]).slice(0, 4).map((bullet: any, i: number) => (
+                  <div key={i} className="text-center w-full md:w-1/4" style={{ textAlign: 'center' }}>
                     {bullet.headline && (
-                      <h3 className="font-black text-[42px] md:text-[65px] text-white mb-0">
+                      <h3
+                        className="text-white"
+                        style={{ fontWeight: 900, fontSize: '65px', marginBottom: 0 }}
+                      >
                         {bullet.headline}
                       </h3>
                     )}
                     {bullet.content && (
-                      <p className="text-white text-[18px] md:text-[27px] font-thin -mt-5 italic uppercase">
+                      <p
+                        className="text-white uppercase italic"
+                        style={{ fontSize: '27px', fontWeight: 100, marginTop: '-20px' }}
+                      >
                         {bullet.content}
                       </p>
                     )}
@@ -96,23 +100,24 @@ export function GymInstructors({ media, customBullets, backgroundImage, content 
               </div>
             )}
 
-            {/* Caption */}
-            <div className="px-0 md:px-10 text-center mt-4">
+            {/* Caption + CTA */}
+            <div style={{ padding: '0px 40px', textAlign: 'center' }}>
               {content && (
                 <div
-                  className="text-center text-white text-[18px] mt-2 leading-[29px]"
-                  dangerouslySetInnerHTML={{ __html: content ?? '' }}
+                  className="text-white"
+                  style={{ textAlign: 'center', fontSize: '18px', marginTop: '10px', lineHeight: '29px' }}
+                  dangerouslySetInnerHTML={{ __html: content }}
                 />
               )}
-              <a href="/instructors">
+              <Link href="/instructors">
                 <button
-                  className="mt-5 px-8 py-3 text-white font-bold"
-                  style={{ backgroundColor: accentColor }}
+                  className="text-white"
+                  style={{ backgroundColor: accentColor, marginTop: '20px', padding: '8px 24px' }}
                   aria-label="View all instructors"
                 >
                   View All Instructors
                 </button>
-              </a>
+              </Link>
             </div>
           </div>
         </div>

@@ -6,8 +6,9 @@ import { useOrgStore } from '@/store/orgStore'
 import { buildMediaUrl } from '@/lib/utils/media'
 
 export function TeamCoaches({ headline, subtitle, content }: SectionProps) {
-  const staff = useOrgStore(s => s.location)?.staff ?? []
-  const instructors = staff.slice(0, 3)
+  const org = useOrgStore(s => s.organization)
+  const accentColor = (org as any)?.colors?.['app-main-accent-color'] || '#d5242c'
+  const instructors = ((org as any)?.staffs ?? []).slice(0, 3)
 
   return (
     <div className="bg-[#EEEEEE] py-10 md:py-[70px] px-0">
@@ -29,14 +30,14 @@ export function TeamCoaches({ headline, subtitle, content }: SectionProps) {
 
         {/* Coaches grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-10">
-          {instructors.map((instructor, idx) => {
-            const imgUrl = instructor.media ? buildMediaUrl(instructor.media) : ''
+          {instructors.map((instructor: any, idx: number) => {
+            const imgUrl = instructor.media ? buildMediaUrl(instructor.media, 'medium') : ''
             return (
               <div key={instructor.id ?? idx} className="relative mt-7">
                 {/* Vertical line decoration */}
                 <div
                   className="absolute right-0 bottom-10 w-[1px] h-[150px] hover:h-[180px] transition-all duration-200"
-                  style={{ backgroundColor: 'var(--org-primary)' }}
+                  style={{ backgroundColor: accentColor }}
                 />
 
                 <div className="relative">
@@ -56,7 +57,7 @@ export function TeamCoaches({ headline, subtitle, content }: SectionProps) {
                     <span
                       className="absolute top-[53px] -right-[63px] uppercase text-xs"
                       style={{
-                        color: 'var(--org-primary)',
+                        color: accentColor,
                         transform: 'rotate(-270deg)',
                         fontFamily: 'Poppins, sans-serif',
                       }}

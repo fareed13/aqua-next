@@ -34,7 +34,7 @@ export function FitnessCarousel({ headline, customBullets }: SectionProps) {
   return (
     <div className="relative w-full h-[500px] md:h-[800px] overflow-hidden">
       {bullets.map((bullet: any, i: number) => {
-        const imgSrc = bullet.media ? buildMediaUrl(bullet.media, 800) : ''
+        const imgSrc = bullet.media ? buildMediaUrl(bullet.media, 'large') : ''
         return (
           <div
             key={i}
@@ -48,6 +48,7 @@ export function FitnessCarousel({ headline, customBullets }: SectionProps) {
                 fill
                 className="object-cover w-full"
                 priority={i === 0}
+                sizes="(max-width: 767px) 100vw, (max-width: 1024px) 100vw, 1920px"
               />
             )}
 

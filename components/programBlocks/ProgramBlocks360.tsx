@@ -98,11 +98,12 @@ export function ProgramBlocks360({ headline = "LET'S FIND THE RIGHT PROGRAM FOR 
                   {/* Hover overlay (full height) */}
                   {isHovering && (
                     <div
-                      className="absolute inset-0 flex flex-col items-center justify-center text-white text-center transition-all duration-300"
+                      className="absolute inset-0 flex flex-col items-center justify-center text-center transition-all duration-300"
                       style={{
-                        background: 'rgba(25,27,24,0.85)',
+                        background: 'rgba(25,27,24,0.8)',
                         fontFamily: 'Khand, sans-serif',
                         fontWeight: 'bold',
+                        color: organization?.colors?.['app-main-accent-with-transparent'] ?? '#ffffff',
                       }}
                     >
                       <span className="uppercase text-base md:text-2xl lg:text-[30px] mb-4 px-4">

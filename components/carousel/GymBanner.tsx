@@ -1,8 +1,7 @@
 'use client'
 
 import type { SectionProps } from '@/components/sections/registry'
-import type { Media } from '@/types/api'
-import { buildMediaUrl } from '@/lib/utils/media'
+import { buildBackgroundUrl } from '@/lib/utils/media'
 import { useOrgStore } from '@/store/orgStore'
 import { useUiStore } from '@/store/uiStore'
 
@@ -13,9 +12,7 @@ export function GymBanner({ subtitle, headline, backgroundImage }: SectionProps)
   const cta = loc?.call_to_action || 'Secure Your First Class'
   const accentColor = organization?.colors?.['app-main-accent-color'] || 'var(--org-primary)'
 
-  const bgUrl = backgroundImage
-    ? buildMediaUrl({ uuid: backgroundImage } as Media, 800)
-    : ''
+  const bgUrl = buildBackgroundUrl(backgroundImage)
 
   return (
     <div className="gym-main-wrapper">
@@ -24,12 +21,12 @@ export function GymBanner({ subtitle, headline, backgroundImage }: SectionProps)
         style={{ backgroundImage: bgUrl ? `url(${bgUrl})` : undefined }}
       >
         {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0" style={{ background: '#00000096' }} />
 
         {/* Caption */}
         <div className="relative z-10 text-center px-4">
           {subtitle && (
-            <p className="text-white uppercase text-2xl md:text-[40px] tracking-widest font-light mb-0">
+            <p className="text-white uppercase text-2xl md:text-[40px] tracking-widest font-thin mb-0">
               {subtitle}
             </p>
           )}
@@ -40,8 +37,8 @@ export function GymBanner({ subtitle, headline, backgroundImage }: SectionProps)
           )}
           <button
             onClick={() => setDialog(true)}
-            style={{ backgroundColor: accentColor }}
-            className="text-white px-7 py-6 rounded-none font-medium hover:opacity-90 transition flex items-center gap-1 mx-auto"
+            style={{ backgroundColor: accentColor, padding: '27px 28px', borderRadius: 0 }}
+            className="text-white font-medium hover:opacity-90 transition flex items-center gap-1 mx-auto"
             aria-label={cta}
           >
             {cta}
