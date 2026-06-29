@@ -56,8 +56,9 @@ export function useLogin() {
       )
 
       setCookie('user', JSON.stringify(response.user))
-      setCookie('auth._token.local', response.token)
-      setUserToken(response.token)
+      const bearerToken = `Bearer ${response.token}`
+      setCookie('auth._token.local', bearerToken)
+      setUserToken(bearerToken)
       setUserRole(response.user.role)
 
       if (response.user.role === 'superadmin' || response.user.role === 'org-admin') {

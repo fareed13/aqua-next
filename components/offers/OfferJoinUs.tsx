@@ -6,11 +6,21 @@ import type { SectionProps } from '@/components/sections/registry'
 import { buildMediaUrl } from '@/lib/utils/media'
 import { useOrgStore } from '@/store/orgStore'
 import { useUiStore } from '@/store/uiStore'
+import { useOfferDeal } from '@/hooks/useOfferDeal'
+import { useOffers } from '@/hooks/useOffers'
+import { useAuth } from '@/hooks/useAuth'
+import { useInterestedServices } from '@/hooks/useInterestedServices'
 
-export function OfferJoinUs({ headline, subtitle, media }: SectionProps) {
-  const setDialog = useUiStore(s => s.setDialog)
+export function OfferJoinUs({ headline, subtitle, media, plan }: SectionProps) {
+  const setSelectedPlan = useUiStore(s => s.setSelectedPlan)
+  const accentColor = useOrgStore(s => s.organization?.colors?.['app-main-accent-color']) ?? '#d5242c'
   const loc = useOrgStore(s => s.location)
   const cta = loc?.call_to_action || 'Secure Your First Class'
+
+  const { setDialog, offerReady, classOfferOnly, newPrice, currencySign, getComponentPlan } = useOffers({ component_plan_id: plan ?? null })
+  const { getDeal, specialOffer } = useOfferDeal()
+  const { isLoggedIn } = useAuth()
+  const { setInterestedService } = useInterestedServices()
 
   const [videoReady, setVideoReady] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -23,6 +33,8 @@ export function OfferJoinUs({ headline, subtitle, media }: SectionProps) {
   const imageUrl = isImage && media ? buildMediaUrl(media[0]) : ''
   const videoUrl = isVideo && media ? buildMediaUrl(media[0]) : ''
 
+  const isFree = typeof newPrice === 'string' && newPrice.toLowerCase() === 'free'
+
   // Lazy-load video after idle callback (2 s fallback)
   useEffect(() => {
     const load = () => setVideoReady(true)
@@ -33,6 +45,18 @@ export function OfferJoinUs({ headline, subtitle, media }: SectionProps) {
       return () => clearTimeout(t)
     }
   }, [])
+
+  const handleCta = () => {
+    if (isLoggedIn()) return
+    setDialog(true)
+    const componentPlan = getComponentPlan(plan ?? null)
+    if (componentPlan) {
+      setSelectedPlan(componentPlan.plan as Record<string, unknown>)
+      if (componentPlan.service) {
+        setInterestedService(componentPlan.service)
+      }
+    }
+  }
 
   return (
     <div
@@ -109,21 +133,40 @@ export function OfferJoinUs({ headline, subtitle, media }: SectionProps) {
             </div>
           )}
 
-          {/* Deal badge — white pill with org primary text */}
-          <div
-            className="inline-block px-6 py-[3px] mt-10 font-bold text-[18px] md:text-[24px] lg:text-[36px] uppercase"
-            style={{
-              backgroundColor: '#ffffff',
-              color: 'var(--org-primary)',
-              borderRadius: '30px 0 30px 0',
-            }}
-          >
-            Special Offer
-          </div>
+          {/* Deal badge — white pill with org accent text */}
+          {offerReady && (
+            <div
+              className="inline-block px-6 py-[3px] mt-10 font-bold text-[18px] md:text-[24px] lg:text-[36px] uppercase"
+              style={{
+                backgroundColor: '#ffffff',
+                color: accentColor,
+                borderRadius: '30px 0 30px 0',
+              }}
+            >
+              {getDeal()}{specialOffer ? ' Special' : ''}
+            </div>
+          )}
+
+          {/* Class offer label e.g. "3 Sessions For" */}
+          {offerReady && classOfferOnly && (
+            <h6 className="text-center uppercase text-white text-[40px] md:text-[40px] lg:text-[50px] font-bold mt-2">
+              {classOfferOnly} For
+            </h6>
+          )}
+
+          {/* Price */}
+          {offerReady && newPrice ? (
+            <h5 className="text-center flex justify-center text-white font-bold leading-none text-[60px] md:text-[80px]">
+              <sub className="text-[28px] md:text-[36px] mt-1">
+                {!isFree ? currencySign : ''}
+              </sub>
+              {newPrice}
+            </h5>
+          ) : null}
 
           {/* CTA button */}
           <button
-            onClick={() => setDialog(true)}
+            onClick={handleCta}
             aria-label={cta}
             className="text-white border-2 border-white px-[20px] py-[12px] md:px-[42px] md:py-[15px] text-[20px] md:text-[25px] font-bold tracking-wide mt-[50px]"
             style={{

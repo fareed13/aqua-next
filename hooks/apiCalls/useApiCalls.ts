@@ -187,12 +187,22 @@ export function useNonSecureCalls() {
     [orgId],
   )
 
+  const postPublicProtected = useCallback(
+    <T = unknown>(url: string, data: unknown, authHeader: string) =>
+      apiClient.post<T>(url, data, {
+        params: { organization_id: orgId },
+        headers: { Authorization: authHeader },
+      }),
+    [orgId],
+  )
+
   return {
     nonSecureEndpoint: NON_SECURE_ENDPOINTS,
     getPublic,
     postPublic,
     putPublic,
     deletePublic,
+    postPublicProtected,
   }
 }
 

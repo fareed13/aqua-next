@@ -52,7 +52,7 @@ export function CTARightVideo({ headline, content, bullets, media }: SectionProp
               />
             )}
             {bulletList.length > 0 && (
-              <ul className="text-white pt-3 ml-5">
+              <ul className="text-white pt-3 ml-5 list-disc">
                 {bulletList.map((bullet, i) => (
                   <li key={i} dangerouslySetInnerHTML={{ __html: bullet }} />
                 ))}

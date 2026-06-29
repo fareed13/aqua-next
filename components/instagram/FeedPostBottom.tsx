@@ -11,12 +11,13 @@ interface FeedPostBottomProps {
 function convertToLinks(text: string): string {
   const regex = /([#@]\w+)/g
   return text.replace(regex, match => {
+    const linkStyle = 'color:#00376b;text-decoration:none;cursor:pointer'
     if (match.startsWith('@')) {
       const username = match.substring(1)
-      return `<a href="https://www.instagram.com/${username}/" style="color:inherit">${match}</a>`
+      return `<a href="https://www.instagram.com/${username}/" target="_blank" rel="noopener noreferrer" style="${linkStyle}">${match}</a>`
     } else {
       const keyword = match.substring(1)
-      return `<a href="https://www.instagram.com/explore/tags/${keyword}/" style="color:inherit">${match}</a>`
+      return `<a href="https://www.instagram.com/explore/tags/${keyword}/" target="_blank" rel="noopener noreferrer" style="${linkStyle}">${match}</a>`
     }
   })
 }

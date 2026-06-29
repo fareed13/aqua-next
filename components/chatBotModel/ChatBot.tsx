@@ -10,7 +10,7 @@ interface Props {
   headerTitle?: string
   children?: React.ReactNode
   onNewMessage: (msg: string) => void
-  onRecaptchaVerified?: () => void
+  onRecaptchaVerified?: (token: string) => void
 }
 
 export function ChatBot({ headerTitle = 'Chatbot', children, onNewMessage, onRecaptchaVerified }: Props) {
@@ -50,7 +50,7 @@ export function ChatBot({ headerTitle = 'Chatbot', children, onNewMessage, onRec
           const res = await postPublic(nonSecureEndpoint.GOOGLERECAPTCHA, { token }) as any
           if (res.success) {
             setRecaptchaToken(token)
-            onRecaptchaVerified?.()
+            onRecaptchaVerified?.(token)
           } else {
             setRecaptchaToken(null)
           }

@@ -4,6 +4,8 @@ import { buildPageMetadata } from '@/lib/utils/metaTags'
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
 import { ProgramDefault } from '@/components/programBlocks/ProgramDefault'
 import { ReviewsClean } from '@/components/reviews/ReviewsClean'
+import { VirtualScheduleDefault } from '@/components/schedule/VirtualScheduleDefault'
+import { StaffList } from '@/components/instructor/StaffList'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
@@ -58,7 +60,10 @@ export default async function TargetLocationPage({ params }: PageProps) {
       <div className="max-w-7xl mx-auto px-4">
         <ProgramDefault component="ProgramDefault" headline="What we offer" />
         <ReviewsClean component="ReviewsClean" />
+        <h2 className="text-center text-2xl font-bold my-6">Schedules</h2>
+        <VirtualScheduleDefault component="VirtualScheduleDefault" />
       </div>
+      <StaffList />
     </div>
   )
 }

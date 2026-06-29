@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useOrgStore } from '@/store/orgStore'
+import { useAuth } from '@/hooks/useAuth'
 import { apiClient } from '@/lib/api/fetchClient'
 
 interface Agreement {
@@ -30,8 +32,22 @@ function formatDate(dateStr: string): string {
 
 export function AgreementList() {
   const orgId = useOrgStore((s) => s.organization?.id)
+  const router = useRouter()
+  const { getUser, isMemberLoggedIn } = useAuth()
   const [agreements, setAgreements] = useState<Agreement[]>([])
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const user = getUser()
+    if (!user) {
+      router.push('/login?redirect=/agreements')
+      return
+    }
+    if (!isMemberLoggedIn()) {
+      router.push('/')
+      return
+    }
+  }, [getUser, isMemberLoggedIn, router])
 
   useEffect(() => {
     async function load() {

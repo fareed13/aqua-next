@@ -5,10 +5,15 @@ const AUTH_COOKIE = 'auth._token.local'
 
 function getToken(): string | null {
   if (typeof document === 'undefined') return null
-  return document.cookie
+  const match = document.cookie
     .split('; ')
     .find((c) => c.startsWith(`${AUTH_COOKIE}=`))
-    ?.split('=')[1] ?? null
+  if (!match) return null
+  try {
+    return decodeURIComponent(match.split('=')[1])
+  } catch {
+    return match.split('=')[1]
+  }
 }
 
 interface FetchOptions extends Omit<RequestInit, 'body'> {
@@ -26,7 +31,10 @@ async function request<T>(path: string, options: FetchOptions = {}): Promise<T> 
     })
   }
 
-  const token = getToken()
+  const raw = getToken()
+  const token = raw
+    ? (raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`)
+    : null
 
   const res = await fetch(url.toString(), {
     ...rest,

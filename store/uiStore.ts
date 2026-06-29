@@ -1,6 +1,13 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
+interface CheckoutCustomer {
+  email: string
+  phone: string
+  firstName: string
+  lastName: string
+}
+
 interface UIState {
   dialog: boolean
   reviewDialog: boolean
@@ -13,6 +20,9 @@ interface UIState {
   scheduleBookNowClicked: boolean
   selectedPlan: Record<string, unknown> | null
   interestedServiceId: number | null
+  selectedEvent: Record<string, unknown> | null
+  checkoutAuthToken: string
+  checkoutCustomer: CheckoutCustomer | null
 
   setDialog: (open: boolean, bookNowClick?: boolean) => void
   setReviewDialog: (open: boolean) => void
@@ -24,6 +34,9 @@ interface UIState {
   setSettingsVisibleSection: (section: string | null) => void
   setSelectedPlan: (plan: Record<string, unknown> | null) => void
   setInterestedServiceId: (id: number | null) => void
+  setSelectedEvent: (event: Record<string, unknown> | null) => void
+  setCheckoutAuthToken: (token: string) => void
+  setCheckoutCustomer: (customer: CheckoutCustomer) => void
 }
 
 export const useUiStore = create<UIState>()(
@@ -39,10 +52,17 @@ export const useUiStore = create<UIState>()(
     scheduleBookNowClicked: false,
     selectedPlan: null,
     interestedServiceId: null,
+    selectedEvent: null,
+    checkoutAuthToken: '',
+    checkoutCustomer: null,
 
     setDialog: (open, bookNowClick = false) => set((state) => {
       state.dialog = open
       state.scheduleBookNowClicked = bookNowClick
+      if (!open) {
+        state.checkoutAuthToken = ''
+        state.checkoutCustomer = null
+      }
     }),
     setReviewDialog: (open) => set((state) => { state.reviewDialog = open }),
     setBanner: (show) => set((state) => { state.banner = show }),
@@ -53,6 +73,9 @@ export const useUiStore = create<UIState>()(
     setSettingsVisibleSection: (section) => set((state) => { state.settingsVisibleSection = section }),
     setSelectedPlan: (plan) => set((state) => { state.selectedPlan = plan }),
     setInterestedServiceId: (id) => set((state) => { state.interestedServiceId = id }),
+    setSelectedEvent: (event) => set((state) => { state.selectedEvent = event }),
+    setCheckoutAuthToken: (token) => set((state) => { state.checkoutAuthToken = token }),
+    setCheckoutCustomer: (customer) => set((state) => { state.checkoutCustomer = customer }),
   }))
 )
 

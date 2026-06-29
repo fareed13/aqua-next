@@ -4,7 +4,6 @@ import { buildPageMetadata } from '@/lib/utils/metaTags'
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
 import { DynamicPage } from '@/components/pages/DynamicPage'
 import { ReviewsPageContent } from '@/components/reviews/ReviewsPageContent'
-import { EventDefault } from '@/components/events/EventDefault'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import type { Page } from '@/types/api'
@@ -41,16 +40,6 @@ export default async function CatchAllPage({ params }: PageProps) {
   const location = organization.locations[0]
 
   let foundPage: Page | undefined
-
-  if (slug === 'events') {
-    const events = organization.locations.flatMap(l => l.location_events ?? [])
-    return (
-      <div>
-        <LandingPageBanner component="LandingPageBanner" headline="Events" />
-        <EventDefault component="EventDefault" events={events} />
-      </div>
-    )
-  }
 
   if (slug === 'contact') {
     foundPage = location.pages?.find(p => p.slug === 'contact')

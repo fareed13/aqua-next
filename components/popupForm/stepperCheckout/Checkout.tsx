@@ -6,7 +6,12 @@ import { useOrgStore } from '@/store/orgStore'
 import { useUiStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
 import { useCheckoutDetails } from '@/hooks/useCheckoutDetails'
+import { getPublicAuthHeader } from '@/lib/utils/initializeSocket'
+import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { useRecaptcha } from '@/hooks/useRecaptcha'
 // import { useValidation } from '@/hooks/useValidation'
+import { toast } from 'sonner'
+import { parseApiError } from '@/lib/utils/parseApiError'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
@@ -33,9 +38,11 @@ export function Checkout() {
 
   const organization = useOrgStore((s) => s.organization)
   const locations = useOrgStore((s) => s.locations)
+  const primaryLocation = useOrgStore((s) => s.location)
   const dialog = useUiStore((s) => s.dialog)
   const setDialog = useUiStore((s) => s.setDialog)
-  const selectedEvent = useOrgStore((s) => (s as any).selectedEvent ?? null)
+  const selectedEvent = useUiStore((s) => s.selectedEvent)
+  const setCheckoutCustomer = useUiStore((s) => s.setCheckoutCustomer)
 
   const {
     servicesWithPlan,
@@ -43,13 +50,18 @@ export function Checkout() {
     getPlan,
     getLocationCoordinates,
     form,
+    setForm,
+    setStudents,
     selectedLocationObject,
+    setSelectedLocationObject,
     serviceId,
     students,
     selectedClass,
+    setAuthToken,
   } = useCheckoutDetails()
 
-  // const { isRequired, emailRule, max, min } = useValidation()
+  const { postPublic, postPublicProtected } = useNonSecureCalls()
+  const { recaptchaReady, loadRecaptchaScript, getSiteKey } = useRecaptcha()
 
   // Step state
   const [step, setStep] = useState(1)
@@ -57,6 +69,8 @@ export function Checkout() {
   const [customerId, setCustomerId] = useState<number>(2089)
   const [plansWithServices, setPlansWithServices] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'form' | 'chatbot'>('form')
+  const [recaptchaVerified, setRecaptchaVerified] = useState(false)
+  const captchaWidgetId = useRef<number | null>(null)
 
   // Form fields
   const [firstname, setFirstname] = useState('')
@@ -71,15 +85,40 @@ export function Checkout() {
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const isUk = useMemo(() => organization?.country === 'UK', [organization])
-  const isAustralia = useMemo(
-    () => organization?.country === 'Australia',
-    [organization]
-  )
-  const isNewZealand = useMemo(
-    () => organization?.country === 'New Zealand',
-    [organization]
-  )
+  const isUk = useMemo(() => {
+    const st = primaryLocation?.state
+    if (!st?.name) return false
+    const name = st.name.toLowerCase()
+    return name === 'united kingdom' || st.parent_state?.name?.toLowerCase() === 'united kingdom'
+  }, [primaryLocation])
+  const isAustralia = useMemo(() => {
+    const st = primaryLocation?.state
+    if (!st?.name) return false
+    const name = st.name.toLowerCase()
+    return name === 'australia' || st.parent_state?.name?.toLowerCase() === 'australia'
+  }, [primaryLocation])
+  const isNewZealand = useMemo(() => {
+    const st = primaryLocation?.state
+    if (!st?.name) return false
+    const name = st.name.toLowerCase()
+    return name === 'new zealand' || st.parent_state?.name?.toLowerCase() === 'new zealand'
+  }, [primaryLocation])
+
+  const handlePhoneChange = useCallback((raw: string) => {
+    if (isUk) {
+      setMobile(raw.replace(/\D/g, '').slice(0, 11))
+    } else if (isAustralia || isNewZealand) {
+      setMobile(raw.replace(/\D/g, '').slice(0, 10))
+    } else {
+      // US: format as (###)-###-####
+      const digits = raw.replace(/\D/g, '').slice(0, 10)
+      if (!digits) { setMobile(''); return }
+      let formatted = `(${digits.slice(0, 3)}`
+      if (digits.length > 3) formatted += `)-${digits.slice(3, 6)}`
+      if (digits.length > 6) formatted += `-${digits.slice(6)}`
+      setMobile(formatted)
+    }
+  }, [isUk, isAustralia, isNewZealand])
 
   const accentColor =
     organization?.colors?.['app-main-accent-color'] ?? '#1976D2'
@@ -134,12 +173,37 @@ export function Checkout() {
     if (contactTime.trim() !== '') return
 
     const newErrors: Record<string, string> = {}
+
     if (!firstname.trim()) newErrors.firstname = 'First name is required'
+    else if (firstname.trim().length > 100) newErrors.firstname = 'First name must be under 100 characters'
+
     if (!lastname.trim()) newErrors.lastname = 'Last name is required'
+    else if (lastname.trim().length > 100) newErrors.lastname = 'Last name must be under 100 characters'
+
     if (!email.trim()) newErrors.email = 'Email is required'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      newErrors.email = 'Please enter a valid email'
-    if (isUk && !mobile.trim()) newErrors.mobile = 'Phone number is required'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Please enter a valid email'
+    else if (email.trim().length > 100) newErrors.email = 'Email must be under 100 characters'
+
+    if (isUk) {
+      if (!mobile.trim()) {
+        newErrors.mobile = 'Phone number is required'
+      } else {
+        const digits = mobile.replace(/\D/g, '')
+        if (digits.length < 10 || digits.length > 11)
+          newErrors.mobile = 'Phone number must be 10–11 digits'
+      }
+    } else if (isAustralia || isNewZealand) {
+      if (mobile.trim()) {
+        const digits = mobile.replace(/\D/g, '')
+        if (digits.length < 9 || digits.length > 10)
+          newErrors.mobile = 'Phone number must be 9–10 digits'
+      }
+    } else {
+      // US: optional, if filled must be 14 chars (###)-###-####
+      if (mobile.trim() && mobile.replace(/\D/g, '').length > 0 && mobile.length < 14)
+        newErrors.mobile = 'Please enter a valid phone number'
+    }
+
     if (locations.length > 1 && !selectedLocationObject?.id)
       newErrors.location = 'Please select a location'
 
@@ -150,117 +214,176 @@ export function Checkout() {
   }
 
   const completeStep1 = async () => {
-    let arrangedTags: string[] = []
-    if (pathname === '/') {
-      arrangedTags = ['general']
-    } else if (selectedEvent) {
-      arrangedTags = ['event']
-    }
+    const tags: string[] = pathname === '/' ? ['general'] : selectedEvent ? ['event'] : [pathname.replace('/', '')]
 
     try {
       setLoading(true)
+      const org = organization!
+      const authHeader = await getPublicAuthHeader(org.id, !!org.recaptcha_enabled)
+      setAuthToken(authHeader)
 
-      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? ''
-      const res = await fetch(`${BACKEND_URL}/website/lead/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const result: any = await postPublicProtected(
+        NON_SECURE_ENDPOINTS.CUSTOMER_CREATE,
+        {
           first_name: firstname,
           last_name: lastname,
           email,
           phone: mobile,
-          location: selectedLocationObject?.id,
+          location_id: selectedLocationObject?.id,
           service: serviceId,
-          tags: arrangedTags,
+          tags,
+          is_uk: isUk,
           sms_opt_in: smsOptIn,
-          custom_field: customField,
-          reason_for_joining: reasonForJoining,
-        }),
-      })
+          custom_field: customField || undefined,
+          reason_for_joining: reasonForJoining || undefined,
+        },
+        authHeader,
+      )
 
-      if (!res.ok) throw new Error('Lead submission failed')
-      const data = await res.json()
-      const newCustomerId = data?.customer_id ?? data?.id ?? customerId
+      const newCustomerId: number = result?.id ?? customerId
       setCustomerId(newCustomerId)
 
-      // Update checkout form state
-      form.email = email
-      form.phone = mobile
-      students.splice(0, students.length, { first_name: firstname, last_name: lastname })
+      // Sync form state into the hook so send() can use it
+      setForm((prev: any) => ({ ...prev, email, phone: mobile }))
+      setStudents([{ first_name: firstname, last_name: lastname }])
+      // Share customer data globally so other hook instances (step 2/3) can read it
+      setCheckoutCustomer({ email, phone: mobile, firstName: firstname, lastName: lastname })
 
-      const is_booking_enabled = organization?.is_booking_enabled
+      const is_booking_enabled = org.is_booking_enabled
+      const selectedPlan = useUiStore.getState().selectedPlan
 
-      // Free event
-      if (selectedEvent && !Number(selectedEvent.price)) {
-        changeStep(4)
-        return
+      // --- Free event ---
+      if (selectedEvent && selectedEvent.id) {
+        const eventPrice = parseFloat((selectedEvent as any).price ?? '0')
+        if (!eventPrice) {
+          await postPublicProtected(
+            NON_SECURE_ENDPOINTS.FREE_EVENT_TRACK,
+            { price_charged: (selectedEvent as any).price, customer: newCustomerId, event: selectedEvent.id },
+            authHeader,
+          )
+          changeStep(4)
+          return
+        }
       }
 
-      const targeted_service = organization?.services?.find(
-        (s: any) => s.id === serviceId
-      )
+      // Fall back to first service-with-paid-plan when serviceId hasn't been resolved yet
+      const currentServicesWithPlan = servicesWithPlan()
+      const effectiveServiceId = serviceId ?? currentServicesWithPlan[0]?.id ?? null
+      const targeted_service = org.services?.find((s: any) => s.id === effectiveServiceId)
       const firstServicePlanByOrder = getFirstServicePlanByOrder(targeted_service as any)
       const firstPlanByOrder = firstServicePlanByOrder?.plan
-      const selectedPlan = (useUiStore.getState() as any).selectedPlan
 
-      // No service plans at all
+      // --- No service plans ---
       if (!selectedPlan && !targeted_service?.service_plans?.length && !selectedEvent) {
         changeStep(is_booking_enabled ? 3 : 4)
         return
       }
 
-      // Free plan
-      const isFree =
-        (selectedPlan &&
-          (selectedPlan.price === '0.00' ||
-            selectedPlan.discounted_price === '0.00')) ||
-        (!selectedPlan &&
-          (!firstPlanByOrder ||
-            firstPlanByOrder.price === '0.00' ||
-            firstPlanByOrder.discounted_price === '0.00'))
-
-      if (!selectedEvent && isFree) {
-        changeStep(is_booking_enabled ? 3 : 4)
-        return
-      }
-
-      // No active payment method
-      if (!selectedLocationObject?.active_payment_method) {
-        changeStep(is_booking_enabled && !selectedEvent ? 3 : 4)
-        return
-      }
-
-      // No services / plans
-      if (
-        !selectedLocationObject ||
-        !organization?.services?.length ||
-        (!organization.services.find((s: any) => s.service_plans?.length > 0) &&
-          !selectedEvent)
-      ) {
-        if (plansWithServices.length < 1 && !selectedEvent) {
+      // --- Free plan ---
+      if (!selectedEvent) {
+        const effectivePlan: any = selectedPlan ?? firstPlanByOrder
+        if (effectivePlan && (effectivePlan.price === '0.00' || effectivePlan.discounted_price === '0.00')) {
+          await postPublicProtected(
+            NON_SECURE_ENDPOINTS.FREE_PLAN_TRACK,
+            { price_charged: effectivePlan.discounted_price === '0.00' ? effectivePlan.discounted_price : effectivePlan.price, customer: newCustomerId, plan: effectivePlan.id },
+            authHeader,
+          )
           changeStep(is_booking_enabled ? 3 : 4)
+          return
         }
-        return
+
+        // --- No active payment method ---
+        if (!selectedLocationObject?.active_payment_method) {
+          try { await postPublic(NON_SECURE_ENDPOINTS.HUBSPOT_TICKET_ENDPOINT, { organization_id: org.id, location_id: selectedLocationObject?.id }) } catch {}
+          changeStep(is_booking_enabled ? 3 : 4)
+          return
+        }
+
+        // --- No services with plans (call servicesWithPlan() directly — plansWithServices state may be stale if org loaded after mount) ---
+        if (currentServicesWithPlan.length < 1 && !selectedPlan) {
+          changeStep(is_booking_enabled ? 3 : 4)
+          return
+        }
       }
 
-      // Default: go to payment step
-      if (
-        plansWithServices.length < 1 &&
-        !selectedEvent &&
-        !selectedPlan &&
-        !targeted_service?.service_plans?.length
-      ) {
-        changeStep(is_booking_enabled ? 3 : 4)
-      } else {
-        changeStep(2)
-        scrollToTop()
-      }
+      changeStep(2)
+      scrollToTop()
     } catch (err) {
       console.error('Step 1 submission error:', err)
+      toast.error(parseApiError(err))
     } finally {
       setLoading(false)
     }
   }
+
+  // Reset step to 1 when dialog closes (backdrop click bypasses closeDialogue)
+  useEffect(() => {
+    if (!dialog) setStep(1)
+  }, [dialog])
+
+  // ------- reCAPTCHA: load script when dialog opens on step 1 -------
+  useEffect(() => {
+    if (dialog && step === 1 && organization?.recaptcha_enabled) {
+      loadRecaptchaScript()
+    }
+  }, [dialog, step, organization?.recaptcha_enabled, loadRecaptchaScript])
+
+  // ------- reCAPTCHA: render widget once per mount -------
+  useEffect(() => {
+    if (!recaptchaReady || !organization?.recaptcha_enabled || step !== 1) return
+
+    const g = (window as any).grecaptcha
+    if (!g?.render) return
+
+    if (captchaWidgetId.current !== null) return
+
+    const el = document.getElementById('recaptcha-checkout')
+    if (!el || el.childElementCount > 0) return
+
+    const id = g.render('recaptcha-checkout', {
+      sitekey: getSiteKey(),
+      callback: async (token: string) => {
+        // Store in sessionStorage AND in the shared uiStore so all hook instances can use it
+        sessionStorage.setItem('recaptcha_token', token)
+        useUiStore.getState().setCheckoutAuthToken(token)
+        try {
+          const result: any = await postPublic(NON_SECURE_ENDPOINTS.GOOGLERECAPTCHA, { token })
+          if (result?.success) setRecaptchaVerified(true)
+        } catch {
+          setRecaptchaVerified(false)
+        }
+      },
+      'expired-callback': () => {
+        // Token expired — clear both stores so the next API call doesn't use a stale token
+        sessionStorage.removeItem('recaptcha_token')
+        useUiStore.getState().setCheckoutAuthToken('')
+        setRecaptchaVerified(false)
+      },
+      'error-callback': () => {
+        sessionStorage.removeItem('recaptcha_token')
+        useUiStore.getState().setCheckoutAuthToken('')
+        setRecaptchaVerified(false)
+      },
+    })
+    captchaWidgetId.current = id
+
+    // Reset the ref on cleanup so React Strict Mode's remount can re-inject into the fresh DOM element
+    return () => { captchaWidgetId.current = null }
+  }, [recaptchaReady, step, organization?.recaptcha_enabled, getSiteKey, postPublic])
+
+  // ------- reCAPTCHA: full reset only when dialog closes -------
+  // Do NOT reset on step change — the token must survive into steps 2 and 3
+  useEffect(() => {
+    if (!organization?.recaptcha_enabled) return
+    if (dialog) return  // dialog just opened — let the render effect handle it
+    setRecaptchaVerified(false)
+    sessionStorage.removeItem('recaptcha_token')
+    useUiStore.getState().setCheckoutAuthToken('')
+    if (captchaWidgetId.current !== null) {
+      try { (window as any).grecaptcha?.reset(captchaWidgetId.current) } catch {}
+      captchaWidgetId.current = null
+    }
+  }, [dialog, organization?.recaptcha_enabled])
 
   // ------- init -------
   useEffect(() => {
@@ -270,6 +393,13 @@ export function Checkout() {
     }
     init()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-select location when there is only one (no dropdown shown)
+  useEffect(() => {
+    if (locations.length === 1 && !selectedLocationObject) {
+      setSelectedLocationObject(locations[0])
+    }
+  }, [locations, selectedLocationObject, setSelectedLocationObject])
 
   // ------- step 4 redirect -------
   useEffect(() => {
@@ -286,10 +416,10 @@ export function Checkout() {
       return organization.thanks_text
     if (organization?.event_thanks_text && selectedEvent)
       return organization.event_thanks_text
-    if (plansWithServices.length < 1 && !selectedEvent)
+    if (servicesWithPlan().length < 1 && !selectedEvent)
       return 'for your interest. A member of our team will be reaching out to you shortly!'
     return 'We are looking forward to seeing you! We have emailed you a receipt. Please present your receipt when you arrive for your first class.'
-  }, [organization, selectedEvent, plansWithServices])
+  }, [organization, selectedEvent, servicesWithPlan])
 
   // ------- render step 1 -------
   const renderStep1 = () => (
@@ -357,13 +487,13 @@ export function Checkout() {
             type="tel"
             name="phone"
             value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
+            onChange={(e) => handlePhoneChange(e.target.value)}
             placeholder={
               isAustralia || isNewZealand
                 ? 'Phone Number (10 digits)'
                 : isUk
                 ? 'Phone Number (10–11 digits)'
-                : 'Phone Number'
+                : '(###)-###-####'
             }
             inputMode="numeric"
             autoComplete="tel-national"
@@ -436,7 +566,7 @@ export function Checkout() {
                     (l: any) => l.id === Number(e.target.value)
                   )
                   if (loc) {
-                    if (selectedLocationObject) Object.assign(selectedLocationObject, loc)
+                    setSelectedLocationObject(loc)
                     locationChanged()
                   }
                 }}
@@ -485,12 +615,23 @@ export function Checkout() {
           </div>
         )}
 
+        {/* reCAPTCHA widget */}
+        {organization?.recaptcha_enabled && (
+          <div className="center-input max-w-[300px] mx-auto mb-3">
+            {recaptchaReady ? (
+              <div id="recaptcha-checkout" />
+            ) : (
+              <p className="text-xs text-gray-400 text-center py-1">Loading reCAPTCHA…</p>
+            )}
+          </div>
+        )}
+
         {/* GET STARTED button */}
         <div className="center-input max-w-[300px] mx-auto pb-3">
           <div className="flex justify-end">
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || (!!organization?.recaptcha_enabled && !recaptchaVerified)}
               onClick={validateStep1}
               className="text-white px-7 py-3 text-sm font-semibold rounded disabled:opacity-50"
               style={{
@@ -619,7 +760,7 @@ export function Checkout() {
                     backgroundColor: '#000',
                   }}
                 >
-                  {selectedEvent ? selectedEvent.name : organization?.stepper_text}
+                  {selectedEvent ? String((selectedEvent as any).name ?? '') : organization?.stepper_text}
                 </h2>
 
                 {/* Progress bar */}
@@ -639,23 +780,23 @@ export function Checkout() {
                 <div className="stepper-container">
                   {step === 1 && renderStep1()}
 
-                  {step === 2 && selectedEvent && selectedLocationObject && (
+                  {step === 2 && selectedEvent && (selectedLocationObject ?? locations[0]) && (
                     <EventPurchaseStep
-                      selectedLocation={selectedLocationObject}
+                      selectedLocation={selectedLocationObject ?? locations[0]}
                       changeStep={changeStep}
                     />
                   )}
 
-                  {step === 2 && !selectedEvent && selectedLocationObject && (
+                  {step === 2 && !selectedEvent && (selectedLocationObject ?? locations[0]) && (
                     <CheckoutStep2
-                      selectedLocation={selectedLocationObject}
+                      selectedLocation={selectedLocationObject ?? locations[0]}
                       changeStep={changeStep}
                     />
                   )}
 
-                  {step === 3 && selectedLocationObject && (
+                  {step === 3 && (selectedLocationObject ?? locations[0]) && (
                     <AppointmentBooking
-                      selectedLocation={selectedLocationObject}
+                      selectedLocation={selectedLocationObject ?? locations[0]}
                       customerId={customerId}
                       changeStep={changeStep}
                     />

@@ -13,11 +13,15 @@ export function VideoClean({ headline, subtitle, media }: SectionProps) {
         {headline && (
           <h2
             className="uppercase text-center text-[50px] md:text-[80px] font-bold mb-2"
+            style={{ fontFamily: 'Khand, sans-serif' }}
             dangerouslySetInnerHTML={{ __html: headline ?? '' }}
           />
         )}
         {subtitle && (
-          <h4 className="text-center text-[30px] md:text-[42px] text-[#bf2a2a] italic leading-none mb-4">
+          <h4
+            className="text-center text-[30px] md:text-[42px] text-[#bf2a2a] italic leading-none mb-4"
+            style={{ fontFamily: 'Khand, sans-serif' }}
+          >
             {subtitle}
           </h4>
         )}

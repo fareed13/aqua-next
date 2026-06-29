@@ -39,7 +39,7 @@ export function AccountCarousel({ customBullets }: SectionProps) {
       aria-label="Account carousel"
     >
       {bullets.map((bullet: any, i: number) => {
-        const imgSrc = bullet.media ? buildMediaUrl(bullet.media, 800) : ''
+        const imgSrc = bullet.media ? buildMediaUrl(bullet.media, 'large') : ''
         return (
           <div
             key={i}
@@ -54,6 +54,7 @@ export function AccountCarousel({ customBullets }: SectionProps) {
                 fill
                 className="object-contain w-full h-full"
                 priority={i === 0}
+                sizes="100vw"
               />
             )}
             {/* Dark overlay */}

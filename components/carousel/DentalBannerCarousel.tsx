@@ -35,7 +35,7 @@ export function DentalBannerCarousel({ customBullets }: SectionProps) {
   return (
     <div className="relative w-full overflow-hidden h-[400px] md:h-[500px]" aria-label="Dental banner carousel">
       {bullets.map((bullet: any, i: number) => {
-        const imgSrc = bullet.media ? buildMediaUrl(bullet.media, 800) : ''
+        const imgSrc = bullet.media ? buildMediaUrl(bullet.media, 'large') : ''
         return (
           <div
             key={i}
@@ -48,8 +48,9 @@ export function DentalBannerCarousel({ customBullets }: SectionProps) {
                 src={imgSrc}
                 alt={bullet.headline || 'Carousel image'}
                 fill
-                className="object-cover w-full h-full"
+                className="object-contain w-full h-full"
                 priority={i === 0}
+                sizes="100vw"
               />
             )}
 
