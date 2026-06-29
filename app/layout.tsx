@@ -8,6 +8,9 @@ import { FooterRegistry } from '@/components/layout/FooterRegistry'
 import { AnalyticsScripts } from '@/components/layout/AnalyticsScripts'
 import { Suspense } from 'react'
 import { PopupStepperCheckout } from '@/components/popupForm/PopupStepperCheckout'
+import { HomePageEmbeds } from '@/components/layout/HomePageEmbeds'
+import { Widgets } from '@/components/dynamic-widgets/Widgets'
+import { BottomRequestFormDefault } from '@/components/bottomRequestForm/BottomRequestFormDefault'
 import { fetchOrganization, fetchCustomCss } from '@/lib/api/serverInit'
 import { getDomain } from '@/lib/utils/getDomain'
 import { buildGoogleFontsUrl } from '@/lib/utils/fonts'
@@ -72,11 +75,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Bake org colors + fonts into the static HTML — zero FOUC, zero production fetch
   const fonts = location?.fonts ?? organization?.fonts ?? {}
   const orgColorVars = buildOrgColorStyle(organization.colors ?? {})
+  // Keep CSS vars for colors + the two shared font vars (globals.css references them)
   const orgFontVars = [
     fonts.p ? `--org-font-body:"${fonts.p}",sans-serif` : '',
     fonts.h1 ? `--org-font-heading:"${fonts.h1}",sans-serif` : '',
   ].filter(Boolean).join(';')
   const orgStyle = [orgColorVars, orgFontVars].filter(Boolean).join(';')
+
+  // Per-element font rules matching Nuxt's organizationFontStyles — each heading
+  // level can have its own font family (h2 != h1, h3 != h2, etc.)
+  const FONT_SELECTORS: Array<[keyof typeof fonts, string]> = [
+    ['p', 'body, p'],
+    ['h1', 'h1'],
+    ['h2', 'h2'],
+    ['h3', 'h3'],
+    ['h4', 'h4'],
+    ['h5', 'h5'],
+    ['h6', 'h6'],
+  ]
+  const orgFontElementRules = FONT_SELECTORS
+    .filter(([key]) => fonts[key])
+    .map(([key, selector]) => `${selector}{font-family:"${fonts[key]}",sans-serif!important}`)
+    .join('')
 
   const fontsUrl = buildGoogleFontsUrl(fonts)
   const customCss = await fetchCustomCss(domain)
@@ -95,6 +115,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en">
       <head>
         {orgStyle && <style>{`:root{${orgStyle}}`}</style>}
+        {orgFontElementRules && <style>{orgFontElementRules}</style>}
         {customCss && <style>{customCss}</style>}
         {/* Explicit favicon — prevents Next.js default /favicon.ico from winning */}
         {logoUrl && <link rel="icon" href={logoUrl} type={logoMime} />}
@@ -131,8 +152,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               location={location}
               locations={locations}
             />
+            <BottomRequestFormDefault />
             <main>{children}</main>
-            <Suspense><PopupStepperCheckout /></Suspense>
+            <HomePageEmbeds />
             <FooterRegistry
               name={footerName}
               organization={organization}
@@ -140,6 +162,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               locations={locations}
               domain={domain}
             />
+            <Suspense><PopupStepperCheckout /></Suspense>
+            <Widgets />
             <AnalyticsScripts />
           </StoreHydrator>
         </Providers>
