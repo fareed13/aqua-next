@@ -7,10 +7,18 @@ import { Message } from './Message'
 import { useOrgStore } from '@/store/orgStore'
 import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? ''
+const WS_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL ?? ''
 
-function getWsUrl(): string {
-  return BACKEND_URL.replace(/^https/, 'wss').replace(/^http/, 'ws')
+function getWsToken(orgId: number, sessionId: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(`${WS_URL}/token/${orgId}/${sessionId}/`)
+    ws.onopen = () => ws.send(JSON.stringify({ tokenRequired: 'True' }))
+    ws.onmessage = (e) => {
+      try { ws.close() } catch {}
+      resolve(JSON.parse(e.data).token)
+    }
+    ws.onerror = (err) => reject(err)
+  })
 }
 
 function getUserSessionId(): string {
@@ -47,6 +55,7 @@ function initChatbotSession(): string {
 
 export function ChatContainer() {
   const organization = useOrgStore((s) => s.organization)
+  const orgId = useOrgStore((s) => s.organization?.id)
   const isUk = (organization as any)?.is_uk ?? false
   const chatbotConfig = (organization as any)?.chatbot_config?.[0]
   const recaptchaEnabled = (organization as any)?.recaptcha_enabled ?? false
@@ -61,7 +70,7 @@ export function ChatContainer() {
   const variations = chatbotConfig?.greeting_variations ?? []
   const greetingMessage = variations.length ? variations[Math.floor(Math.random() * variations.length)] : null
 
-  const { postPublic, nonSecureEndpoint } = useNonSecureCalls()
+  const { postPublic, postPublicProtected, nonSecureEndpoint } = useNonSecureCalls()
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [botTyping, setBotTyping] = useState(false)
@@ -79,8 +88,17 @@ export function ChatContainer() {
   const getResponse = async (query: string) => {
     setBotTyping(true)
     try {
+      const sessionId = getUserSessionId()
+      let authHeader = ''
+      if (recaptchaEnabled) {
+        const storedToken = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('recaptcha_token') : null
+        authHeader = recaptchaTokenRef.current ?? storedToken ?? ''
+      } else {
+        const wsToken = await getWsToken(orgId!, sessionId)
+        authHeader = `Bearer ${wsToken}`
+      }
       const data = { session_id: getChatbotSessionId(), client_question: query }
-      const res = await postPublic(nonSecureEndpoint.CHATBOT, data) as any
+      const res = await postPublicProtected(nonSecureEndpoint.CHATBOT, data, authHeader) as any
 
       setMessages((prev) => [
         ...prev,
@@ -124,7 +142,13 @@ export function ChatContainer() {
 
   return (
     <div className="h-full">
-      <ChatBot onNewMessage={msgSend} onRecaptchaVerified={scrollToBottom}>
+      <ChatBot
+        onNewMessage={msgSend}
+        onRecaptchaVerified={(token) => {
+          recaptchaTokenRef.current = token
+          scrollToBottom()
+        }}
+      >
         <div ref={containerRef} className="space-y-2 h-full overflow-y-auto">
           {/* Welcome message */}
           <div className="flex items-end gap-2 mb-4">
