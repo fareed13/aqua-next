@@ -33,29 +33,44 @@ export function TeamCoaches({ headline, subtitle, content }: SectionProps) {
           {instructors.map((instructor: any, idx: number) => {
             const imgUrl = instructor.media ? buildMediaUrl(instructor.media, 'medium') : ''
             return (
-              <div key={instructor.id ?? idx} className="relative mt-7">
-                {/* Vertical line decoration */}
+              <div key={instructor.id ?? idx} className="relative mt-7 group">
+
+                {/* Vertical accent line — thicker, grows on group hover */}
                 <div
-                  className="absolute right-0 bottom-10 w-[1px] h-[150px] hover:h-[180px] transition-all duration-200"
+                  className="absolute right-0 bottom-10 w-[2px] h-[150px] group-hover:h-[180px] transition-all duration-300"
                   style={{ backgroundColor: accentColor }}
                 />
 
-                <div className="relative">
-                  <Image
-                    src={imgUrl || '/placeholder.jpg'}
-                    alt={`${instructor.name} - ${subtitle || 'Instructor'}`}
-                    width={350}
-                    height={400}
-                    className="w-full object-cover px-[10px]"
-                    loading="lazy"
+                {/* White card — shadow lifts on hover */}
+                <div className="relative bg-white shadow-md group-hover:shadow-xl transition-shadow duration-300">
+
+                  {/* Image wrapper — clips the zoom transform */}
+                  <div className="overflow-hidden">
+                    <Image
+                      src={imgUrl || '/placeholder.jpg'}
+                      alt={`${instructor.name} - ${subtitle || 'Instructor'}`}
+                      width={350}
+                      height={400}
+                      className="w-full object-cover px-[10px] transition-transform duration-500 group-hover:scale-[1.04]"
+                      loading="lazy"
+                    />
+                  </div>
+
+                  {/* Accent bar — slides in from left on hover */}
+                  <div
+                    className="h-[3px] w-0 group-hover:w-full transition-all duration-500"
+                    style={{ backgroundColor: accentColor }}
                   />
-                  <h3 className="uppercase text-center font-black mt-[10px] text-[20px]">
+
+                  {/* Name */}
+                  <h3 className="uppercase text-center font-black mt-[10px] mb-[14px] text-[20px] break-words px-[10px] tracking-wide">
                     {instructor.name}
                   </h3>
-                  {/* Rotated subtitle label */}
+
+                  {/* Rotated subtitle label — anchored to this relative card */}
                   {subtitle && (
                     <span
-                      className="absolute top-[53px] -right-[63px] uppercase text-xs"
+                      className="absolute top-[53px] -right-[63px] uppercase text-xs font-semibold tracking-widest"
                       style={{
                         color: accentColor,
                         transform: 'rotate(-270deg)',
@@ -66,6 +81,7 @@ export function TeamCoaches({ headline, subtitle, content }: SectionProps) {
                     </span>
                   )}
                 </div>
+
               </div>
             )
           })}

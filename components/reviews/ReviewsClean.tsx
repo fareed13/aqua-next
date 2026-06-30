@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import type { ReactElement } from 'react'
 import type { SectionProps } from '@/components/sections/registry'
 import { useOrgStore } from '@/store/orgStore'
@@ -69,9 +69,19 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
   const [activeSlide, setActiveSlide] = useState(0)
   const [readMore, setReadMore] = useState(true)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(true)
+  const [currentIndex, setCurrentIndex] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  const scrollToCard = useCallback((index: number) => {
+    const clamped = Math.max(0, Math.min(reviews.length - 1, index))
+    setCurrentIndex(clamped)
+    cardRefs.current[clamped]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    })
+  }, [reviews.length])
 
   if (!reviews.length) return null
 
@@ -101,17 +111,6 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
     }
   }
 
-  const onScrollUpdate = () => {
-    const el = scrollRef.current
-    if (!el) return
-    setCanScrollLeft(el.scrollLeft > 1)
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1)
-  }
-
-  const scrollCards = (dir: number) => {
-    scrollRef.current?.scrollBy({ left: dir * 310, behavior: 'smooth' })
-  }
-
   const isScaled = (i: number) => i % 3 === 1
 
   return (
@@ -124,8 +123,8 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
         {/* Desktop: arrows sit outside the scroll container as flex siblings */}
         <div className="hidden md:flex items-center">
           <button
-            onClick={() => scrollCards(-1)}
-            disabled={!canScrollLeft}
+            onClick={() => scrollToCard(currentIndex - 1)}
+            disabled={currentIndex === 0}
             className="shrink-0 text-black disabled:opacity-30 leading-none"
             aria-label="Previous review"
           >
@@ -134,9 +133,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
 
           <div
             ref={scrollRef}
-            onScroll={onScrollUpdate}
             className="flex-1 overflow-x-auto flex items-center pb-6 hide-scrollbar"
-            style={{ scrollSnapType: 'x mandatory' }}
           >
             {reviews.map((review: any, i: number) => {
               const isExpanded = !readMore && selectedIndex === i
@@ -144,6 +141,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
               return (
                 <div
                   key={i}
+                  ref={(el) => { cardRefs.current[i] = el }}
                   className="shrink-0 text-center border border-[#aaa] bg-[#eee] p-5 flex flex-col items-center"
                   style={{
                     width: 267,
@@ -152,7 +150,6 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
                     transform: scaled ? 'scale(1.3)' : 'none',
                     boxShadow: scaled ? '1px 1px 5px #ccc' : 'none',
                     zIndex: scaled ? 9 : 'auto',
-                    scrollSnapAlign: 'center',
                     position: 'relative',
                   }}
                 >
@@ -189,8 +186,8 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
           </div>
 
           <button
-            onClick={() => scrollCards(1)}
-            disabled={!canScrollRight}
+            onClick={() => scrollToCard(currentIndex + 1)}
+            disabled={currentIndex === reviews.length - 1}
             className="shrink-0 text-black disabled:opacity-30 leading-none"
             aria-label="Next review"
           >
