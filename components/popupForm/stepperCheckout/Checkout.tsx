@@ -332,6 +332,12 @@ export function Checkout() {
   useEffect(() => {
     if (!recaptchaReady || !organization?.recaptcha_enabled || step !== 1) return
 
+    const siteKey = getSiteKey()
+    if (!siteKey) {
+      console.warn('[reCAPTCHA] NEXT_PUBLIC_SITE_KEY_RECAPTCHA is not set — skipping widget render')
+      return
+    }
+
     const g = (window as any).grecaptcha
     if (!g?.render) return
 
@@ -340,32 +346,36 @@ export function Checkout() {
     const el = document.getElementById('recaptcha-checkout')
     if (!el || el.childElementCount > 0) return
 
-    const id = g.render('recaptcha-checkout', {
-      sitekey: getSiteKey(),
-      callback: async (token: string) => {
-        // Store in sessionStorage AND in the shared uiStore so all hook instances can use it
-        sessionStorage.setItem('recaptcha_token', token)
-        useUiStore.getState().setCheckoutAuthToken(token)
-        try {
-          const result: any = await postPublic(NON_SECURE_ENDPOINTS.GOOGLERECAPTCHA, { token })
-          if (result?.success) setRecaptchaVerified(true)
-        } catch {
+    try {
+      const id = g.render('recaptcha-checkout', {
+        sitekey: siteKey,
+        callback: async (token: string) => {
+          // Store in sessionStorage AND in the shared uiStore so all hook instances can use it
+          sessionStorage.setItem('recaptcha_token', token)
+          useUiStore.getState().setCheckoutAuthToken(token)
+          try {
+            const result: any = await postPublic(NON_SECURE_ENDPOINTS.GOOGLERECAPTCHA, { token })
+            if (result?.success) setRecaptchaVerified(true)
+          } catch {
+            setRecaptchaVerified(false)
+          }
+        },
+        'expired-callback': () => {
+          // Token expired — clear both stores so the next API call doesn't use a stale token
+          sessionStorage.removeItem('recaptcha_token')
+          useUiStore.getState().setCheckoutAuthToken('')
           setRecaptchaVerified(false)
-        }
-      },
-      'expired-callback': () => {
-        // Token expired — clear both stores so the next API call doesn't use a stale token
-        sessionStorage.removeItem('recaptcha_token')
-        useUiStore.getState().setCheckoutAuthToken('')
-        setRecaptchaVerified(false)
-      },
-      'error-callback': () => {
-        sessionStorage.removeItem('recaptcha_token')
-        useUiStore.getState().setCheckoutAuthToken('')
-        setRecaptchaVerified(false)
-      },
-    })
-    captchaWidgetId.current = id
+        },
+        'error-callback': () => {
+          sessionStorage.removeItem('recaptcha_token')
+          useUiStore.getState().setCheckoutAuthToken('')
+          setRecaptchaVerified(false)
+        },
+      })
+      captchaWidgetId.current = id
+    } catch (err) {
+      console.error('[reCAPTCHA] render failed:', err)
+    }
 
     // Reset the ref on cleanup so React Strict Mode's remount can re-inject into the fresh DOM element
     return () => { captchaWidgetId.current = null }
@@ -615,8 +625,8 @@ export function Checkout() {
           </div>
         )}
 
-        {/* reCAPTCHA widget */}
-        {organization?.recaptcha_enabled && (
+        {/* reCAPTCHA widget — only render when sitekey is configured */}
+        {organization?.recaptcha_enabled && getSiteKey() && (
           <div className="center-input max-w-[300px] mx-auto mb-3">
             {recaptchaReady ? (
               <div id="recaptcha-checkout" />
@@ -631,7 +641,7 @@ export function Checkout() {
           <div className="flex justify-end">
             <button
               type="button"
-              disabled={loading || (!!organization?.recaptcha_enabled && !recaptchaVerified)}
+              disabled={loading || (!!organization?.recaptcha_enabled && !!getSiteKey() && !recaptchaVerified)}
               onClick={validateStep1}
               className="text-white px-7 py-3 text-sm font-semibold rounded disabled:opacity-50"
               style={{

@@ -40,7 +40,7 @@ export function CheckoutForm() {
       const primaryService = services[0]
       const serviceId = primaryService?.id
 
-      const res = await fetch(`${BACKEND_URL}/website/lead/`, {
+      const res = await fetch(`${BACKEND_URL}/customer/create/?organization_id=${organization?.id ?? ''}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -48,11 +48,12 @@ export function CheckoutForm() {
           last_name: lastname,
           email,
           phone: mobile,
-          location: selectedLocationId || location?.id,
+          location_id: selectedLocationId || location?.id,
           service: serviceId,
           sms_opt_in: smsOptIn,
-          custom_field: customField,
-          reason_for_joining: reasonForJoining,
+          custom_field: customField || undefined,
+          reason_for_joining: reasonForJoining || undefined,
+          tags: ['general'],
         }),
       })
 

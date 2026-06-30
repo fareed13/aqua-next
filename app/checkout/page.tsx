@@ -6,12 +6,17 @@ import { CheckoutForm } from '@/components/checkout/CheckoutForm'
 import type { Metadata } from 'next'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const domain = getDomain()
-  const org = (await fetchOrganization(domain))[0]
-  return buildPageMetadata({ org, domain, pageName: 'checkout', path: '/checkout' })
+  try {
+    const domain = getDomain()
+    const org = (await fetchOrganization(domain))[0]
+    if (!org) return { title: 'Checkout' }
+    return buildPageMetadata({ org, domain, pageName: 'checkout', path: '/checkout' })
+  } catch {
+    return { title: 'Checkout' }
+  }
 }
 
-export default async function CheckoutPage() {
+export default function CheckoutPage() {
   return (
     <div>
       <LandingPageBanner component="LandingPageBanner" headline="Checkout" />
