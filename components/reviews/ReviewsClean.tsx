@@ -31,6 +31,22 @@ function getSocialIcon(platform?: string): ReactElement {
   return SOCIAL_SVG[platform.toLowerCase()] ?? SOCIAL_SVG.default
 }
 
+function ChevronLeft({ size }: { size: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor">
+      <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
+    </svg>
+  )
+}
+
+function ChevronRight({ size }: { size: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor">
+      <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+    </svg>
+  )
+}
+
 function Stars({ rating, size = 25 }: { rating: any; size?: number }) {
   const stars = rating ? Math.round(Number(rating)) : 0
   return (
@@ -53,6 +69,8 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
   const [activeSlide, setActiveSlide] = useState(0)
   const [readMore, setReadMore] = useState(true)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   if (!reviews.length) return null
@@ -83,11 +101,17 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
     }
   }
 
-  const scrollBy = (dir: number) => {
+  const onScrollUpdate = () => {
+    const el = scrollRef.current
+    if (!el) return
+    setCanScrollLeft(el.scrollLeft > 1)
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1)
+  }
+
+  const scrollCards = (dir: number) => {
     scrollRef.current?.scrollBy({ left: dir * 310, behavior: 'smooth' })
   }
 
-  // Every 2nd item (0-indexed: 1,4,7…) gets scaled-up treatment matching Nuxt nth-child(2),nth-child(5)…
   const isScaled = (i: number) => i % 3 === 1
 
   return (
@@ -97,20 +121,21 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
           Hear what our members are saying
         </h2>
 
-        {/* Desktop: horizontal scrollable with arrows */}
-        <div className="hidden md:block relative">
+        {/* Desktop: arrows sit outside the scroll container as flex siblings */}
+        <div className="hidden md:flex items-center">
           <button
-            onClick={() => scrollBy(-1)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 text-black"
+            onClick={() => scrollCards(-1)}
+            disabled={!canScrollLeft}
+            className="shrink-0 text-black disabled:opacity-30 leading-none"
             aria-label="Previous review"
-            style={{ fontSize: 60 }}
           >
-            ‹
+            <ChevronLeft size={60} />
           </button>
 
           <div
             ref={scrollRef}
-            className="overflow-x-auto flex items-center gap-0 pb-6 px-10 hide-scrollbar"
+            onScroll={onScrollUpdate}
+            className="flex-1 overflow-x-auto flex items-center pb-6 hide-scrollbar"
             style={{ scrollSnapType: 'x mandatory' }}
           >
             {reviews.map((review: any, i: number) => {
@@ -145,7 +170,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
                   </p>
                   <button
                     onClick={() => changeButtonClass(i)}
-                    className="text-[9px] capitalize text-[#0e0e0e] cursor-pointer"
+                    className="capitalize text-[#0e0e0e] cursor-pointer"
                     style={{ height: 18, padding: 0, fontSize: 9 }}
                     aria-label={isExpanded ? 'Collapse review text' : 'Read more review text'}
                   >
@@ -155,7 +180,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
                   <h4 className="text-[#0e0e0e] mb-[14px]" style={{ fontSize: 16 }}>
                     {formatDate(review.date_created || review.created_at)}
                   </h4>
-                  <span className="block justify-center flex">
+                  <span className="flex justify-center">
                     {getSocialIcon(review.platform ?? undefined)}
                   </span>
                 </div>
@@ -164,16 +189,16 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
           </div>
 
           <button
-            onClick={() => scrollBy(1)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 text-black"
+            onClick={() => scrollCards(1)}
+            disabled={!canScrollRight}
+            className="shrink-0 text-black disabled:opacity-30 leading-none"
             aria-label="Next review"
-            style={{ fontSize: 60 }}
           >
-            ›
+            <ChevronRight size={60} />
           </button>
         </div>
 
-        {/* Mobile: carousel with prev/next buttons */}
+        {/* Mobile: carousel with prev/next icon buttons — hidden on desktop */}
         <div className="md:hidden">
           {reviews.length > 0 && (
             <div className="relative">
@@ -192,8 +217,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
                       />
                       <button
                         onClick={() => changeButtonClass(activeSlide)}
-                        className="text-xs capitalize underline mb-2 mx-auto cursor-pointer"
-                        style={{ width: 100 }}
+                        className="text-xs capitalize underline mb-2 mx-auto cursor-pointer w-[100px]"
                         aria-label={isExpanded ? 'Collapse review text' : 'Read more review text'}
                       >
                         {isExpanded ? 'Collapse' : 'Read More'}
@@ -202,7 +226,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
                       <h4 className="text-sm text-[#0e0e0e] mb-3">
                         {formatDate(review.date_created || review.created_at)}
                       </h4>
-                      <span className="block text-[#2783ef] mb-4 flex justify-center">
+                      <span className="flex justify-center mb-5 text-[#2783ef]">
                         {getSocialIcon(review.platform ?? undefined)}
                       </span>
                     </>
@@ -211,22 +235,28 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
               </div>
 
               <div className="flex justify-between mt-4">
+                {/* Prev — green elevated icon button matching Nuxt color="success" */}
                 <button
                   onClick={() => { setActiveSlide(p => Math.max(0, p - 1)); setSelectedIndex(null) }}
                   disabled={activeSlide === 0}
-                  className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-40"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-green-600 text-white shadow disabled:opacity-40"
                   aria-label="Previous review"
                 >
-                  ‹
+                  <ChevronLeft size={28} />
                 </button>
-                <span className="text-sm text-gray-500 self-center">{activeSlide + 1} / {reviews.length}</span>
+
+                <span className="text-sm text-gray-500 self-center">
+                  {activeSlide + 1} / {reviews.length}
+                </span>
+
+                {/* Next — blue elevated icon button matching Nuxt color="info" */}
                 <button
                   onClick={() => { setActiveSlide(p => Math.min(reviews.length - 1, p + 1)); setSelectedIndex(null) }}
                   disabled={activeSlide === reviews.length - 1}
-                  className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-40"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white shadow disabled:opacity-40"
                   aria-label="Next review"
                 >
-                  ›
+                  <ChevronRight size={28} />
                 </button>
               </div>
             </div>
