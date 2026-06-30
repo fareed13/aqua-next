@@ -9,9 +9,12 @@ interface FeedPostBottomProps {
 }
 
 function convertToLinks(text: string): string {
+  const linkStyle = 'color:#00376b;text-decoration:none;cursor:pointer'
+  // Preserve line breaks from Instagram captions
+  const withBreaks = text.replace(/\n/g, '<br>')
+  // Convert #hashtags and @mentions to clickable Instagram links
   const regex = /([#@]\w+)/g
-  return text.replace(regex, match => {
-    const linkStyle = 'color:#00376b;text-decoration:none;cursor:pointer'
+  return withBreaks.replace(regex, match => {
     if (match.startsWith('@')) {
       const username = match.substring(1)
       return `<a href="https://www.instagram.com/${username}/" target="_blank" rel="noopener noreferrer" style="${linkStyle}">${match}</a>`
@@ -86,7 +89,8 @@ export function FeedPostBottom({
           &nbsp;
           {caption && (
             <span
-              className="inline text-sm"
+              className="post-desc inline text-sm"
+              style={{ color: 'black' }}
               dangerouslySetInnerHTML={{ __html: convertToLinks(caption) }}
             />
           )}

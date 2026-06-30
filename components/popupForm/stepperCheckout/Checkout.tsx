@@ -43,6 +43,8 @@ export function Checkout() {
   const setDialog = useUiStore((s) => s.setDialog)
   const selectedEvent = useUiStore((s) => s.selectedEvent)
   const setCheckoutCustomer = useUiStore((s) => s.setCheckoutCustomer)
+  const scheduleBookNowClicked = useUiStore((s) => s.scheduleBookNowClicked)
+  const selectedScheduleLocation = useUiStore((s) => s.selectedScheduleLocation)
 
   const {
     servicesWithPlan,
@@ -321,16 +323,22 @@ export function Checkout() {
     if (!dialog) setStep(1)
   }, [dialog])
 
-  // ------- reCAPTCHA: load script when dialog opens on step 1 -------
+  // ------- reCAPTCHA: load script when dialog opens or on standalone checkout page -------
   useEffect(() => {
-    if (dialog && step === 1 && organization?.recaptcha_enabled) {
+    if ((dialog || isOnCheckoutPage) && step === 1 && organization?.recaptcha_enabled) {
       loadRecaptchaScript()
     }
-  }, [dialog, step, organization?.recaptcha_enabled, loadRecaptchaScript])
+  }, [dialog, isOnCheckoutPage, step, organization?.recaptcha_enabled, loadRecaptchaScript])
 
   // ------- reCAPTCHA: render widget once per mount -------
   useEffect(() => {
     if (!recaptchaReady || !organization?.recaptcha_enabled || step !== 1) return
+
+    const siteKey = getSiteKey()
+    if (!siteKey) {
+      console.warn('[reCAPTCHA] NEXT_PUBLIC_SITE_KEY_RECAPTCHA is not set — skipping widget render')
+      return
+    }
 
     const g = (window as any).grecaptcha
     if (!g?.render) return
@@ -340,32 +348,36 @@ export function Checkout() {
     const el = document.getElementById('recaptcha-checkout')
     if (!el || el.childElementCount > 0) return
 
-    const id = g.render('recaptcha-checkout', {
-      sitekey: getSiteKey(),
-      callback: async (token: string) => {
-        // Store in sessionStorage AND in the shared uiStore so all hook instances can use it
-        sessionStorage.setItem('recaptcha_token', token)
-        useUiStore.getState().setCheckoutAuthToken(token)
-        try {
-          const result: any = await postPublic(NON_SECURE_ENDPOINTS.GOOGLERECAPTCHA, { token })
-          if (result?.success) setRecaptchaVerified(true)
-        } catch {
+    try {
+      const id = g.render('recaptcha-checkout', {
+        sitekey: siteKey,
+        callback: async (token: string) => {
+          // Store in sessionStorage AND in the shared uiStore so all hook instances can use it
+          sessionStorage.setItem('recaptcha_token', token)
+          useUiStore.getState().setCheckoutAuthToken(token)
+          try {
+            const result: any = await postPublic(NON_SECURE_ENDPOINTS.GOOGLERECAPTCHA, { token })
+            if (result?.success) setRecaptchaVerified(true)
+          } catch {
+            setRecaptchaVerified(false)
+          }
+        },
+        'expired-callback': () => {
+          // Token expired — clear both stores so the next API call doesn't use a stale token
+          sessionStorage.removeItem('recaptcha_token')
+          useUiStore.getState().setCheckoutAuthToken('')
           setRecaptchaVerified(false)
-        }
-      },
-      'expired-callback': () => {
-        // Token expired — clear both stores so the next API call doesn't use a stale token
-        sessionStorage.removeItem('recaptcha_token')
-        useUiStore.getState().setCheckoutAuthToken('')
-        setRecaptchaVerified(false)
-      },
-      'error-callback': () => {
-        sessionStorage.removeItem('recaptcha_token')
-        useUiStore.getState().setCheckoutAuthToken('')
-        setRecaptchaVerified(false)
-      },
-    })
-    captchaWidgetId.current = id
+        },
+        'error-callback': () => {
+          sessionStorage.removeItem('recaptcha_token')
+          useUiStore.getState().setCheckoutAuthToken('')
+          setRecaptchaVerified(false)
+        },
+      })
+      captchaWidgetId.current = id
+    } catch (err) {
+      console.error('[reCAPTCHA] render failed:', err)
+    }
 
     // Reset the ref on cleanup so React Strict Mode's remount can re-inject into the fresh DOM element
     return () => { captchaWidgetId.current = null }
@@ -400,6 +412,13 @@ export function Checkout() {
       setSelectedLocationObject(locations[0])
     }
   }, [locations, selectedLocationObject, setSelectedLocationObject])
+
+  // Pre-select and lock the location when opened via Book Now from schedule page (matches Nuxt Checkout.vue watcher)
+  useEffect(() => {
+    if (scheduleBookNowClicked && selectedScheduleLocation && locations.length > 1) {
+      setSelectedLocationObject(selectedScheduleLocation as any)
+    }
+  }, [scheduleBookNowClicked, selectedScheduleLocation, locations.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ------- step 4 redirect -------
   useEffect(() => {
@@ -561,6 +580,7 @@ export function Checkout() {
             <div className="flex gap-2">
               <select
                 value={selectedLocationObject?.id ?? ''}
+                disabled={!!(selectedScheduleLocation as any)?.target_locations?.[0] && scheduleBookNowClicked && locations.length > 1}
                 onChange={(e) => {
                   const loc = locations.find(
                     (l: any) => l.id === Number(e.target.value)
@@ -570,7 +590,7 @@ export function Checkout() {
                     locationChanged()
                   }
                 }}
-                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 h-[38px]"
+                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 h-[38px] disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
               >
                 <option value="">Select a Location</option>
                 {locations.map((loc: any) => (
@@ -615,8 +635,8 @@ export function Checkout() {
           </div>
         )}
 
-        {/* reCAPTCHA widget */}
-        {organization?.recaptcha_enabled && (
+        {/* reCAPTCHA widget — only render when sitekey is configured */}
+        {organization?.recaptcha_enabled && getSiteKey() && (
           <div className="center-input max-w-[300px] mx-auto mb-3">
             {recaptchaReady ? (
               <div id="recaptcha-checkout" />
@@ -631,7 +651,7 @@ export function Checkout() {
           <div className="flex justify-end">
             <button
               type="button"
-              disabled={loading || (!!organization?.recaptcha_enabled && !recaptchaVerified)}
+              disabled={loading || (!!organization?.recaptcha_enabled && !!getSiteKey() && !recaptchaVerified)}
               onClick={validateStep1}
               className="text-white px-7 py-3 text-sm font-semibold rounded disabled:opacity-50"
               style={{

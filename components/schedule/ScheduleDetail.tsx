@@ -87,6 +87,10 @@ export function ScheduleDetail({ classId, locationId, slug }: ScheduleDetailProp
 
   useEffect(() => { setIsReady(true) }, [])
 
+  useEffect(() => {
+    if (!classData) router.push('/')
+  }, [classData])
+
   const deadline = useMemo(() => {
     if (!classData) return ''
     const classDay = DAYS_MAPPING[classData.day_of_week]
@@ -110,10 +114,7 @@ export function ScheduleDetail({ classId, locationId, slug }: ScheduleDetailProp
 
   const zoomLogo = `${MEDIA_URL}/videoPlay_700.png`
 
-  if (!classData) {
-    router.push('/')
-    return null
-  }
+  if (!classData) return null
 
   const onLogoClick = async () => {
     if (requireLogin) {

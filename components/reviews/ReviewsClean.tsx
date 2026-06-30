@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import type { ReactElement } from 'react'
 import type { SectionProps } from '@/components/sections/registry'
 import { useOrgStore } from '@/store/orgStore'
@@ -31,6 +31,22 @@ function getSocialIcon(platform?: string): ReactElement {
   return SOCIAL_SVG[platform.toLowerCase()] ?? SOCIAL_SVG.default
 }
 
+function ChevronLeft({ size }: { size: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor">
+      <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
+    </svg>
+  )
+}
+
+function ChevronRight({ size }: { size: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor">
+      <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+    </svg>
+  )
+}
+
 function Stars({ rating, size = 25 }: { rating: any; size?: number }) {
   const stars = rating ? Math.round(Number(rating)) : 0
   return (
@@ -53,7 +69,19 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
   const [activeSlide, setActiveSlide] = useState(0)
   const [readMore, setReadMore] = useState(true)
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [currentIndex, setCurrentIndex] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  const scrollToCard = useCallback((index: number) => {
+    const clamped = Math.max(0, Math.min(reviews.length - 1, index))
+    setCurrentIndex(clamped)
+    cardRefs.current[clamped]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    })
+  }, [reviews.length])
 
   if (!reviews.length) return null
 
@@ -83,11 +111,6 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
     }
   }
 
-  const scrollBy = (dir: number) => {
-    scrollRef.current?.scrollBy({ left: dir * 310, behavior: 'smooth' })
-  }
-
-  // Every 2nd item (0-indexed: 1,4,7…) gets scaled-up treatment matching Nuxt nth-child(2),nth-child(5)…
   const isScaled = (i: number) => i % 3 === 1
 
   return (
@@ -97,21 +120,20 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
           Hear what our members are saying
         </h2>
 
-        {/* Desktop: horizontal scrollable with arrows */}
-        <div className="hidden md:block relative">
+        {/* Desktop: arrows sit outside the scroll container as flex siblings */}
+        <div className="hidden md:flex items-center">
           <button
-            onClick={() => scrollBy(-1)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 text-black"
+            onClick={() => scrollToCard(currentIndex - 1)}
+            disabled={currentIndex === 0}
+            className="shrink-0 text-black disabled:opacity-30 leading-none"
             aria-label="Previous review"
-            style={{ fontSize: 60 }}
           >
-            ‹
+            <ChevronLeft size={60} />
           </button>
 
           <div
             ref={scrollRef}
-            className="overflow-x-auto flex items-center gap-0 pb-6 px-10 hide-scrollbar"
-            style={{ scrollSnapType: 'x mandatory' }}
+            className="flex-1 overflow-x-auto flex items-center pb-6 hide-scrollbar"
           >
             {reviews.map((review: any, i: number) => {
               const isExpanded = !readMore && selectedIndex === i
@@ -119,6 +141,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
               return (
                 <div
                   key={i}
+                  ref={(el) => { cardRefs.current[i] = el }}
                   className="shrink-0 text-center border border-[#aaa] bg-[#eee] p-5 flex flex-col items-center"
                   style={{
                     width: 267,
@@ -127,7 +150,6 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
                     transform: scaled ? 'scale(1.3)' : 'none',
                     boxShadow: scaled ? '1px 1px 5px #ccc' : 'none',
                     zIndex: scaled ? 9 : 'auto',
-                    scrollSnapAlign: 'center',
                     position: 'relative',
                   }}
                 >
@@ -145,7 +167,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
                   </p>
                   <button
                     onClick={() => changeButtonClass(i)}
-                    className="text-[9px] capitalize text-[#0e0e0e] cursor-pointer"
+                    className="capitalize text-[#0e0e0e] cursor-pointer"
                     style={{ height: 18, padding: 0, fontSize: 9 }}
                     aria-label={isExpanded ? 'Collapse review text' : 'Read more review text'}
                   >
@@ -155,7 +177,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
                   <h4 className="text-[#0e0e0e] mb-[14px]" style={{ fontSize: 16 }}>
                     {formatDate(review.date_created || review.created_at)}
                   </h4>
-                  <span className="block justify-center flex">
+                  <span className="flex justify-center">
                     {getSocialIcon(review.platform ?? undefined)}
                   </span>
                 </div>
@@ -164,16 +186,16 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
           </div>
 
           <button
-            onClick={() => scrollBy(1)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 text-black"
+            onClick={() => scrollToCard(currentIndex + 1)}
+            disabled={currentIndex === reviews.length - 1}
+            className="shrink-0 text-black disabled:opacity-30 leading-none"
             aria-label="Next review"
-            style={{ fontSize: 60 }}
           >
-            ›
+            <ChevronRight size={60} />
           </button>
         </div>
 
-        {/* Mobile: carousel with prev/next buttons */}
+        {/* Mobile: carousel with prev/next icon buttons — hidden on desktop */}
         <div className="md:hidden">
           {reviews.length > 0 && (
             <div className="relative">
@@ -192,8 +214,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
                       />
                       <button
                         onClick={() => changeButtonClass(activeSlide)}
-                        className="text-xs capitalize underline mb-2 mx-auto cursor-pointer"
-                        style={{ width: 100 }}
+                        className="text-xs capitalize underline mb-2 mx-auto cursor-pointer w-[100px]"
                         aria-label={isExpanded ? 'Collapse review text' : 'Read more review text'}
                       >
                         {isExpanded ? 'Collapse' : 'Read More'}
@@ -202,7 +223,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
                       <h4 className="text-sm text-[#0e0e0e] mb-3">
                         {formatDate(review.date_created || review.created_at)}
                       </h4>
-                      <span className="block text-[#2783ef] mb-4 flex justify-center">
+                      <span className="flex justify-center mb-5 text-[#2783ef]">
                         {getSocialIcon(review.platform ?? undefined)}
                       </span>
                     </>
@@ -211,22 +232,28 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
               </div>
 
               <div className="flex justify-between mt-4">
+                {/* Prev — green elevated icon button matching Nuxt color="success" */}
                 <button
                   onClick={() => { setActiveSlide(p => Math.max(0, p - 1)); setSelectedIndex(null) }}
                   disabled={activeSlide === 0}
-                  className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-40"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-green-600 text-white shadow disabled:opacity-40"
                   aria-label="Previous review"
                 >
-                  ‹
+                  <ChevronLeft size={28} />
                 </button>
-                <span className="text-sm text-gray-500 self-center">{activeSlide + 1} / {reviews.length}</span>
+
+                <span className="text-sm text-gray-500 self-center">
+                  {activeSlide + 1} / {reviews.length}
+                </span>
+
+                {/* Next — blue elevated icon button matching Nuxt color="info" */}
                 <button
                   onClick={() => { setActiveSlide(p => Math.min(reviews.length - 1, p + 1)); setSelectedIndex(null) }}
                   disabled={activeSlide === reviews.length - 1}
-                  className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-40"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white shadow disabled:opacity-40"
                   aria-label="Next review"
                 >
-                  ›
+                  <ChevronRight size={28} />
                 </button>
               </div>
             </div>

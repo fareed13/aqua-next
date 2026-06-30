@@ -133,20 +133,17 @@ export function InstagramFeed({ headline }: SectionProps) {
         </h2>
       </div>
 
-      {/* Mobile heading + outside close button */}
-      <div className="max-w-screen-xl mx-auto px-4">
+      {/* Mobile heading + outside close button — hidden on desktop */}
+      <div className="md:hidden max-w-screen-xl mx-auto px-4">
         <div
           className={`flex items-center ${openFeed ? 'justify-between bg-[#f8f8f8] border-b border-[#f1f1f1]' : 'justify-center'}`}
         >
-          <button
-            onClick={closeFeedPost}
-            className="md:hidden"
-            style={{ display: openFeed ? 'inline-flex' : 'none' }}
-            aria-label="Close Instagram feed"
-          >
-            <CloseIcon />
-          </button>
-          <h3 className="md:hidden flex items-center justify-center text-lg font-semibold py-2">
+          {openFeed && (
+            <button onClick={closeFeedPost} aria-label="Close Instagram feed">
+              <CloseIcon />
+            </button>
+          )}
+          <h3 className="flex items-center justify-center text-lg font-semibold py-2">
             {headline || 'Follow us on Instagram'}
           </h3>
         </div>
@@ -257,7 +254,7 @@ export function InstagramFeed({ headline }: SectionProps) {
                 zIndex: 3,
               }}
             >
-              {/* Inside close button (desktop only) */}
+              {/* Inside close button (desktop only) — matches Nuxt: absolute, top of post panel */}
               <div
                 className="close-feed-btn-inside hidden md:block mx-2 my-2 text-center"
                 style={{ position: 'absolute', top: 0, left: '50%', width: '53%' }}
@@ -274,7 +271,7 @@ export function InstagramFeed({ headline }: SectionProps) {
               >
                 <div
                   className="insta-feed-posts"
-                  style={{ width: '100%', margin: 'auto', height: '100%', backgroundColor: 'white' }}
+                  style={{ width: '100%', margin: 'auto', minHeight: '100%', backgroundColor: 'white' }}
                 >
                   <div className="flex flex-row">
                     <div className="relative">

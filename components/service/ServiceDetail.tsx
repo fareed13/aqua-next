@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { SectionRenderer } from '@/components/sections/SectionRenderer'
 import { ReviewsClean } from '@/components/reviews/ReviewsClean'
 import { InstructorDefault } from '@/components/instructor/InstructorDefault'
@@ -9,6 +9,7 @@ import { ServicePlans } from '@/components/sections/ServicePlans'
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
 import { useOrgStore } from '@/store/orgStore'
 import { buildMediaUrl } from '@/lib/utils/media'
+import { interestedServiceSetter } from '@/hooks/useCheckoutDetails'
 import type { Service, ComponentContent } from '@/types/api'
 
 interface ServiceDetailProps {
@@ -53,6 +54,11 @@ export function ServiceDetail({ service, serviceName, showProgramChildren }: Ser
   const organization = useOrgStore(s => s.organization)
   const location = useOrgStore(s => s.location)
   const location1 = location?.target_locations?.[0] ?? ''
+
+  // Record page visit so checkout pre-selects this program (matches Nuxt interestedServiceSetter on page load)
+  useEffect(() => {
+    interestedServiceSetter(service.id)
+  }, [service.id])
 
   const backgroundImage = service.large_media
     ? buildMediaUrl(service.large_media, 700)

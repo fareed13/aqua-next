@@ -39,7 +39,7 @@ export function PopupStepperCheckout() {
       {/* Right-side drawer */}
       <div
         className={[
-          'fixed inset-y-0 right-0 z-[999] w-full md:w-[30%] bg-white shadow-xl overflow-y-auto transition-transform duration-300',
+          'fixed inset-y-0 right-0 z-[999] w-full md:w-1/2 lg:w-[30%] 2xl:w-1/4 bg-white shadow-xl overflow-y-auto transition-transform duration-300',
           dialog ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
       >
