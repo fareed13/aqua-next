@@ -321,12 +321,12 @@ export function Checkout() {
     if (!dialog) setStep(1)
   }, [dialog])
 
-  // ------- reCAPTCHA: load script when dialog opens on step 1 -------
+  // ------- reCAPTCHA: load script when dialog opens or on standalone checkout page -------
   useEffect(() => {
-    if (dialog && step === 1 && organization?.recaptcha_enabled) {
+    if ((dialog || isOnCheckoutPage) && step === 1 && organization?.recaptcha_enabled) {
       loadRecaptchaScript()
     }
-  }, [dialog, step, organization?.recaptcha_enabled, loadRecaptchaScript])
+  }, [dialog, isOnCheckoutPage, step, organization?.recaptcha_enabled, loadRecaptchaScript])
 
   // ------- reCAPTCHA: render widget once per mount -------
   useEffect(() => {

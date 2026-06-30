@@ -11,8 +11,6 @@ import { useRecaptcha } from '@/hooks/useRecaptcha'
 import { getPublicAuthHeader } from '@/lib/utils/initializeSocket'
 import { toast } from 'sonner'
 
-const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? ''
-
 const steps = ['Choose Special', 'Sender', 'Recipient', 'Payment']
 
 interface PersonForm {
@@ -576,7 +574,7 @@ export function GiftCard() {
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Card Details
-                    <Image src={`${MEDIA_URL}/assets/img/cards.png`} width={80} height={20} alt="Accepted cards" className="inline-block ml-2 mb-1 h-5 w-auto" />
+                    <Image src={`/assets/img/cards.png`} width={80} height={20} alt="Accepted cards" className="inline-block ml-2 mb-1 h-5 w-auto" />
                   </label>
                   <div
                     id="stripe-card-element"
@@ -607,7 +605,7 @@ export function GiftCard() {
                   <div>
                     <label className="block text-sm font-medium mb-1">
                       Card Number
-                      <Image src={`${MEDIA_URL}/assets/img/cards.png`} width={80} height={20} alt="Accepted cards" className="inline-block ml-2 mb-1 h-5 w-auto" />
+                      <Image src={`/assets/img/cards.png`} width={80} height={20} alt="Accepted cards" className="inline-block ml-2 mb-1 h-5 w-auto" />
                     </label>
                     <input
                       type="text"
@@ -654,7 +652,7 @@ export function GiftCard() {
                   <div className="max-w-[180px]">
                     <label className="block text-sm font-medium mb-1 flex items-center gap-2">
                       Security Code
-                      <Image src={`${MEDIA_URL}/assets/img/cvv-card-img.png`} width={40} height={20} alt="CVV" className="inline-block h-5 w-auto" />
+                      <Image src={`/assets/img/cvv-card-img.png`} width={40} height={20} alt="CVV" className="inline-block h-5 w-auto" />
                     </label>
                     <input
                       type="text"
@@ -695,7 +693,7 @@ export function GiftCard() {
                   <div>
                     <label className="block text-sm font-medium mb-1">
                       Card Number
-                      <Image src={`${MEDIA_URL}/assets/img/cards.png`} width={80} height={20} alt="Accepted cards" className="inline-block ml-2 mb-1 h-5 w-auto" />
+                      <Image src={`/assets/img/cards.png`} width={80} height={20} alt="Accepted cards" className="inline-block ml-2 mb-1 h-5 w-auto" />
                     </label>
                     <input
                       type="text"
@@ -805,14 +803,14 @@ export function GiftCard() {
               {/* Trust badges */}
               <div className="flex items-center justify-center gap-4 mt-4">
                 <Image
-                  src={`${MEDIA_URL}/assets/img/Secure-Badge-Option3.png`}
+                  src="/assets/img/Secure-Badge-Option3.png"
                   width={150}
                   height={60}
                   alt="Secure payment badge"
                   className="max-w-[150px] w-full h-auto"
                 />
                 <Image
-                  src={`${MEDIA_URL}/assets/img/SatisifactionGarunteed.png`}
+                  src="/assets/img/satisfaction.png"
                   width={150}
                   height={60}
                   alt="Satisfaction guaranteed badge"
