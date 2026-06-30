@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { SectionProps } from '@/components/sections/registry';
@@ -10,6 +10,7 @@ import { useUiStore } from '@/store/uiStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useSchedule } from '@/hooks/useSchedule';
 import { useSecureCalls, SECURE_ENDPOINTS, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls';
+import { interestedServiceSetter } from '@/hooks/useCheckoutDetails';
 import { VirtualScheduleEdit } from '@/components/schedule/VirtualScheduleEdit';
 import { CloseDateAddEdit } from '@/components/schedule/CloseDateAddEdit';
 import { VirtualScheduleUploadPopup } from '@/components/schedule/VirtualScheduleUploadPopup';
@@ -41,6 +42,10 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
   const organization = useOrgStore(s => s.organization) as any;
   const { isAdminLoggedIn } = useAuth();
   const setDialog = useUiStore(s => s.setDialog);
+  const setSelectedPlan = useUiStore(s => s.setSelectedPlan);
+  const setCheckoutSchedule = useUiStore(s => s.setSelectedSchedule);
+  const setCheckoutScheduleDate = useUiStore(s => s.setSelectedScheduleDate);
+  const setCheckoutScheduleLocation = useUiStore(s => s.setSelectedScheduleLocation);
   const { schedule, scheduleFound, selectedLocationId, selectLocation, locations, filteredLocations } = useSchedule();
   const { getSecure, postSecure, deleteSecure } = useSecureCalls();
 
@@ -52,6 +57,9 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
   const [classReservations, setClassReservations] = useState<Record<string, Record<string, number>>>({});
   const [reservedClasses, setReservedClasses] = useState<any[]>([]);
   const [overlay, setOverlay] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const tabScrollRef = useRef<HTMLDivElement>(null);
 
   // Modals
   const [editPopup, setEditPopup] = useState(false);
@@ -175,6 +183,49 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
     } catch { setDeletePopup(null); }
   };
 
+  // Mirrors Nuxt's bookClass: clear plan, set interested service, store schedule+date,
+  // then set first service plan so free-plan skip in completeStep1 works correctly.
+  const bookNow = (sch: any, dateStr: string) => {
+    setSelectedPlan(null)
+    const serviceId = sch.service?.id
+    if (serviceId) {
+      interestedServiceSetter(serviceId)
+      const svc = organization?.services?.find((s: any) => s.id === serviceId)
+      const sorted = [...(svc?.service_plans ?? [])].sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
+      if (sorted[0]?.plan) setSelectedPlan(sorted[0].plan)
+    }
+    // Store schedule, date and location so Checkout can pre-select and lock the location dropdown
+    const currentLoc = (organization?.locations ?? locations).find((l: any) => l.id === currentLocationId)
+    if (currentLoc) setCheckoutScheduleLocation(currentLoc)
+    setCheckoutSchedule({ ...sch, date: dateStr })
+    setCheckoutScheduleDate(dateStr)
+    setDialog(true, true)
+  }
+
+  // Track whether desktop tab strip can scroll left/right (for arrow visibility)
+  const syncScrollState = useCallback(() => {
+    const el = tabScrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 2);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  }, []);
+
+  useEffect(() => {
+    const el = tabScrollRef.current;
+    if (!el) return;
+    syncScrollState();
+    el.addEventListener('scroll', syncScrollState, { passive: true });
+    const ro = new ResizeObserver(syncScrollState);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', syncScrollState); ro.disconnect(); };
+  }, [syncScrollState, availableDays]);
+
+  const scrollTabs = (dir: 'left' | 'right') => {
+    const el = tabScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === 'left' ? -200 : 200, behavior: 'smooth' });
+  };
+
   const daySchedule = availableDays[tab]
     ? (schedule[(availableDays[tab].day.toLowerCase()) as keyof typeof schedule] ?? [])
     : [];
@@ -262,18 +313,57 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
         </p>
       )}
 
-      {/* Desktop day tabs */}
-      <div className="hidden lg:flex border-b mb-4">
-        {availableDays.map((obj, i) => (
-          <button key={i} onClick={() => setTab(i)}
-            className={`flex-1 py-5 text-center transition-colors border-b-4 ${
-              tab === i ? 'border-current font-bold bg-black text-white' : 'border-transparent bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-            style={tab === i ? { borderColor: accentColor } : {}}>
-            <div className="font-bold text-sm">{obj.day}</div>
-            <div className="text-xs mt-1">{formatMMDD(obj.date)}</div>
-          </button>
-        ))}
+      {/* Desktop day tabs — fixed-width tabs with scroll arrows (matches Nuxt v-tabs behaviour) */}
+      <div className="hidden lg:flex items-stretch border-b mb-4 relative">
+        {/* Left scroll arrow */}
+        <button
+          onClick={() => scrollTabs('left')}
+          disabled={!canScrollLeft}
+          className="flex-shrink-0 w-9 flex items-center justify-center bg-white hover:bg-gray-100 transition-colors disabled:opacity-30 border-r border-gray-200"
+          aria-label="Scroll tabs left"
+        >
+          <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        {/* Scrollable tab strip */}
+        <div
+          ref={tabScrollRef}
+          className={`flex overflow-x-auto scrollbar-none flex-1 ${availableDays.length < 6 ? 'justify-center' : ''}`}
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}
+        >
+          {availableDays.map((obj, i) => (
+            <button
+              key={i}
+              onClick={() => setTab(i)}
+              className={`flex-shrink-0 py-[30px] text-center transition-colors border-b-4 ${
+                tab === i
+                  ? 'bg-black text-white'
+                  : 'bg-[#f1f1f1] text-[#505050] hover:bg-gray-200'
+              }`}
+              style={{
+                minWidth: '11.2vw',
+                borderBottomColor: tab === i ? accentColor : 'transparent',
+              }}
+            >
+              <div className="font-bold text-sm mb-[5px]">{obj.day}</div>
+              <div className="text-xs">{formatMMDD(obj.date)}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Right scroll arrow */}
+        <button
+          onClick={() => scrollTabs('right')}
+          disabled={!canScrollRight}
+          className="flex-shrink-0 w-9 flex items-center justify-center bg-white hover:bg-gray-100 transition-colors disabled:opacity-30 border-l border-gray-200"
+          aria-label="Scroll tabs right"
+        >
+          <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
 
       {/* Mobile day selector */}
@@ -334,7 +424,7 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
                       style={{ background: accentColor }}>Join Virtually</Link>
                   )}
                   {sch.eligible_for_trial_class && !isCloseDate(dateStr, sch) && !isExpired(sch) && (
-                    <button onClick={() => setDialog(true, true)} className="px-4 py-2 rounded-full text-white text-sm font-semibold"
+                    <button onClick={() => bookNow(sch, dateStr)} className="px-4 py-2 rounded-full text-white text-sm font-semibold"
                       style={{ background: accentColor }}>BOOK NOW</button>
                   )}
                   {showReserveBtn(sch) && (
@@ -379,7 +469,7 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
                     </Link>
                   )}
                   {sch.eligible_for_trial_class && !isCloseDate(dateStr, sch) && !isExpired(sch) && (
-                    <button onClick={() => setDialog(true, true)} className="px-4 py-2 rounded-lg text-white text-sm font-semibold bg-green-600">
+                    <button onClick={() => bookNow(sch, dateStr)} className="px-4 py-2 rounded-lg text-white text-sm font-semibold bg-green-600">
                       📅 Book Now
                     </button>
                   )}
@@ -398,7 +488,6 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
 
         {daySchedule.length === 0 && availableDays.length > 0 && !overlay && (
           <div className="text-center py-10 text-gray-400">
-            <div className="text-4xl mb-2">📅</div>
             <p>No classes scheduled for {availableDays[tab]?.day}.</p>
           </div>
         )}

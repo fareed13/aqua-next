@@ -117,6 +117,8 @@ export function AppointmentBooking({ customerId, changeStep, selectedLocation }:
   const organization = useOrgStore((s) => s.organization)
   const orgId = organization?.id
   const checkoutAuthToken = useUiStore((s) => s.checkoutAuthToken)
+  const selectedScheduleFromStore = useUiStore((s) => s.selectedSchedule)
+  const selectedScheduleDateFromStore = useUiStore((s) => s.selectedScheduleDate)
   const { getPublic, postPublicProtected } = useNonSecureCalls()
 
   const [progressLoading, setProgressLoading] = useState(false)
@@ -161,6 +163,16 @@ export function AppointmentBooking({ customerId, changeStep, selectedLocation }:
     }
     const today = new Date().toLocaleDateString('en-CA')
     setPicker(today)
+
+    // Matches Nuxt AppointmentBooking.vue onMounted: if a schedule was pre-set by
+    // bookClass (Book Now from schedule page), pre-load it and open confirmation popup
+    if (selectedScheduleFromStore) {
+      const preloaded = selectedScheduleFromStore as any
+      setAvailabilitySlotsData([preloaded])
+      if (selectedScheduleDateFromStore) setPicker(selectedScheduleDateFromStore)
+      toggleConfirmationPopup(preloaded)
+    }
+
     getAvailabilitySlots()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

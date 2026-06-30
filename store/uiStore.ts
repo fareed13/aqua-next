@@ -19,6 +19,9 @@ interface UIState {
   settingsVisibleSection: string | null
   scheduleBookNowClicked: boolean
   selectedPlan: Record<string, unknown> | null
+  selectedSchedule: Record<string, unknown> | null
+  selectedScheduleDate: string | null
+  selectedScheduleLocation: Record<string, unknown> | null
   interestedServiceId: number | null
   selectedEvent: Record<string, unknown> | null
   checkoutAuthToken: string
@@ -33,6 +36,9 @@ interface UIState {
   setLocationEditPopup: (open: boolean) => void
   setSettingsVisibleSection: (section: string | null) => void
   setSelectedPlan: (plan: Record<string, unknown> | null) => void
+  setSelectedSchedule: (schedule: Record<string, unknown> | null) => void
+  setSelectedScheduleDate: (date: string | null) => void
+  setSelectedScheduleLocation: (location: Record<string, unknown> | null) => void
   setInterestedServiceId: (id: number | null) => void
   setSelectedEvent: (event: Record<string, unknown> | null) => void
   setCheckoutAuthToken: (token: string) => void
@@ -51,6 +57,9 @@ export const useUiStore = create<UIState>()(
     settingsVisibleSection: null,
     scheduleBookNowClicked: false,
     selectedPlan: null,
+    selectedSchedule: null,
+    selectedScheduleDate: null,
+    selectedScheduleLocation: null,
     interestedServiceId: null,
     selectedEvent: null,
     checkoutAuthToken: '',
@@ -62,6 +71,9 @@ export const useUiStore = create<UIState>()(
       if (!open) {
         state.checkoutAuthToken = ''
         state.checkoutCustomer = null
+        state.selectedSchedule = null
+        state.selectedScheduleDate = null
+        state.selectedScheduleLocation = null
       }
     }),
     setReviewDialog: (open) => set((state) => { state.reviewDialog = open }),
@@ -72,6 +84,9 @@ export const useUiStore = create<UIState>()(
     setLocationEditPopup: (open) => set((state) => { state.locationEditPopup = open }),
     setSettingsVisibleSection: (section) => set((state) => { state.settingsVisibleSection = section }),
     setSelectedPlan: (plan) => set((state) => { state.selectedPlan = plan }),
+    setSelectedSchedule: (schedule) => set((state) => { state.selectedSchedule = schedule }),
+    setSelectedScheduleDate: (date) => set((state) => { state.selectedScheduleDate = date }),
+    setSelectedScheduleLocation: (location) => set((state) => { state.selectedScheduleLocation = location }),
     setInterestedServiceId: (id) => set((state) => { state.interestedServiceId = id }),
     setSelectedEvent: (event) => set((state) => { state.selectedEvent = event }),
     setCheckoutAuthToken: (token) => set((state) => { state.checkoutAuthToken = token }),

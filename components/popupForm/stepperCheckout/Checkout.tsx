@@ -43,6 +43,8 @@ export function Checkout() {
   const setDialog = useUiStore((s) => s.setDialog)
   const selectedEvent = useUiStore((s) => s.selectedEvent)
   const setCheckoutCustomer = useUiStore((s) => s.setCheckoutCustomer)
+  const scheduleBookNowClicked = useUiStore((s) => s.scheduleBookNowClicked)
+  const selectedScheduleLocation = useUiStore((s) => s.selectedScheduleLocation)
 
   const {
     servicesWithPlan,
@@ -411,6 +413,13 @@ export function Checkout() {
     }
   }, [locations, selectedLocationObject, setSelectedLocationObject])
 
+  // Pre-select and lock the location when opened via Book Now from schedule page (matches Nuxt Checkout.vue watcher)
+  useEffect(() => {
+    if (scheduleBookNowClicked && selectedScheduleLocation && locations.length > 1) {
+      setSelectedLocationObject(selectedScheduleLocation as any)
+    }
+  }, [scheduleBookNowClicked, selectedScheduleLocation, locations.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ------- step 4 redirect -------
   useEffect(() => {
     if (step === 4 && organization?.is_thanks_redirect_enabled) {
@@ -571,6 +580,7 @@ export function Checkout() {
             <div className="flex gap-2">
               <select
                 value={selectedLocationObject?.id ?? ''}
+                disabled={!!(selectedScheduleLocation as any)?.target_locations?.[0] && scheduleBookNowClicked && locations.length > 1}
                 onChange={(e) => {
                   const loc = locations.find(
                     (l: any) => l.id === Number(e.target.value)
@@ -580,7 +590,7 @@ export function Checkout() {
                     locationChanged()
                   }
                 }}
-                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 h-[38px]"
+                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 h-[38px] disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
               >
                 <option value="">Select a Location</option>
                 {locations.map((loc: any) => (
