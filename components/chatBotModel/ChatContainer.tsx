@@ -62,7 +62,7 @@ export function ChatContainer() {
 
   const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL ?? ''
   const avatarLogo = chatbotConfig?.avatar
-    ? `${MEDIA_URL}${chatbotConfig.avatar.uuid}_350.${chatbotConfig.avatar.extension ?? ''}`
+    ? `${MEDIA_URL}/${chatbotConfig.avatar.uuid}_350.${chatbotConfig.avatar.extension ?? ''}`
     : (organization as any)?.primary_logo
       ? `${MEDIA_URL}/${(organization as any).primary_logo.uuid}_350.${(organization as any).primary_logo.extension}`
       : ''
