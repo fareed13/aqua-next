@@ -28,7 +28,7 @@ export function BigImageBackground({
 
   // Right-side media: first media item that is an image, or the video
   const rightMedia = media && media.length > 0 ? media[0] : null
-  const isVideo = rightMedia?.extension === 'mp4' || rightMedia?.type === 'video'
+  const isVideo = rightMedia?.extension === 'mp4' || rightMedia?.type === 'video' || rightMedia?.media_type === 'video'
 
   const mediaUrl = rightMedia ? buildMediaUrl(rightMedia, isVideo ? 1000 : 'large') : ''
 

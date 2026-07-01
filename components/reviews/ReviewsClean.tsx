@@ -64,7 +64,7 @@ export function ReviewsClean({ countOfReviews }: SectionProps) {
   const isEuroDate = country.includes('uk') || country.includes('gb') || country.includes('australia') || country.includes('new zealand')
 
   const allReviews = organization?.org_reviews ?? []
-  const reviews = allReviews.slice(0, countOfReviews ?? 6)
+  const reviews = countOfReviews != null ? allReviews.slice(0, countOfReviews) : allReviews
 
   const [activeSlide, setActiveSlide] = useState(0)
   const [readMore, setReadMore] = useState(true)

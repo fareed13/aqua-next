@@ -7,6 +7,42 @@ import { SocialIcon } from '@/components/layout/SocialIcon'
 import { buildMediaUrl } from '@/lib/utils/media'
 import type { Organization, Location } from '@/types/api'
 
+const INDUSTRY_LABELS: Record<string, string> = {
+  fitness_center: 'EFC',
+  salon: 'EFC',
+  junk_removal: 'EFC',
+}
+
+const PhoneIcon = () => (
+  <svg width={24} height={24} viewBox="0 0 24 24" fill="currentColor" style={{ color: '#636363', display: 'inline-block' }} aria-hidden="true">
+    <path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24 11.5 11.5 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.5 11.5 0 0 0 .57 3.6 1 1 0 0 1-.24 1.01l-2.2 2.18Z" />
+  </svg>
+)
+
+const EmailIcon = () => (
+  <svg width={24} height={24} viewBox="0 0 24 24" fill="currentColor" style={{ color: '#636363', display: 'inline-block' }} aria-hidden="true">
+    <path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z" />
+  </svg>
+)
+
+// Matches Nuxt .footer-widget p::before — white 200px line below text
+const DecorativeLine = () => (
+  <span
+    aria-hidden="true"
+    style={{
+      position: 'absolute',
+      display: 'block',
+      width: 200,
+      height: 2,
+      background: '#fff',
+      left: 0,
+      right: 0,
+      margin: 'auto',
+      marginTop: 46,
+    }}
+  />
+)
+
 interface Props {
   initialOrganization: Organization
   initialLocation: Location
@@ -26,114 +62,119 @@ export function FooterWavy({ initialOrganization, initialLocation, initialLocati
   const domain = storeDomain || initialDomain
 
   const phoneLink = location.phone ? `tel:${location.phone}` : '#'
+  const secondaryPhoneLink = location.secondary_phone ? `tel:${location.secondary_phone}` : '#'
   const mailLink = location.email ? `mailto:${location.email}` : '#'
   const logoUrl = buildMediaUrl(organization.primary_logo, 350)
   const socialMedia = location.social_media ?? []
   const year = new Date().getFullYear()
+  const industryLabel = INDUSTRY_LABELS[organization.industry_type ?? '']
+
+  const country = (organization.country ?? '').toLowerCase()
+  const showTermsBar = country.includes('australia') || country.includes('new zealand')
 
   return (
     <footer
-      className="py-12 text-white relative overflow-hidden"
-      style={{ backgroundColor: '#1a1a2e' }}
+      className="text-center text-white"
+      style={{
+        backgroundImage: "url('/assets/img/footer-bg.png')",
+        backgroundSize: 'cover',
+        padding: '100px 0 130px',
+      }}
       aria-label="Site footer"
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1185px] px-4">
 
-        {/* 3-column main row */}
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3 items-center">
+        {/* 3-column top row — phone | logo | email */}
+        <div className="flex flex-wrap items-center justify-center">
 
-          {/* Col 1: Phone */}
-          <div className="flex flex-col items-center md:items-start gap-2">
-            <div className="flex items-center gap-2">
-              {/* Phone icon (SVG inline) */}
-              <svg
-                className="w-5 h-5 text-white flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
-                />
-              </svg>
+          {/* Phone — .footer-widget { top: 100px } */}
+          <div className="w-full px-3 sm:w-1/3" style={{ position: 'relative', top: 100 }}>
+            <PhoneIcon />
+            <p style={{ color: '#fff', fontSize: 13, marginTop: 5, position: 'relative' }}>
               {location.pretty_phone ? (
-                <a
-                  href={phoneLink}
-                  className="text-white hover:text-white/80 text-base no-underline font-medium"
-                >
+                <a href={phoneLink} style={{ color: '#fff', textDecoration: 'none' }}>
                   {location.pretty_phone}
                 </a>
-              ) : (
-                <span className="text-[rgba(255,255,255,0.4)] text-sm">No phone listed</span>
-              )}
-            </div>
+              ) : null}
+              {location.pretty_phone && location.pretty_secondary_phone ? ' / ' : null}
+              {location.pretty_secondary_phone ? (
+                <a href={secondaryPhoneLink} style={{ color: '#fff', textDecoration: 'none' }}>
+                  {location.pretty_secondary_phone}
+                </a>
+              ) : null}
+              <DecorativeLine />
+            </p>
           </div>
 
-          {/* Col 2: Logo centered, pulled up slightly */}
-          <div className="flex justify-center relative -top-3">
-            <Link href="/">
-              {logoUrl ? (
-                <Image
-                  src={logoUrl}
-                  alt="Organization logo"
-                  width={160}
-                  height={70}
-                  style={{ maxWidth: 160, width: '100%', height: 'auto' }}
-                />
-              ) : (
-                <span className="text-white font-bold text-xl">{organization.name}</span>
-              )}
-            </Link>
+          {/* Logo — .logo-widget { top: 110px } */}
+          <div className="w-full px-3 sm:w-1/3" style={{ position: 'relative', top: 110 }}>
+            {logoUrl ? (
+              <Image
+                src={logoUrl}
+                alt="School logo"
+                width={220}
+                height={80}
+                style={{ objectFit: 'contain', margin: '0 auto', display: 'block', width: 220, height: 'auto' }}
+                loading="lazy"
+              />
+            ) : (
+              <span className="text-xl font-bold text-white">{organization.name}</span>
+            )}
           </div>
 
-          {/* Col 3: Email */}
-          <div className="flex flex-col items-center md:items-end gap-2">
-            <div className="flex items-center gap-2">
-              {/* Email icon (SVG inline) */}
-              <svg
-                className="w-5 h-5 text-white flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
-                />
-              </svg>
+          {/* Email — .footer-widget { top: 100px } */}
+          <div className="w-full px-3 sm:w-1/3" style={{ position: 'relative', top: 100 }}>
+            <EmailIcon />
+            <p style={{ color: '#f0f0f0', fontSize: 13, marginTop: 5, position: 'relative' }}>
               {location.email ? (
-                <a
-                  href={mailLink}
-                  className="text-white hover:text-white/80 text-base no-underline font-medium"
-                >
+                <a href={mailLink} style={{ color: '#f0f0f0', textDecoration: 'none' }}>
                   {location.email}
                 </a>
-              ) : (
-                <span className="text-[rgba(255,255,255,0.4)] text-sm">No email listed</span>
-              )}
-            </div>
+              ) : null}
+              <DecorativeLine />
+            </p>
           </div>
+
         </div>
 
-        {/* Bottom row: copyright + privacy + social icons */}
-        <div className="mt-10 border-t border-[rgba(255,255,255,0.15)] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[rgba(255,255,255,0.5)] text-sm text-center sm:text-left m-0">
-            Copyright &copy; {year} {domain}
-            {' | '}
-            <Link href="/privacy-policy" className="text-[rgba(255,255,255,0.5)] hover:text-white no-underline">
+        {/* Bottom row — copyright + social — .logo-widget { top: 110px } */}
+        <div className="text-center" style={{ position: 'relative', top: 110 }}>
+
+          {/* Terms bar — AU / NZ only */}
+          {showTermsBar && (
+            <div className="mb-2">
+              <Link href="/terms-of-service" style={{ color: '#fff', textDecoration: 'none', fontSize: 13, margin: '0 8px' }}>
+                Terms of service
+              </Link>
+              {' | '}
+              <Link href="/refund-policy" style={{ color: '#fff', textDecoration: 'none', fontSize: 13, margin: '0 8px' }}>
+                Refund Policy
+              </Link>
+              {locations.length < 2 && location.abn && (
+                <>
+                  {' | '}
+                  <span style={{ color: '#fff', fontSize: 13, margin: '0 8px' }}>ABN: {location.abn}</span>
+                </>
+              )}
+            </div>
+          )}
+
+          <p style={{ color: '#fff', fontSize: 13, marginTop: 15 }}>
+            &copy; Copyright {year} | {domain} |{' '}
+            <Link href="/privacy-policy" style={{ color: '#fff', textDecoration: 'none' }}>
               Privacy Policy
             </Link>
+            <span style={{ color: '#fff', lineHeight: '36px', paddingBottom: 5, display: 'block', fontSize: 13 }}>
+              {industryLabel ? `${industryLabel} Websites ` : ''}Powered by{' '}
+              <a href="https://abbi.ai" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none' }}>
+                Abbi.AI
+              </a>
+            </span>
           </p>
 
+          {/* Social icons — outlined rounded buttons matching Nuxt v-btn variant="outlined" */}
           {socialMedia.length > 0 && (
-            <div className="flex items-center gap-3">
+            <div className="mt-3 flex items-center justify-center">
               {socialMedia.map((item, i) => (
                 <a
                   key={i}
@@ -141,13 +182,15 @@ export function FooterWavy({ initialOrganization, initialLocation, initialLocati
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`Visit our ${item.platform} page`}
-                  className="text-[rgba(255,255,255,0.6)] hover:text-white transition-colors"
+                  className="flex items-center justify-center rounded-full border"
+                  style={{ borderColor: '#f9f9f9', color: '#f9f9f9', height: 35, minWidth: 35, padding: 0, margin: '0 7px' }}
                 >
-                  <SocialIcon platform={item.platform} size={20} />
+                  <SocialIcon platform={item.platform} size={18} />
                 </a>
               ))}
             </div>
           )}
+
         </div>
       </div>
     </footer>

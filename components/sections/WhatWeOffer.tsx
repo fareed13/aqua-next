@@ -12,18 +12,20 @@ export function WhatWeOffer({ headline, content, bullets, media }: SectionProps)
   const cta = loc?.call_to_action || 'Secure Your First Class'
 
   const bulletList = Array.isArray(bullets) ? bullets : bullets ? [bullets] : []
-  const imgUrl = media && media.length > 0 ? buildMediaUrl(media[0], 800) : ''
+  const imgUrl = media && media.length > 0 ? buildMediaUrl(media[0], 'large') : ''
 
   return (
     <div className="flex flex-col md:flex-row">
       {/* Left image */}
-      <div className="relative h-64 w-full md:h-auto md:w-1/2">
+      <div className="w-full md:w-1/2">
         {imgUrl && (
           <Image
             src={imgUrl}
             alt={(media?.[0] as any)?.alternativeText || headline || 'What we offer'}
-            fill
-            className="object-cover"
+            width={900}
+            height={1134}
+            className="block h-full w-full object-cover"
+            loading="lazy"
           />
         )}
       </div>

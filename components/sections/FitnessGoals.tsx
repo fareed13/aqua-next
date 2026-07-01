@@ -11,7 +11,7 @@ export function FitnessGoals({ headline, content, customBullets }: SectionProps)
     <div className="py-[70px] px-4 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Heading */}
-        <div className="text-center mb-8">
+        <div className="mb-8">
           {headline && (
             <h3 className="text-[33px] md:text-[56px] leading-[44px] md:leading-[64px] tracking-wide uppercase text-center font-extrabold text-[#111111] mb-5 max-w-[550px] mx-auto">
               {headline}
@@ -19,7 +19,7 @@ export function FitnessGoals({ headline, content, customBullets }: SectionProps)
           )}
           {content && (
             <div
-              className="text-center text-base text-[#777777] leading-[31px] max-w-[700px] mx-auto"
+              className="text-base text-[#777777] leading-[31px] max-w-[700px] mx-auto"
               dangerouslySetInnerHTML={{ __html: content ?? '' }}
             />
           )}

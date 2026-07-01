@@ -4,8 +4,9 @@ import type { SectionProps } from '@/components/sections/registry'
 import { buildMediaUrl } from '@/lib/utils/media'
 
 export function VideoClean({ headline, subtitle, media }: SectionProps) {
-  const hasVideo = media && media.length > 0 && media[0].type === 'video'
-  const videoUrl = hasVideo ? buildMediaUrl(media![0], 800) : ''
+  const hasVideo = media && media.length > 0 &&
+    (media[0].type === 'video' || (media[0] as any).media_type === 'video' || media[0].extension === 'mp4')
+  const videoUrl = hasVideo ? buildMediaUrl(media![0], 1000) : ''
 
   return (
     <div className="w-full bg-[#f6f6f8] py-8 px-4">

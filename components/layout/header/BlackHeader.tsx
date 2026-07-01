@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Menu, X, User } from 'lucide-react'
+import { Menu, User } from 'lucide-react'
 import { useOrgStore } from '@/store/orgStore'
 import { useAuthStore } from '@/store/authStore'
 import { useUiStore } from '@/store/uiStore'
@@ -56,6 +56,7 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
   const logoUrl = buildMediaUrl(organization?.primary_logo)
   const callToAction = location.call_to_action || 'Secure Your First Class'
   const socialMedia = location.social_media ?? []
+  const headerHeight = (socialMedia.length > 0 ? 100 : 72) + (showBanner ? 57 : 0)
   const enableLogin = organization.enable_login
   const underMaintenance = organization.under_maintenance
   const topLevelServices = organization.services?.filter((s) => !s.parent_service) ?? []
@@ -146,7 +147,7 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
             {showClassesLink && (
               <Link
                 href="/classes"
-                className="relative hidden pb-1 text-sm font-medium uppercase text-white transition-opacity hover:opacity-80 md:block"
+                className="relative hidden pb-1 text-sm font-medium uppercase tracking-widest text-white transition-opacity hover:opacity-80 md:block"
                 style={{ borderBottom: '2px solid var(--org-underline, var(--org-primary))' }}
                 aria-label={`View ${organization.school_type ?? 'Fitness Classes'}`}
               >
@@ -160,7 +161,7 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
             {!isLoggedIn && (
               <button
                 onClick={handleCtaClick}
-                className="hidden sm:block rounded px-4 py-2 text-sm font-medium uppercase text-white transition-opacity hover:opacity-90"
+                className="hidden sm:block rounded px-4 py-[7px] text-sm font-medium uppercase text-white transition-opacity hover:opacity-90 md:tracking-[1px] lg:text-[11px]"
                 style={{ backgroundColor: 'var(--org-primary)' }}
                 aria-label={callToAction}
               >
@@ -204,7 +205,7 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
                 ) : (
                   <Link
                     href="/login"
-                    className="flex items-center gap-1 rounded border px-3 py-1.5 text-sm transition-colors hover:opacity-80"
+                    className="flex items-center gap-1 rounded border px-4 py-1.5 text-sm transition-colors hover:opacity-80 md:text-xs md:h-[39px]"
                     style={{ borderColor: 'var(--org-primary)', color: 'var(--org-primary)' }}
                     aria-label="Log in to your account"
                   >
@@ -222,7 +223,7 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
           <div className="px-4 pb-3 sm:hidden">
             <button
               onClick={handleCtaClick}
-              className="w-full rounded py-2 text-sm font-medium uppercase text-white transition-opacity hover:opacity-90"
+              className="w-full rounded py-2 text-sm font-medium uppercase tracking-[1px] text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: 'var(--org-primary)' }}
             >
               {callToAction}
@@ -231,26 +232,29 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
         )}
       </header>
 
-      {/* Sidebar overlay — z-[80] so it layers above the banner (z-[70]) */}
+      {/* Sidebar — fixed left panel matching Nuxt .left-sidebar, no dark backdrop */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-[80] flex">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
-          <aside className="relative z-10 flex h-full w-4/5 max-w-xs flex-col overflow-y-auto bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b px-4 py-3">
-              <span className="text-sm font-semibold text-gray-700">Menu</span>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="rounded p-1 text-gray-500 hover:text-gray-800"
-                aria-label="Close menu"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 py-2">
-              <NavMenu items={menuItems} onNavigate={() => setSidebarOpen(false)} />
-            </div>
+        <>
+          {/* Transparent click-outside catcher */}
+          <div
+            className="fixed inset-0 z-[39]"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+          {/* Panel: white, fixed, starts from top of page, responsive width */}
+          <aside
+            className="fixed left-0 z-[40] w-full overflow-y-auto bg-white pb-20 md:w-1/2 lg:w-1/3 xl:w-[20%]"
+            style={{
+              top: 0,
+              height: '100vh',
+              boxShadow: '0px 6px 9px #cccccc59',
+              paddingTop: 10,
+            }}
+            aria-label="Main navigation menu"
+          >
+            <NavMenu items={menuItems} onNavigate={() => setSidebarOpen(false)} />
           </aside>
-        </div>
+        </>
       )}
 
       {/* Spacer: header height + banner height when banner is visible */}

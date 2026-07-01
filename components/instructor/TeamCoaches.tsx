@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import type { SectionProps } from '@/components/sections/registry'
 import { useOrgStore } from '@/store/orgStore'
 import { buildMediaUrl } from '@/lib/utils/media'
@@ -33,55 +32,41 @@ export function TeamCoaches({ headline, subtitle, content }: SectionProps) {
           {instructors.map((instructor: any, idx: number) => {
             const imgUrl = instructor.media ? buildMediaUrl(instructor.media, 'medium') : ''
             return (
-              <div key={instructor.id ?? idx} className="relative mt-7 group">
-
-                {/* Vertical accent line — thicker, grows on group hover */}
-                <div
-                  className="absolute right-0 bottom-10 w-[2px] h-[150px] group-hover:h-[180px] transition-all duration-300"
-                  style={{ backgroundColor: accentColor }}
-                />
-
-                {/* White card — shadow lifts on hover */}
-                <div className="relative bg-white shadow-md group-hover:shadow-xl transition-shadow duration-300">
-
-                  {/* Image wrapper — clips the zoom transform */}
-                  <div className="overflow-hidden">
-                    <Image
-                      src={imgUrl || '/placeholder.jpg'}
-                      alt={`${instructor.name} - ${subtitle || 'Instructor'}`}
-                      width={350}
-                      height={400}
-                      className="w-full object-cover px-[10px] transition-transform duration-500 group-hover:scale-[1.04]"
-                      loading="lazy"
-                    />
-                  </div>
-
-                  {/* Accent bar — slides in from left on hover */}
-                  <div
-                    className="h-[3px] w-0 group-hover:w-full transition-all duration-500"
-                    style={{ backgroundColor: accentColor }}
+              <div key={instructor.id ?? idx} className="relative mt-7">
+                <div style={{ flexDirection: 'column', alignItems: 'center' }}>
+                  {/* Fixed 400px height container — same height for all cards, image cropped with cover */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imgUrl}
+                    alt={`${instructor.name} - ${subtitle || 'Instructor'}`}
+                    className="w-full"
+                    style={{ height: 400, objectFit: 'cover', padding: '0 10px', display: 'block' }}
+                    loading="lazy"
                   />
-
-                  {/* Name */}
-                  <h3 className="uppercase text-center font-black mt-[10px] mb-[14px] text-[20px] break-words px-[10px] tracking-wide">
+                  <h3 className="uppercase text-center font-black mt-[10px] text-[20px] break-words">
                     {instructor.name}
                   </h3>
-
-                  {/* Rotated subtitle label — anchored to this relative card */}
-                  {subtitle && (
-                    <span
-                      className="absolute top-[53px] -right-[63px] uppercase text-xs font-semibold tracking-widest"
-                      style={{
-                        color: accentColor,
-                        transform: 'rotate(-270deg)',
-                        fontFamily: 'Poppins, sans-serif',
-                      }}
-                    >
-                      {subtitle}
-                    </span>
-                  )}
                 </div>
 
+                {subtitle && (
+                  <span
+                    className="absolute top-[53px] uppercase text-xs font-semibold"
+                    style={{
+                      color: accentColor,
+                      right: '-63px',
+                      transform: 'rotate(-270deg)',
+                      fontFamily: 'Poppins, sans-serif',
+                    }}
+                  >
+                    {subtitle}
+                  </span>
+                )}
+
+                {/* Accent line — matches Nuxt: 1px wide, right: -13px, bottom: 39px */}
+                <div
+                  className="absolute w-px h-[150px] transition-all duration-200 hover:h-[180px]"
+                  style={{ backgroundColor: accentColor, right: '-13px', bottom: '39px' }}
+                />
               </div>
             )
           })}
