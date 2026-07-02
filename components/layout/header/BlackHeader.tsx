@@ -248,7 +248,7 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
               top: 0,
               height: '100vh',
               boxShadow: '0px 6px 9px #cccccc59',
-              paddingTop: 10,
+              paddingTop: headerHeight,
             }}
             aria-label="Main navigation menu"
           >
