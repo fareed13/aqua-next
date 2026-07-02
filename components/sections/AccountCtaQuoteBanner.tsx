@@ -10,7 +10,7 @@ export function AccountCtaQuoteBanner({ headline }: SectionProps) {
   const cta = loc?.call_to_action || 'Secure Your First Class'
 
   return (
-    <div className="py-7 px-4" style={{ background: 'var(--org-primary)' }}>
+    <div className="py-7 px-4" style={{ background: 'var(--org-primary-light)' }}>
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row items-center gap-4">
           {/* Headline */}
@@ -26,7 +26,7 @@ export function AccountCtaQuoteBanner({ headline }: SectionProps) {
             <button
               onClick={() => setDialog(true)}
               className="inline-flex items-center gap-2 bg-white font-semibold px-7 py-4 rounded"
-              style={{ color: 'var(--org-primary)' }}
+              style={{ color: 'var(--org-primary-light)' }}
               aria-label={cta}
             >
               {cta}

@@ -9,7 +9,7 @@ export function AbbiRightImage({ headline, content, bullets, media }: SectionPro
   const setDialog = useUiStore(s => s.setDialog)
 
   const bulletList = Array.isArray(bullets) ? bullets : bullets ? [bullets] : []
-  const imgUrl = media && media.length ? buildMediaUrl(media[0]) : ''
+  const imgUrl = media && media.length ? buildMediaUrl(media[0], 'x-large') : ''
 
   return (
     <div className="relative min-h-[520px] overflow-hidden py-8 bg-[#f7f7f7]">

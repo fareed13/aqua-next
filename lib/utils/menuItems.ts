@@ -4,6 +4,7 @@ export interface MenuItem {
   name: string
   url?: string
   external?: boolean
+  icon?: string
   children?: MenuItem[]
 }
 
@@ -29,6 +30,7 @@ export function buildMenuItems(
       children: topLevelServices.map((s) => ({
         name: s.name,
         url: `/classes/${s.slug}/`,
+        icon: 'book-open',
       })),
     })
   }
@@ -38,16 +40,18 @@ export function buildMenuItems(
     menu.push({
       name: 'Locations',
       url: '/locations',
+      icon: 'map-pin',
       children: locations.map((loc) => ({
         name: loc.target_locations?.[0] ?? loc.city,
         url: `/location/${loc.slug.toLowerCase()}`,
+        icon: 'book-open',
       })),
     })
   }
 
   // Reviews
   if ((organization.org_reviews_count ?? 0) > 0) {
-    menu.push({ name: 'Reviews', url: '/reviews' })
+    menu.push({ name: 'Reviews', url: '/reviews', icon: 'star' })
   }
 
   // Instructors / Stylists / Team
@@ -66,6 +70,7 @@ export function buildMenuItems(
     menu.push({
       name: location.instructor_text_override || label,
       url: urlPath,
+      icon: 'graduation-cap',
     })
   }
 
@@ -76,38 +81,39 @@ export function buildMenuItems(
         name: 'Schedule',
         url: location.schedule_override ? undefined : '/schedule',
         external: !!location.schedule_override,
+        icon: 'clock',
       })
     }
   }
 
   // Events
   if ((location.location_events_count ?? 0) > 0) {
-    menu.push({ name: 'Events', url: '/events' })
+    menu.push({ name: 'Events', url: '/events', icon: 'calendar' })
   }
 
   // Blog
   if ((location.blogs?.length ?? 0) > 0) {
-    menu.push({ name: 'Blogs', url: '/blog' })
+    menu.push({ name: 'Blogs', url: '/blog', icon: 'newspaper' })
   }
 
   // Logged-in only
   if (isLoggedIn) {
     if (organization.require_login_for_virtual_classes) {
-      menu.push({ name: 'Agreements', url: '/agreements' })
+      menu.push({ name: 'Agreements', url: '/agreements', icon: 'file-text' })
     }
     if ((location.curriculums?.length ?? 0) > 0) {
-      menu.push({ name: 'Curriculum', url: '/curriculum' })
+      menu.push({ name: 'Curriculum', url: '/curriculum', icon: 'book-open' })
     }
   }
 
   // Gift card
   if (organization.is_gift_card_enabled) {
-    menu.push({ name: 'Gift Card', url: '/gift-card' })
+    menu.push({ name: 'Gift Card', url: '/gift-card', icon: 'gift' })
   }
 
   // Contact — only for single-location orgs
   if (locations.length === 1) {
-    menu.push({ name: 'Contact Us', url: '/contact' })
+    menu.push({ name: 'Contact Us', url: '/contact', icon: 'phone' })
   }
 
   // Additional headers from admin

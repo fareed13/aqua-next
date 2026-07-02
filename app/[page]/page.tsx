@@ -63,7 +63,7 @@ export default async function CatchAllPage({ params }: PageProps) {
         <LandingPageBanner component="LandingPageBanner" headline={headline || organization.name || 'Reviews'} />
         {foundPage && foundPage.content?.length > 0
           ? <DynamicPage page={foundPage} headlineFromMeta={headline} />
-          : <ReviewsPageContent />
+          : <ReviewsPageContent initialReviews={organization.org_reviews ?? []} />
         }
       </div>
     )

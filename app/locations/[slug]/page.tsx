@@ -59,7 +59,7 @@ export default async function TargetLocationPage({ params }: PageProps) {
 
       <div className="max-w-7xl mx-auto px-4">
         <ProgramDefault component="ProgramDefault" headline="What we offer" />
-        <ReviewsClean component="ReviewsClean" />
+        <ReviewsClean />
         <h2 className="text-center text-2xl font-bold my-6">Schedules</h2>
         <VirtualScheduleDefault component="VirtualScheduleDefault" />
       </div>

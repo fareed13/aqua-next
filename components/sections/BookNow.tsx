@@ -10,7 +10,7 @@ export function BookNow({ headline, content, media }: SectionProps) {
   const org = useOrgStore(s => s.organization)
   const setDialog = useUiStore(s => s.setDialog)
   const accentColor = (org as any)?.colors?.['app-main-accent-color'] || 'var(--org-primary)'
-  const imgUrl = media && media.length ? buildMediaUrl(media[0], 800) : ''
+  const imgUrl = media && media.length ? buildMediaUrl(media[0], 'large') : ''
 
   return (
     <div className="py-14 px-4">
@@ -55,7 +55,7 @@ export function BookNow({ headline, content, media }: SectionProps) {
                   alt={headline || 'Feature image'}
                   width={800}
                   height={500}
-                  className="w-full object-cover max-h-[500px]"
+                  className="w-full object-contain max-h-[500px]"
                 />
               </div>
             )}

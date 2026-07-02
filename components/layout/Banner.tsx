@@ -61,7 +61,7 @@ export function Banner({ initialOrganization }: Props) {
       className="fixed left-0 right-0 top-0 z-[70] flex h-[57px] items-center justify-between gap-4 bg-white px-4 shadow-sm"
     >
       <div
-        className="flex-1 text-xs font-semibold uppercase sm:text-sm md:text-lg lg:text-2xl"
+        className="flex-1 text-xs font-semibold uppercase leading-[31px] sm:text-sm md:leading-10 lg:text-xl lg:leading-[31px] xl:text-3xl"
         style={uncolored ? { color: 'black' } : undefined}
       >
           {bannerHtml ? (

@@ -85,7 +85,7 @@ export function ServiceDetail({ service, serviceName, showProgramChildren }: Ser
         <SectionRenderer key={i} section={section} />
       ))}
 
-      <ReviewsClean component="ReviewsClean" />
+      <ReviewsClean />
 
       {showProgramChildren && (
         <ProgramChildren serviceId={service.id} services={organization?.services ?? []} />
