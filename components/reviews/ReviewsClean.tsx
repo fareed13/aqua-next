@@ -2,8 +2,11 @@
 
 import { useState, useRef, useCallback } from 'react'
 import type { ReactElement } from 'react'
-import type { SectionProps } from '@/components/sections/registry'
 import { useOrgStore } from '@/store/orgStore'
+
+interface ReviewsCleanProps {
+  countOfReviews?: number
+}
 
 const SOCIAL_SVG: Record<string, ReactElement> = {
   google: (
@@ -58,7 +61,7 @@ function Stars({ rating, size = 25 }: { rating: any; size?: number }) {
   )
 }
 
-export function ReviewsClean({ countOfReviews }: SectionProps) {
+export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
   const organization = useOrgStore(s => s.organization)
   const country = organization?.country?.toLowerCase() ?? ''
   const isEuroDate = country.includes('uk') || country.includes('gb') || country.includes('australia') || country.includes('new zealand')
