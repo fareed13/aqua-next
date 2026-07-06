@@ -30,8 +30,8 @@ export function OfferJoinUs({ headline, subtitle, media, plan }: SectionProps) {
   const isImage = firstMedia?.type === 'image'
   const isVideo = firstMedia && !isImage
 
-  const imageUrl = isImage && media ? buildMediaUrl(media[0]) : ''
-  const videoUrl = isVideo && media ? buildMediaUrl(media[0]) : ''
+  const imageUrl = isImage && media ? buildMediaUrl(media[0], 'x-large') : ''
+  const videoUrl = isVideo && media ? buildMediaUrl(media[0], 'large') : ''
 
   const isFree = typeof newPrice === 'string' && newPrice.toLowerCase() === 'free'
 
