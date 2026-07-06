@@ -50,6 +50,7 @@ export function Checkout() {
     servicesWithPlan,
     getFirstServicePlanByOrder,
     getPlan,
+    getPrimaryService,
     getLocationCoordinates,
     form,
     setForm,
@@ -216,6 +217,8 @@ export function Checkout() {
   }
 
   const completeStep1 = async () => {
+    const primaryServiceId = getPrimaryService()
+
     const tags: string[] = pathname === '/' ? ['general'] : selectedEvent ? ['event'] : [pathname.replace('/', '')]
 
     try {
@@ -232,7 +235,7 @@ export function Checkout() {
           email,
           phone: mobile,
           location_id: selectedLocationObject?.id,
-          service: serviceId,
+          service: primaryServiceId ?? serviceId,
           tags,
           is_uk: isUk,
           sms_opt_in: smsOptIn,
@@ -270,7 +273,7 @@ export function Checkout() {
 
       // Fall back to first service-with-paid-plan when serviceId hasn't been resolved yet
       const currentServicesWithPlan = servicesWithPlan()
-      const effectiveServiceId = serviceId ?? currentServicesWithPlan[0]?.id ?? null
+      const effectiveServiceId = primaryServiceId ?? serviceId ?? currentServicesWithPlan[0]?.id ?? null
       const targeted_service = org.services?.find((s: any) => s.id === effectiveServiceId)
       const firstServicePlanByOrder = getFirstServicePlanByOrder(targeted_service as any)
       const firstPlanByOrder = firstServicePlanByOrder?.plan

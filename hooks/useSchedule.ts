@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useOrgStore } from '@/store/orgStore'
+import { useAuth } from '@/hooks/useAuth'
 import type { Location, Schedule } from '@/types/api'
 
 const DAYS_OF_WEEK = [
@@ -32,6 +33,7 @@ function loadLocationSchedule(loc: Location): DayScheduleMap {
 export function useSchedule() {
   const locations = useOrgStore((s) => s.locations)
   const location = useOrgStore((s) => s.location)
+  const { isAdminLoggedIn } = useAuth()
 
   const [activeTab, setActiveTab] = useState(0)
   const [virtual, setVirtual] = useState(false)
@@ -40,10 +42,11 @@ export function useSchedule() {
   const [scheduleFound, setScheduleFound] = useState(false)
 
   const filteredLocations = useMemo(() => {
+    if (isAdminLoggedIn()) return locations ?? []
     return (locations ?? []).filter((loc) =>
       Object.values(loc.day_schedules ?? {}).some((arr) => (arr as Schedule[]).length > 0),
     )
-  }, [locations])
+  }, [locations, isAdminLoggedIn])
 
   const selectLocation = useCallback(
     (id: number) => {
