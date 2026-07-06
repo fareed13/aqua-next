@@ -63,6 +63,7 @@ export function useCheckoutDetails() {
   const { arrangeEventPrice } = useEvent()
   const { getPublic, postPublic, postPublicProtected } = useNonSecureCalls()
   const { postSecure } = useSecureCalls()
+  const dialog = useUiStore(s => s.dialog)
   const selectedEvent = useUiStore(s => s.selectedEvent)
   const selectedPlan = useUiStore(s => s.selectedPlan)
   const setSelectedPlanInStore = useUiStore(s => s.setSelectedPlan)
@@ -340,6 +341,26 @@ export function useCheckoutDetails() {
     }
     if (resolvedId) getPlan(resolvedId)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-resolve the interested service each time the drawer opens, so cookie/URL
+  // updates made while checkout was closed (e.g. browsing programs) are picked up.
+  const wasDialogOpen = useRef(dialog)
+  useEffect(() => {
+    const justOpened = dialog && !wasDialogOpen.current
+    wasDialogOpen.current = dialog
+    if (!justOpened) return
+
+    const filtered = servicesWithPlan()
+    const queryService = searchParams?.get('service')
+    const urlMatch = queryService ? filtered.find(s => String(s.id) === queryService) : null
+    const resolvedId = urlMatch ? (() => {
+      setSelectedClass(urlMatch.name)
+      setServiceId(urlMatch.id)
+      return urlMatch.id
+    })() : getPrimaryService()
+
+    if (resolvedId) getPlan(resolvedId)
+  }, [dialog]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onLoadBraintree = useCallback(async (locationOverride?: Location | null) => {
     const loc = locationOverride ?? selectedLocationObject

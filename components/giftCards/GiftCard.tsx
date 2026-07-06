@@ -130,6 +130,14 @@ export function GiftCard() {
       },
     })
     captchaWidgetId.current = id
+
+    // Reset on cleanup (step change away from 4) so returning to step 4 re-renders
+    // into the freshly mounted #recaptcha-gift-card div instead of no-op'ing.
+    return () => {
+      captchaWidgetId.current = null
+      setRecaptchaVerified(false)
+      sessionStorage.removeItem('recaptcha_token')
+    }
   }, [recaptchaReady, recaptchaEnabled, stepNumber]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadLocationData = useCallback(async () => {
