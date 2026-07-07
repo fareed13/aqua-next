@@ -6,29 +6,8 @@ import { ChatBot } from './ChatBot'
 import { Message } from './Message'
 import { useOrgStore } from '@/store/orgStore'
 import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { getRecaptchaAuthHeader } from '@/lib/utils/recaptchaAuth'
 
-const WS_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL ?? ''
-
-function getWsToken(orgId: number, sessionId: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const ws = new WebSocket(`${WS_URL}/token/${orgId}/${sessionId}/`)
-    ws.onopen = () => ws.send(JSON.stringify({ tokenRequired: 'True' }))
-    ws.onmessage = (e) => {
-      try { ws.close() } catch {}
-      resolve(JSON.parse(e.data).token)
-    }
-    ws.onerror = (err) => reject(err)
-  })
-}
-
-function getUserSessionId(): string {
-  if (typeof document === 'undefined') return ''
-  const match = document.cookie.split('; ').find(c => c.startsWith('user_session_id='))
-  if (match) return match.split('=')[1]
-  const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)
-  document.cookie = `user_session_id=${id}; path=/; max-age=${60 * 60 * 24 * 365}`
-  return id
-}
 
 interface ChatMessage {
   sender: 'User' | 'Bot'
@@ -55,7 +34,6 @@ function initChatbotSession(): string {
 
 export function ChatContainer() {
   const organization = useOrgStore((s) => s.organization)
-  const orgId = useOrgStore((s) => s.organization?.id)
   const isUk = (organization as any)?.is_uk ?? false
   const chatbotConfig = (organization as any)?.chatbot_config?.[0]
   const recaptchaEnabled = (organization as any)?.recaptcha_enabled ?? false
@@ -88,15 +66,9 @@ export function ChatContainer() {
   const getResponse = async (query: string) => {
     setBotTyping(true)
     try {
-      const sessionId = getUserSessionId()
-      let authHeader = ''
-      if (recaptchaEnabled) {
-        const storedToken = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('recaptcha_token') : null
-        authHeader = recaptchaTokenRef.current ?? storedToken ?? ''
-      } else {
-        const wsToken = await getWsToken(orgId!, sessionId)
-        authHeader = `Bearer ${wsToken}`
-      }
+      const authHeader = recaptchaEnabled
+        ? (recaptchaTokenRef.current ?? getRecaptchaAuthHeader(true))
+        : ''
       const data = { session_id: getChatbotSessionId(), client_question: query }
       const res = await postPublicProtected(nonSecureEndpoint.CHATBOT, data, authHeader) as any
 

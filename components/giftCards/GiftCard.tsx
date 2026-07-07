@@ -8,7 +8,8 @@ import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApi
 import { useCheckoutDetails } from '@/hooks/useCheckoutDetails'
 import { useTracking } from '@/hooks/useTracking'
 import { useRecaptcha } from '@/hooks/useRecaptcha'
-import { getPublicAuthHeader } from '@/lib/utils/initializeSocket'
+import { storeRecaptchaToken, markRecaptchaVerified, clearRecaptchaToken } from '@/lib/utils/recaptchaAuth'
+import { isStripeManualFallback } from '@/lib/utils/payment'
 import { toast } from 'sonner'
 
 const steps = ['Choose Special', 'Sender', 'Recipient', 'Payment']
@@ -45,8 +46,9 @@ export function GiftCard() {
     squareCard, squarePayment,
     squarePaymentToken, setSquarePaymentToken,
     squareVerificationToken, setSquareVerificationToken,
-    onLoadStripe, onLoadBraintree, onLoadSquare,
+    loadPaymentMethodFields, getPaymentAuthHeader,
     destroyStripeElements, removePreviousIframes,
+    setAuthToken,
   } = useCheckoutDetails()
 
   const services = organization?.services ?? []
@@ -112,20 +114,27 @@ export function GiftCard() {
     const id = g.render('recaptcha-gift-card', {
       sitekey: getSiteKey(),
       callback: async (token: string) => {
-        sessionStorage.setItem('recaptcha_token', token)
+        storeRecaptchaToken(token)
         try {
           const result: any = await postPublic(NON_SECURE_ENDPOINTS.GOOGLERECAPTCHA, { token })
-          if (result?.success) setRecaptchaVerified(true)
+          if (result?.success) {
+            // Only now — after the backend confirms the token — does the payment
+            // fields loader (gated on authToken) unlock and fire.
+            markRecaptchaVerified(token, setAuthToken)
+            setRecaptchaVerified(true)
+          } else {
+            setRecaptchaVerified(false)
+          }
         } catch {
           setRecaptchaVerified(false)
         }
       },
       'expired-callback': () => {
-        sessionStorage.removeItem('recaptcha_token')
+        clearRecaptchaToken(setAuthToken)
         setRecaptchaVerified(false)
       },
       'error-callback': () => {
-        sessionStorage.removeItem('recaptcha_token')
+        clearRecaptchaToken(setAuthToken)
         setRecaptchaVerified(false)
       },
     })
@@ -136,23 +145,13 @@ export function GiftCard() {
     return () => {
       captchaWidgetId.current = null
       setRecaptchaVerified(false)
-      sessionStorage.removeItem('recaptcha_token')
+      clearRecaptchaToken(setAuthToken)
     }
   }, [recaptchaReady, recaptchaEnabled, stepNumber]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadLocationData = useCallback(async () => {
-    if (!selectedLocationObject) return
-    const method = selectedLocationObject.active_payment_method
-    if (method === 'braintree') {
-      await removePreviousIframes()
-      onLoadBraintree(selectedLocationObject)
-    } else if (method === 'square') {
-      onLoadSquare(selectedLocationObject)
-    } else if (method === 'stripe') {
-      destroyStripeElements()
-      onLoadStripe(selectedLocationObject)
-    }
-  }, [selectedLocationObject, removePreviousIframes, onLoadBraintree, onLoadSquare, destroyStripeElements, onLoadStripe])
+  const loadLocationData = useCallback(() => {
+    loadPaymentMethodFields(selectedLocationObject)
+  }, [selectedLocationObject, loadPaymentMethodFields])
 
   const updateSender = (field: keyof PersonForm, value: string) =>
     setSender(prev => ({ ...prev, [field]: value }))
@@ -214,13 +213,6 @@ export function GiftCard() {
       data.card_expiration_year = form.card_expiration_year
       data.card_cvv_code = form.card_cvv_code
     }
-    if (method === 'fat_zebra') {
-      data.card_holder = form.card_holder
-      data.credit_card = (form.credit_card ?? '').replace(/ /g, '')
-      data.card_expiration_year = form.card_expiration_year
-      data.card_expiration_month = form.card_expiration_month
-      data.card_cvv_code = form.card_cvv_code
-    }
     if (method === 'aquila') {
       data.credit_card = (form.credit_card ?? '').replace(/ /g, '')
       data.card_expiration_year = form.card_expiration_year
@@ -246,9 +238,7 @@ export function GiftCard() {
     }
 
     try {
-      const authHeader = recaptchaEnabled
-        ? (sessionStorage.getItem('recaptcha_token') ?? '')
-        : await getPublicAuthHeader(organization!.id, false)
+      const authHeader = await getPaymentAuthHeader()
 
       await postPublicProtected(NON_SECURE_ENDPOINTS.GIFTCARD_PURCHASE, data, authHeader)
       toast.success('Payment confirmed, Gift Card Purchased Successfully')
@@ -264,7 +254,7 @@ export function GiftCard() {
     stripePaymentMethodId, stripeHasPublishableKey, verifiedNonce,
     squarePaymentToken, squareVerificationToken,
     form, city, street, zipCode, state,
-    recaptchaEnabled, organization, getTrackingPayload, postPublicProtected, router,
+    getPaymentAuthHeader, getTrackingPayload, postPublicProtected, router,
   ])
 
   const validateEntries = useCallback(async () => {
@@ -372,7 +362,7 @@ export function GiftCard() {
   ])
 
   const paymentMethod = selectedLocationObject?.active_payment_method
-  const isManualCard = paymentMethod === 'fat_zebra' || (paymentMethod === 'stripe' && stripeCredsResolved && !stripeHasPublishableKey)
+  const isManualCard = isStripeManualFallback(paymentMethod, stripeCredsResolved, stripeHasPublishableKey)
 
   const updateForm = (field: string, value: string) =>
     setForm((prev: any) => ({ ...prev, [field]: value }))
@@ -594,22 +584,9 @@ export function GiftCard() {
                 </div>
               )}
 
-              {/* Manual card fields: Fat Zebra or Stripe-without-key */}
+              {/* Manual card fields: Stripe without a publishable key */}
               {isManualCard && (
                 <div className="space-y-3">
-                  {paymentMethod === 'fat_zebra' && (
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Card Holder Name</label>
-                      <input
-                        type="text"
-                        className="w-full border rounded px-3 py-2"
-                        value={form.card_holder}
-                        onChange={e => updateForm('card_holder', e.target.value)}
-                        placeholder="Card Holder Name"
-                        required
-                      />
-                    </div>
-                  )}
                   <div>
                     <label className="block text-sm font-medium mb-1">
                       Card Number

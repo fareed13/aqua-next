@@ -9,7 +9,7 @@ import { buildMediaUrl } from '@/lib/utils/media';
 import { useOrgStore } from '@/store/orgStore';
 import { useInterestedServices } from '@/hooks/useInterestedServices';
 import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls';
-import { getPublicAuthHeader } from '@/lib/utils/initializeSocket';
+import { getRecaptchaAuthHeader } from '@/lib/utils/recaptchaAuth';
 
 interface InteractiveProgram {
   service: number;
@@ -136,7 +136,7 @@ export function InteractiveVideo({ interactiveVideo }: InteractiveVideoProps) {
     setLoading(true);
     try {
       const org = organization!;
-      const authHeader = await getPublicAuthHeader(org.id, false);
+      const authHeader = getRecaptchaAuthHeader(org.recaptcha_enabled);
       await postPublicProtected(
         NON_SECURE_ENDPOINTS.CUSTOMER_CREATE,
         {

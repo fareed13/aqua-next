@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useOrgStore } from '@/store/orgStore'
 import { useUiStore } from '@/store/uiStore'
 import { useCheckoutDetails, interestedServiceSetter } from '@/hooks/useCheckoutDetails'
+import { isStripeManualFallback } from '@/lib/utils/payment'
 
 interface Props {
   selectedLocation: any
@@ -27,9 +28,7 @@ export function CheckoutStep2({ selectedLocation, changeStep }: Props) {
     decrementQuantity,
     arrangeUnitOfTime,
     loading,
-    onLoadStripe,
-    onLoadBraintree,
-    onLoadSquare,
+    loadPaymentMethodFields,
     stripeHasPublishableKey,
     stripeCredsResolved,
     stripeCardComplete,
@@ -63,9 +62,7 @@ export function CheckoutStep2({ selectedLocation, changeStep }: Props) {
 
   const paymentMethod = selectedLocation?.active_payment_method
   const isStripeWithKey = paymentMethod === 'stripe' && stripeHasPublishableKey
-  const isFatZebraOrFallback =
-    paymentMethod === 'fat_zebra' ||
-    (paymentMethod === 'stripe' && stripeCredsResolved && !stripeHasPublishableKey)
+  const isManualFallback = isStripeManualFallback(paymentMethod, stripeCredsResolved, stripeHasPublishableKey)
   const isSquare = paymentMethod === 'square'
   const isBraintree = paymentMethod === 'braintree'
   const isAquila = paymentMethod === 'aquila'
@@ -78,12 +75,8 @@ export function CheckoutStep2({ selectedLocation, changeStep }: Props) {
       setSelectedLocationObject(selectedLocation)
     }
 
-    if (paymentMethod === 'stripe' && typeof onLoadStripe === 'function') {
-      onLoadStripe(selectedLocation)
-    } else if (paymentMethod === 'braintree' && typeof onLoadBraintree === 'function') {
-      onLoadBraintree(selectedLocation)
-    } else if (paymentMethod === 'square' && typeof onLoadSquare === 'function') {
-      onLoadSquare(selectedLocation)
+    if (typeof loadPaymentMethodFields === 'function') {
+      loadPaymentMethodFields(selectedLocation)
     }
 
     if (typeof getState === 'function') {
@@ -206,7 +199,7 @@ export function CheckoutStep2({ selectedLocation, changeStep }: Props) {
       {/* Stripe — mount point must be in the DOM before onLoadStripe calls card.mount().
           Render it whenever method is stripe and we haven't fallen back to plain inputs,
           so the element exists even before stripeHasPublishableKey resolves. */}
-      {paymentMethod === 'stripe' && !isFatZebraOrFallback && (
+      {paymentMethod === 'stripe' && !isManualFallback && (
         <div className="mb-4">
           {isStripeWithKey && (
             <label className={labelCls}>
@@ -219,16 +212,9 @@ export function CheckoutStep2({ selectedLocation, changeStep }: Props) {
         </div>
       )}
 
-      {/* Fat Zebra / Stripe fallback */}
-      {isFatZebraOrFallback && (
+      {/* Stripe fallback: manual card entry when no publishable key is configured */}
+      {isManualFallback && (
         <div className="mb-4 space-y-3">
-          {paymentMethod === 'fat_zebra' && (
-            <div>
-              <label className={labelCls}>Cardholder Name</label>
-              <input type="text" className={inputCls} value={form?.card_holder ?? ''}
-                onChange={e => setForm((p: any) => ({ ...p, card_holder: e.target.value }))} />
-            </div>
-          )}
           <div>
             <label className={labelCls}>
               Card Number
