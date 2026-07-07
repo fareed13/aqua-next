@@ -94,14 +94,24 @@ export function GiftCard() {
     }
   }, [locations]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load payment SDK + reCAPTCHA when reaching step 4
+  // Load the reCAPTCHA script when reaching step 4 (if enabled)
   useEffect(() => {
     if (stepNumber !== 4) return
-    loadLocationData()
     if (recaptchaEnabled && !recaptchaReady) {
       loadRecaptchaScript()
     }
   }, [stepNumber]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Initialise the payment SDK only once the payment fields are actually
+  // visible — immediately when reCAPTCHA is disabled, or after the user passes
+  // verification when it's enabled. The Stripe/Braintree/Square SDKs mount into
+  // DOM nodes that only exist while the fields are shown, so this must run after
+  // they render. Mirrors Nuxt's loadLocationData() reCAPTCHA gate.
+  useEffect(() => {
+    if (stepNumber !== 4) return
+    if (recaptchaEnabled && !recaptchaVerified) return
+    loadLocationData()
+  }, [stepNumber, recaptchaEnabled, recaptchaVerified]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Render reCAPTCHA widget once script is ready
   useEffect(() => {
@@ -364,6 +374,10 @@ export function GiftCard() {
   const paymentMethod = selectedLocationObject?.active_payment_method
   const isManualCard = isStripeManualFallback(paymentMethod, stripeCredsResolved, stripeHasPublishableKey)
 
+  // Payment fields stay hidden until reCAPTCHA is verified (mirrors Nuxt's
+  // `paymentMethodsVisible`). When reCAPTCHA is disabled they show immediately.
+  const paymentMethodsVisible = !recaptchaEnabled || recaptchaVerified
+
   const updateForm = (field: string, value: string) =>
     setForm((prev: any) => ({ ...prev, [field]: value }))
 
@@ -567,6 +581,10 @@ export function GiftCard() {
           <div className="p-4">
             <div className="space-y-4">
 
+              {/* Payment fields stay hidden until reCAPTCHA is verified
+                  (matches Nuxt's paymentMethodsVisible). */}
+              {paymentMethodsVisible && (
+              <>
               {/* Stripe with publishable key */}
               {paymentMethod === 'stripe' && stripeHasPublishableKey && (
                 <div>
@@ -656,18 +674,18 @@ export function GiftCard() {
 
               {/* Braintree hosted fields */}
               {paymentMethod === 'braintree' && (
-                <form id="hosted-fields-form" className="space-y-3">
+                <form id="hosted-fields-form" className="space-y-2">
                   <div>
                     <label className="block text-sm font-medium mb-1">Card Number</label>
-                    <div id="card-number" className="border rounded px-3 py-2 min-h-[42px]" />
+                    <div id="card-number" className="braintree-frame-input border rounded px-[10px] h-9 overflow-hidden" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">CVV</label>
-                    <div id="cvv" className="border rounded px-3 py-2 min-h-[42px]" />
+                    <div id="cvv" className="braintree-frame-input border rounded px-[10px] h-9 overflow-hidden" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Expiration Date</label>
-                    <div id="expiration-date" className="border rounded px-3 py-2 min-h-[42px]" />
+                    <div id="expiration-date" className="braintree-frame-input border rounded px-[10px] h-9 overflow-hidden" />
                   </div>
                 </form>
               )}
@@ -770,10 +788,17 @@ export function GiftCard() {
               {paymentMethod === 'square' && (
                 <div id="square-payment-form" className="min-h-[100px]" />
               )}
+              </>
+              )}
 
               {/* reCAPTCHA */}
               {recaptchaEnabled && (
                 <div id="recaptcha-gift-card" className="mt-2" />
+              )}
+              {recaptchaEnabled && !recaptchaVerified && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Please complete the verification above to continue.
+                </p>
               )}
 
               {/* Complete Order button */}
