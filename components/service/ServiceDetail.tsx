@@ -8,6 +8,7 @@ import { FaqDefault } from '@/components/faqs/FaqDefault'
 import { ServicePlans } from '@/components/sections/ServicePlans'
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
 import { useOrgStore } from '@/store/orgStore'
+import { useUiStore } from '@/store/uiStore'
 import { buildMediaUrl } from '@/lib/utils/media'
 import { interestedServiceSetter } from '@/hooks/useCheckoutDetails'
 import type { Service, ComponentContent } from '@/types/api'
@@ -54,11 +55,17 @@ export function ServiceDetail({ service, serviceName, showProgramChildren }: Ser
   const organization = useOrgStore(s => s.organization)
   const location = useOrgStore(s => s.location)
   const location1 = location?.target_locations?.[0] ?? ''
+  const setSelectedPlan = useUiStore(s => s.setSelectedPlan)
 
-  // Record page visit so checkout pre-selects this program (matches Nuxt interestedServiceSetter on page load)
+  // Record page visit so checkout pre-selects this program (matches Nuxt
+  // interestedServiceSetter on page load). Also clear any previously-selected
+  // plan: visiting a service page means "interested in this service", so the
+  // checkout should show THIS service's first plan, not a plan clicked earlier
+  // on another service (getPlan() falls back to selectedPlan otherwise).
   useEffect(() => {
     interestedServiceSetter(service.id)
-  }, [service.id])
+    setSelectedPlan(null)
+  }, [service.id, setSelectedPlan])
 
   const backgroundImage = service.large_media
     ? buildMediaUrl(service.large_media, 700)

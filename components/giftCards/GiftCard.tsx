@@ -195,7 +195,13 @@ export function GiftCard() {
     setStepNumber(4)
   }
 
-  const deductPayment = useCallback(async (overrideStripeId?: string | null, overrideNonce?: string | null, overrideSqToken?: string | null, overrideSqVerif?: string | null) => {
+  const deductPayment = useCallback(async (
+    overrideStripeId?: string | null,
+    overrideNonce?: string | null,
+    overrideSqToken?: string | null,
+    overrideSqVerif?: string | null,
+    overrideCard?: { card_expiration_month?: string; card_expiration_year?: string; card_cvv_code?: string } | null,
+  ) => {
     const method = selectedLocationObject?.active_payment_method
     const data: Record<string, any> = {
       sender: { ...sender, cookie: getTrackingPayload() },
@@ -218,10 +224,14 @@ export function GiftCard() {
       }
     }
     if (method === 'braintree') {
+      // Braintree hosted fields are iframes — the card details live in the
+      // tokenize payload, not in `form`. Use the values captured at tokenize
+      // time (passed via overrideCard) so the payload isn't sent empty.
+      // CVV is intentionally omitted: Braintree doesn't expose it and the nonce
+      // already authorizes the card (matches Nuxt, which sends it as undefined).
       data.braintree_token = overrideNonce ?? verifiedNonce
-      data.card_expiration_month = form.card_expiration_month
-      data.card_expiration_year = form.card_expiration_year
-      data.card_cvv_code = form.card_cvv_code
+      data.card_expiration_month = overrideCard?.card_expiration_month ?? form.card_expiration_month
+      data.card_expiration_year = overrideCard?.card_expiration_year ?? form.card_expiration_year
     }
     if (method === 'aquila') {
       data.credit_card = (form.credit_card ?? '').replace(/ /g, '')
@@ -287,6 +297,14 @@ export function GiftCard() {
           return
         }
         const payload = await hostedFieldsInstance.tokenize()
+        // Hosted fields are iframes, so pull the card details out of the
+        // tokenize payload (matches Nuxt). Only expirationMonth/Year are
+        // returned by Braintree — CVV is never exposed, so it isn't sent.
+        const btCard = {
+          card_expiration_month: payload.details?.expirationMonth ?? '',
+          card_expiration_year: payload.details?.expirationYear ?? '',
+        }
+        setForm((p: any) => ({ ...p, ...btCard }))
         setThreeDSOverlay(true)
         const verification = await threeDSInstance.verifyCard({
           amount: price,
@@ -309,7 +327,7 @@ export function GiftCard() {
         setThreeDSOverlay(false)
         if (verification.liabilityShifted) {
           setVerifiedNonce(verification.nonce)
-          await deductPayment(null, verification.nonce)
+          await deductPayment(null, verification.nonce, null, null, btCard)
         } else {
           toast.error('3D Secure verification failed.')
           setLoading(false)

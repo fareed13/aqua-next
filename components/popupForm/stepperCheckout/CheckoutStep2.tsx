@@ -47,6 +47,7 @@ export function CheckoutStep2({ selectedLocation, changeStep }: Props) {
     setZipCode,
     states,
     getPlan,
+    getPrimaryService,
     serviceId,
     setServiceId,
     getState,
@@ -83,11 +84,18 @@ export function CheckoutStep2({ selectedLocation, changeStep }: Props) {
       getState()
     }
 
-    // serviceId may still be null if hook's init effect hasn't flushed yet;
-    // fall back to first service-with-plan so the plan summary shows immediately
-    const fallbackId = serviceId ?? servicesWithPlan?.()?.find(() => true)?.id ?? null
-    if (typeof getPlan === 'function' && fallbackId) {
-      getPlan(fallbackId)
+    // Resolve the interested service the same way the stepper hook does
+    // (cookie → admin default plan → first service). `serviceId` state is still
+    // null on this first render pass, so we must use getPrimaryService's RETURN
+    // value — otherwise the fallback would pick the first service and clobber the
+    // interested-service plan, making the plan/price not match the selection.
+    const resolvedId =
+      serviceId ??
+      (typeof getPrimaryService === 'function' ? getPrimaryService() : null) ??
+      servicesWithPlan?.()?.find(() => true)?.id ??
+      null
+    if (typeof getPlan === 'function' && resolvedId) {
+      getPlan(resolvedId)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
