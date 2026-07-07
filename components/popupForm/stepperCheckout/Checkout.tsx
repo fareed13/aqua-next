@@ -6,9 +6,9 @@ import { useOrgStore } from '@/store/orgStore'
 import { useUiStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
 import { useCheckoutDetails } from '@/hooks/useCheckoutDetails'
-import { getPublicAuthHeader } from '@/lib/utils/initializeSocket'
 import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
 import { useRecaptcha } from '@/hooks/useRecaptcha'
+import { getRecaptchaAuthHeader, storeRecaptchaToken, markRecaptchaVerified, clearRecaptchaToken } from '@/lib/utils/recaptchaAuth'
 // import { useValidation } from '@/hooks/useValidation'
 import { toast } from 'sonner'
 import { parseApiError } from '@/lib/utils/parseApiError'
@@ -224,7 +224,7 @@ export function Checkout() {
     try {
       setLoading(true)
       const org = organization!
-      const authHeader = await getPublicAuthHeader(org.id, !!org.recaptcha_enabled)
+      const authHeader = getRecaptchaAuthHeader(org.recaptcha_enabled)
       setAuthToken(authHeader)
 
       const result: any = await postPublicProtected(
@@ -355,25 +355,26 @@ export function Checkout() {
       const id = g.render('recaptcha-checkout', {
         sitekey: siteKey,
         callback: async (token: string) => {
-          // Store in sessionStorage AND in the shared uiStore so all hook instances can use it
-          sessionStorage.setItem('recaptcha_token', token)
-          useUiStore.getState().setCheckoutAuthToken(token)
+          storeRecaptchaToken(token)
           try {
             const result: any = await postPublic(NON_SECURE_ENDPOINTS.GOOGLERECAPTCHA, { token })
-            if (result?.success) setRecaptchaVerified(true)
+            if (result?.success) {
+              markRecaptchaVerified(token, useUiStore.getState().setCheckoutAuthToken)
+              setRecaptchaVerified(true)
+            } else {
+              setRecaptchaVerified(false)
+            }
           } catch {
             setRecaptchaVerified(false)
           }
         },
         'expired-callback': () => {
           // Token expired — clear both stores so the next API call doesn't use a stale token
-          sessionStorage.removeItem('recaptcha_token')
-          useUiStore.getState().setCheckoutAuthToken('')
+          clearRecaptchaToken(useUiStore.getState().setCheckoutAuthToken)
           setRecaptchaVerified(false)
         },
         'error-callback': () => {
-          sessionStorage.removeItem('recaptcha_token')
-          useUiStore.getState().setCheckoutAuthToken('')
+          clearRecaptchaToken(useUiStore.getState().setCheckoutAuthToken)
           setRecaptchaVerified(false)
         },
       })
@@ -392,8 +393,7 @@ export function Checkout() {
     if (!organization?.recaptcha_enabled) return
     if (dialog) return  // dialog just opened — let the render effect handle it
     setRecaptchaVerified(false)
-    sessionStorage.removeItem('recaptcha_token')
-    useUiStore.getState().setCheckoutAuthToken('')
+    clearRecaptchaToken(useUiStore.getState().setCheckoutAuthToken)
     if (captchaWidgetId.current !== null) {
       try { (window as any).grecaptcha?.reset(captchaWidgetId.current) } catch {}
       captchaWidgetId.current = null

@@ -13,7 +13,6 @@ interface PaymentIntegrationState {
     private_key: string | null;
     tokenization_key: string | null;
   };
-  fat_zebra: { username: string | null; access_token: string | null };
   square: {
     application_id: string | null;
     access_token: string | null;
@@ -55,14 +54,12 @@ export function PaymentIntegrations() {
       private_key: null,
       tokenization_key: null,
     },
-    fat_zebra: { username: null, access_token: null },
     square: { application_id: null, access_token: null, location_id: null },
     aquila: { apiKey: null, locationId: null, refreshToken: null },
   });
   const [methodChoices] = useState<MethodChoice[]>([
     { text: 'Stripe', value: 'stripe' },
     { text: 'Braintree', value: 'braintree' },
-    { text: 'Fat Zebra', value: 'fat_zebra' },
     { text: 'Square', value: 'square' },
     { text: 'Aquila', value: 'aquila' },
   ]);
@@ -119,10 +116,6 @@ export function PaymentIntegrations() {
         merchant_id: data?.braintree?.merchant_id ?? prev.braintree.merchant_id,
         private_key: data?.braintree?.private_key ?? prev.braintree.private_key,
         tokenization_key: data?.braintree?.tokenization_key ?? prev.braintree.tokenization_key,
-      },
-      fat_zebra: {
-        username: data?.fat_zebra?.username ?? prev.fat_zebra.username,
-        access_token: data?.fat_zebra?.access_token ?? prev.fat_zebra.access_token,
       },
       square: {
         application_id: data?.square?.application_id ?? prev.square.application_id,
@@ -317,45 +310,6 @@ export function PaymentIntegrations() {
                 setPaymentIntegration((prev) => ({
                   ...prev,
                   braintree: { ...prev.braintree, tokenization_key: e.target.value },
-                }))
-              }
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Fat Zebra */}
-      <div className="border border-gray-200 rounded mb-2">
-        <div
-          className="flex justify-between items-center cursor-pointer bg-gray-50 p-3 border-b border-gray-200"
-          onClick={() => togglePanel('fat_zebra')}
-        >
-          <span className="font-medium text-sm">Fat Zebra</span>
-          <span className="text-gray-500 text-xs">{openPanels['fat_zebra'] ? '▼' : '▶'}</span>
-        </div>
-        {openPanels['fat_zebra'] && (
-          <div className="p-4">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Username</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={payment_integration.fat_zebra.username || ''}
-              onChange={(e) =>
-                setPaymentIntegration((prev) => ({
-                  ...prev,
-                  fat_zebra: { ...prev.fat_zebra, username: e.target.value },
-                }))
-              }
-            />
-            <label className="block text-xs font-medium text-gray-600 mb-1">Access Token</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={payment_integration.fat_zebra.access_token || ''}
-              onChange={(e) =>
-                setPaymentIntegration((prev) => ({
-                  ...prev,
-                  fat_zebra: { ...prev.fat_zebra, access_token: e.target.value },
                 }))
               }
             />

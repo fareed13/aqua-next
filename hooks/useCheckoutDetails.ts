@@ -7,9 +7,9 @@ import { useUiStore } from '@/store/uiStore'
 import { useAuth } from './useAuth'
 import { useEvent } from './useEvent'
 import { useNonSecureCalls, useSecureCalls, NON_SECURE_ENDPOINTS, SECURE_ENDPOINTS } from './apiCalls/useApiCalls'
-import { getPublicAuthHeader } from '@/lib/utils/initializeSocket'
 import { useTracking } from './useTracking'
 import { arrangeUnitOfTime } from '@/lib/utils/unitOfTime'
+import { getRecaptchaAuthHeader } from '@/lib/utils/recaptchaAuth'
 import type { Service, ServicePlan, Location } from '@/types/api'
 import { toast } from 'sonner'
 import { parseApiError } from '@/lib/utils/parseApiError'
@@ -38,7 +38,7 @@ export function interestedServiceSetter(serviceId: number) {
 }
 
 interface CheckoutForm {
-  first_name: string; last_name: string; card_holder: string
+  first_name: string; last_name: string
   email: string; phone: string; credit_card: string | null
   card_expiration_year: string; card_expiration_month: string; card_cvv_code: string
 }
@@ -61,7 +61,7 @@ export function useCheckoutDetails() {
   const services = organization?.services ?? []
   const { isStatusMember } = useAuth()
   const { arrangeEventPrice } = useEvent()
-  const { getPublic, postPublic, postPublicProtected } = useNonSecureCalls()
+  const { getPublic, postPublic, postPublicProtected, getPublicProtected } = useNonSecureCalls()
   const { postSecure } = useSecureCalls()
   const dialog = useUiStore(s => s.dialog)
   const selectedEvent = useUiStore(s => s.selectedEvent)
@@ -85,7 +85,7 @@ export function useCheckoutDetails() {
   const [locationLoader, setLocationLoader] = useState(false)
   const [students, setStudents] = useState<Student[]>([{ first_name: '', last_name: '' }])
   const [form, setForm] = useState<CheckoutForm>({
-    first_name: '', last_name: '', card_holder: '',
+    first_name: '', last_name: '',
     email: '', phone: '', credit_card: null,
     card_expiration_year: '', card_expiration_month: '', card_cvv_code: '',
   })
@@ -191,6 +191,18 @@ export function useCheckoutDetails() {
     setStripeCardComplete(false)
     setStripeElementError(null)
   }, [stripeCardElement])
+
+  // Recaptcha orgs: read the in-memory token (authToken), not sessionStorage directly —
+  // sessionStorage can carry a stale, already-used token across page reloads, while
+  // authToken is only set right after a real captcha solve (see setAuthToken calls
+  // in Checkout.tsx / GiftCard.tsx's recaptcha widget callbacks).
+  // Non-recaptcha orgs: backend expects a blank Authorization header — no fallback token.
+  const getPaymentAuthHeader = useCallback(() => {
+    const org = organization!
+    return org.recaptcha_enabled
+      ? (authToken || getRecaptchaAuthHeader(true))
+      : ''
+  }, [organization, authToken])
 
   const onLoadStripe = useCallback(async (locationOverride?: Location | null) => {
     const loc = locationOverride ?? selectedLocationObject
@@ -367,7 +379,8 @@ export function useCheckoutDetails() {
     if (!loc) return
     removePreviousIframes()
     try {
-      const response: any = await getPublic(NON_SECURE_ENDPOINTS.BRAINTREE_TOKEN, {
+      const authHeader = await getPaymentAuthHeader()
+      const response: any = await getPublicProtected(NON_SECURE_ENDPOINTS.BRAINTREE_TOKEN, authHeader, {
         location_id: loc.id,
       })
       const clientToken = response?.client_token
@@ -412,13 +425,14 @@ export function useCheckoutDetails() {
     } catch (err) {
       console.error('Braintree setup error:', err)
     }
-  }, [selectedLocationObject, getPublic, removePreviousIframes])
+  }, [selectedLocationObject, getPublicProtected, getPaymentAuthHeader, removePreviousIframes])
 
   const onLoadSquare = useCallback(async (locationOverride?: Location | null) => {
     const loc = locationOverride ?? selectedLocationObject
     if (!loc) return
     try {
-      const response: any = await getPublic(NON_SECURE_ENDPOINTS.SQUARE_TOKEN, {
+      const authHeader = await getPaymentAuthHeader()
+      const response: any = await getPublicProtected(NON_SECURE_ENDPOINTS.SQUARE_TOKEN, authHeader, {
         location_id: loc.id,
       })
       const { application_id, location_id, environment } = response ?? {}
@@ -457,7 +471,37 @@ export function useCheckoutDetails() {
     } catch (err) {
       console.error('Square setup error:', err)
     }
-  }, [selectedLocationObject, getPublic])
+  }, [selectedLocationObject, getPublicProtected, getPaymentAuthHeader])
+
+  // Single reusable entry point for loading a location's payment SDK fields
+  // (Stripe/Braintree/Square). Used by both the checkout flow and gift cards.
+  // If recaptcha is on and the widget hasn't been solved yet, the request is
+  // deferred and automatically retried as soon as a token becomes available —
+  // callers don't need to coordinate timing with the recaptcha widget themselves.
+  const pendingFieldsLocation = useRef<Location | null>(null)
+
+  const loadPaymentMethodFields = useCallback((location: Location | null | undefined) => {
+    if (!location) return
+    // Gate on the in-memory authToken, not sessionStorage — sessionStorage can carry
+    // a stale, already-used token across reloads, while authToken only flips truthy
+    // right after a real captcha solve.
+    if (organization?.recaptcha_enabled && !authToken) {
+      pendingFieldsLocation.current = location
+      return
+    }
+    switch (location.active_payment_method) {
+      case 'braintree': removePreviousIframes(); onLoadBraintree(location); break
+      case 'square': onLoadSquare(location); break
+      case 'stripe': destroyStripeElements(); onLoadStripe(location); break
+    }
+  }, [organization, authToken, onLoadBraintree, onLoadSquare, onLoadStripe, removePreviousIframes, destroyStripeElements])
+
+  useEffect(() => {
+    if (!authToken || !pendingFieldsLocation.current) return
+    const location = pendingFieldsLocation.current
+    pendingFieldsLocation.current = null
+    loadPaymentMethodFields(location)
+  }, [authToken, loadPaymentMethodFields])
 
   const handleVerifyStripe = useCallback(async (changeStep: (n: number) => void) => {
     if (!stripeHasPublishableKey || !stripeInstance || !stripeCardElement) return
@@ -625,13 +669,6 @@ export function useCheckoutDetails() {
       data.card_expiration_year = form.card_expiration_year
       data.card_cvv_code = form.card_cvv_code
     }
-    if (method === 'fat_zebra') {
-      data.card_holder = form.card_holder
-      data.credit_card = (form.credit_card ?? '').replace(/ /g, '')
-      data.card_expiration_year = form.card_expiration_year
-      data.card_expiration_month = form.card_expiration_month
-      data.card_cvv_code = form.card_cvv_code
-    }
     if (method === 'aquila') {
       data.credit_card = (form.credit_card ?? '').replace(/ /g, '')
       data.card_expiration_year = form.card_expiration_year
@@ -653,12 +690,7 @@ export function useCheckoutDetails() {
     try {
       if (!method) throw new Error('No active payment method configured')
 
-      // For recaptcha orgs: always read fresh from sessionStorage so a renewed token
-      // (user re-verified after expiry) is picked up automatically.
-      // For non-recaptcha orgs: use the cached websocket token to avoid a new connection.
-      const authHeader = org.recaptcha_enabled
-        ? (sessionStorage.getItem('recaptcha_token') ?? '')
-        : (authToken || await getPublicAuthHeader(org.id, false))
+      const authHeader = await getPaymentAuthHeader()
 
       if (evtId) {
         if (isStatusMember()) {
@@ -687,7 +719,7 @@ export function useCheckoutDetails() {
     students, form, plan, quantity, selectedClass,
     stripeHasPublishableKey, stripePaymentMethodId, verifiedNonce, deviceData,
     squarePaymentToken, squareVerificationToken,
-    city, street, zipCode, state, authToken, checkoutCustomer,
+    city, street, zipCode, state, checkoutCustomer, getPaymentAuthHeader,
     isStatusMember, postSecure, postPublicProtected, getTrackingPayload, setPrice,
   ])
 
@@ -741,7 +773,7 @@ export function useCheckoutDetails() {
     servicesWithPlan, servicesWithAllFreePlan,
     setDefaultPlanIdAndDropdown, getPlan, setPrice,
     removePreviousIframes, destroyStripeElements, onLoadStripe,
-    onLoadBraintree, onLoadSquare,
+    onLoadBraintree, onLoadSquare, loadPaymentMethodFields, getPaymentAuthHeader,
     validate, sendPayment,
     authToken, setAuthToken,
     getState, findNearestLocation, getLocationCoordinates,

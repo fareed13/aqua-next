@@ -4,9 +4,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { useOrgStore } from '@/store/orgStore'
 import { useUiStore } from '@/store/uiStore'
 import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
-import { getPublicAuthHeader } from '@/lib/utils/initializeSocket'
 import { toast } from 'sonner'
 import { parseApiError } from '@/lib/utils/parseApiError'
+import { getRecaptchaAuthHeader } from '@/lib/utils/recaptchaAuth'
 
 interface Props {
   customerId: number
@@ -115,8 +115,6 @@ function InlineCalendar({
 
 export function AppointmentBooking({ customerId, changeStep, selectedLocation }: Props) {
   const organization = useOrgStore((s) => s.organization)
-  const orgId = organization?.id
-  const checkoutAuthToken = useUiStore((s) => s.checkoutAuthToken)
   const selectedScheduleFromStore = useUiStore((s) => s.selectedSchedule)
   const selectedScheduleDateFromStore = useUiStore((s) => s.selectedScheduleDate)
   const { getPublic, postPublicProtected } = useNonSecureCalls()
@@ -239,9 +237,7 @@ export function AppointmentBooking({ customerId, changeStep, selectedLocation }:
     if (!selectedSlot) return
     setLoading(true)
     try {
-      const authHeader = organization?.recaptcha_enabled
-        ? (sessionStorage.getItem('recaptcha_token') ?? '')
-        : (checkoutAuthToken || await getPublicAuthHeader(orgId!, false))
+      const authHeader = getRecaptchaAuthHeader(organization?.recaptcha_enabled)
 
       await postPublicProtected(
         NON_SECURE_ENDPOINTS.BOOKING_APPOINTMENT,
