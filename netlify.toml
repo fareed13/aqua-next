@@ -1,0 +1,9 @@
+# Netlify config for the Next.js app (App Router, SSR).
+# Pins the build/publish/runtime so it doesn't depend on the site UI settings.
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Next.js runtime v5 — handles SSR functions, image CDN, and deploy-store blobs.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
