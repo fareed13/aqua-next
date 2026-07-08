@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import { parseApiError } from '@/lib/utils/parseApiError'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { MapPin } from 'lucide-react'
 
 const AppointmentBooking = dynamic(
   () => import('./AppointmentBooking').then((m) => m.AppointmentBooking),
@@ -510,13 +511,7 @@ export function Checkout() {
             name="phone"
             value={mobile}
             onChange={(e) => handlePhoneChange(e.target.value)}
-            placeholder={
-              isAustralia || isNewZealand
-                ? 'Phone Number (10 digits)'
-                : isUk
-                ? 'Phone Number (10–11 digits)'
-                : '(###)-###-####'
-            }
+            placeholder="Phone Number"
             inputMode="numeric"
             autoComplete="tel-national"
             className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 h-[38px]"
@@ -607,10 +602,10 @@ export function Checkout() {
                   type="button"
                   onClick={() => getLocationCoordinates?.()}
                   title="Get Nearest Location"
-                  className="border border-gray-300 rounded px-2 text-gray-500 hover:bg-gray-50 h-[38px]"
+                  className="flex items-center justify-center border border-gray-300 rounded px-2 hover:bg-gray-50 h-[38px]"
                   aria-label="Get nearest location"
                 >
-                  &#9679;
+                  <MapPin size={22} style={{ color: '#7D7D7D' }} />
                 </button>
               )}
             </div>
@@ -777,7 +772,7 @@ export function Checkout() {
                 {/* Title */}
                 <h2
                   id="stepperId"
-                  className="text-center text-white font-semibold py-6 pl-10 pr-4 mb-0"
+                  className="text-center text-white font-semibold uppercase py-6 pl-10 pr-4 mb-0"
                   style={{
                     fontSize: 25,
                     backgroundColor: '#000',
@@ -786,15 +781,18 @@ export function Checkout() {
                   {selectedEvent ? String((selectedEvent as any).name ?? '') : organization?.stepper_text}
                 </h2>
 
-                {/* Progress bar */}
+                {/* Progress bar — fill on the left, "% Completed" centered over
+                    the FULL width (matches Nuxt's v-progress-linear) */}
                 <div
-                  className="relative h-[30px] bg-gray-200"
+                  className="relative h-[30px] overflow-hidden"
+                  style={{ backgroundColor: 'rgba(25,118,210,0.2)' }}
                   aria-label={`Checkout progress: ${arrangedProgress}% completed`}
                 >
                   <div
-                    className="absolute inset-y-0 left-0 flex items-center justify-center text-white text-sm font-bold transition-all"
+                    className="absolute inset-y-0 left-0 transition-all"
                     style={{ width: `${arrangedProgress}%`, backgroundColor: '#1976D2' }}
-                  >
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-black">
                     <strong>{arrangedProgress}% Completed</strong>
                   </div>
                 </div>

@@ -2,7 +2,9 @@
 
 html,
 body {
-  overflow-x: hidden;
+  /* `clip` (not `hidden`) prevents horizontal scroll WITHOUT creating a scroll
+     container — `hidden` here would break `position: sticky` on the header. */
+  overflow-x: clip;
 }
 
 @theme inline {

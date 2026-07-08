@@ -49,7 +49,10 @@ function NavItem({
   onNavigate?: () => void
   nested?: boolean
 }) {
-  const [open, setOpen] = useState(false)
+  // Top-level dropdowns start expanded (matches Nuxt tree-view :expanded="true",
+  // whose onMounted sets expanded=true for top-level items only). Nested
+  // dropdowns stay collapsed until clicked.
+  const [open, setOpen] = useState(!nested)
   const hasChildren = (item.children?.length ?? 0) > 0
   const IconComp = item.icon ? ICON_MAP[item.icon] : null
 
@@ -146,7 +149,10 @@ function NavItem({
 
 export function NavMenu({ items, onNavigate }: { items: MenuItem[]; onNavigate?: () => void }) {
   return (
-    <nav aria-label="Main navigation menu">
+    <nav
+      aria-label="Main navigation menu"
+      style={{ fontFamily: 'var(--org-font-body, inherit)', fontWeight: 600 }}
+    >
       <ul style={{ paddingLeft: 0, margin: 0 }}>
         {items.map((item) => (
           <NavItem key={item.name} item={item} onNavigate={onNavigate} />
