@@ -122,3 +122,12 @@ h1, h2, h3, h4, h5, h6 {
 h1 {
   font-size: 50px;
 }
+/* Braintree hosted fields — the injected <iframe> defaults to 150px tall,
+   so pin it to fill the 36px container (matches Nuxt .braintree-frame-input). */
+.braintree-frame-input {
+  min-height: 2.25rem; /* 36px */
+}
+.braintree-frame-input iframe {
+  height: 2.25rem !important; /* 36px */
+  width: 100% !important;
+}
