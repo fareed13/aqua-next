@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Menu, User } from 'lucide-react'
@@ -57,7 +57,12 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
   const logoUrl = buildMediaUrl(organization?.primary_logo)
   const callToAction = location.call_to_action || 'Secure Your First Class'
   const socialMedia = location.social_media ?? []
+  // Fallback estimate; the real value is measured from the header once it opens.
   const headerHeight = 72 + (showBanner ? 57 : 0)
+  const headerRef = useRef<HTMLElement>(null)
+  // Actual header bottom edge in the viewport — used so the sidebar starts
+  // exactly below the header with no overlap, regardless of header height.
+  const [sidebarTop, setSidebarTop] = useState(headerHeight)
   const enableLogin = organization.enable_login
   const underMaintenance = organization.under_maintenance
   const topLevelServices = organization.services?.filter((s) => !s.parent_service) ?? []
@@ -75,6 +80,13 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
   }, [])
 
   useEffect(() => {
+    if (sidebarOpen) {
+      // Measure the header's real bottom before locking scroll so the sidebar
+      // content starts just below it (header height varies with the stacked
+      // social/buttons rows and whether the banner is still in view).
+      const bottom = headerRef.current?.getBoundingClientRect().bottom
+      if (bottom != null) setSidebarTop(Math.max(0, Math.round(bottom)))
+    }
     document.body.style.overflow = sidebarOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [sidebarOpen])
@@ -88,6 +100,7 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
     <>
       <Banner initialOrganization={initialOrganization} />
       <header
+        ref={headerRef}
         className={cn(
           // sticky (not fixed): the banner above scrolls away with the page,
           // then the header sticks to the top. Stays put when checkout opens.
@@ -248,13 +261,8 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
           />
           {/* Panel: white, fixed, starts from top of page, responsive width */}
           <aside
-            className="fixed left-0 z-[40] w-full overflow-y-auto bg-white pb-20 md:w-1/2 lg:w-1/3 xl:w-[20%]"
-            style={{
-              top: 0,
-              height: '100vh',
-              boxShadow: '0px 6px 9px #cccccc59',
-              paddingTop: headerHeight,
-            }}
+            className="fixed left-0 top-0 z-[40] h-screen w-full overflow-y-auto bg-white pb-20 shadow-[0px_6px_9px_#cccccc59] md:w-1/2 lg:w-1/3 xl:w-[20%]"
+            style={{ paddingTop: sidebarTop }}
             aria-label="Main navigation menu"
           >
             <NavMenu items={menuItems} onNavigate={() => setSidebarOpen(false)} />
