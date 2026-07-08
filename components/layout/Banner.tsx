@@ -100,7 +100,7 @@ export function Banner({ initialOrganization }: Props) {
         style={{ color: 'var(--org-primary)' }}
         aria-label="Close banner"
       >
-        {/* <X size={20} /> */}
+        <X size={20} />
       </button>
     </div>
   )
