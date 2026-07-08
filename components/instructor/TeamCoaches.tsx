@@ -50,7 +50,7 @@ export function TeamCoaches({ headline, subtitle, content }: SectionProps) {
 
                 {subtitle && (
                   <span
-                    className="absolute top-[53px] uppercase text-xs font-semibold"
+                    className="absolute top-[53px] uppercase text-xs font-normal"
                     style={{
                       color: accentColor,
                       right: '-63px',

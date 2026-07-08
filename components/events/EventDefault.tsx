@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { SectionProps } from '@/components/sections/registry';
 import { useOrgStore } from '@/store/orgStore';
 import { useEvent } from '@/hooks/useEvent';
@@ -7,7 +8,16 @@ import { formatDateUTC } from '@/lib/utils/dateTime';
 
 export function EventDefault(_props: SectionProps) {
   const organization = useOrgStore((s) => s.organization);
-  const currencySign = (organization as any)?.currency_sign ?? '$';
+  const location = useOrgStore((s) => s.location);
+  // Match Nuxt's store.getOrgCurrencySign: '$' by default, '£' when the
+  // location's state (or its parent state) is the United Kingdom.
+  const currencySign = useMemo(() => {
+    const st = location?.state;
+    const isUkLocation =
+      st?.name?.toLowerCase() === 'united kingdom' ||
+      st?.parent_state?.name?.toLowerCase() === 'united kingdom';
+    return isUkLocation ? '£' : '$';
+  }, [location]);
   const isUk = (organization as any)?.is_uk ?? false;
   const isAustralia = (organization as any)?.is_australia ?? false;
   const isNewZealand = (organization as any)?.is_new_zealand ?? false;

@@ -93,7 +93,9 @@ export function BigImageBackground({
         {/* Content */}
         <div className="relative z-20 w-[85%] mx-auto py-8">
           <div className="flex justify-center">
-            <div className="flex flex-col md:flex-row w-full max-w-[1185px] gap-6">
+            {/* md:items-center vertically centers the right image beside the
+                left text (was stretch → image pinned to top). */}
+            <div className="flex flex-col md:flex-row md:items-center w-full max-w-[1185px] gap-6">
               {/* Left content */}
               <div className="w-full md:w-1/2">
                 <div className="h-full break-words">

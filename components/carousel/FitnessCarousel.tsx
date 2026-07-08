@@ -54,29 +54,33 @@ export function FitnessCarousel({ headline, customBullets }: SectionProps) {
 
             <div className="absolute inset-0 bg-black/20" />
 
-            {/* Caption */}
-            <div className="absolute top-[10%] md:top-[20%] left-0 right-0 z-10 px-4 md:px-8 max-w-[850px]">
-              {headline && (
-                <h1 className="text-white text-[30px] md:text-[50px] font-bold mb-2">
-                  {headline}
-                </h1>
-              )}
-              {bullet.content && (
-                <p
-                  className="text-white text-sm md:text-xl font-light pl-3 ml-1 mb-4"
-                  style={{ borderLeft: `5px solid ${accentColor}` }}
-                >
-                  {bullet.content}
-                </p>
-              )}
-              <button
-                onClick={() => setDialog(true)}
-                style={{ backgroundColor: accentColor }}
-                className="text-white px-6 py-3 mt-4 ml-1 font-medium hover:opacity-90 transition"
-                aria-label={cta}
-              >
-                {cta}
-              </button>
+            {/* Caption — mirrors Nuxt's centered <v-container> wrapping .slider-caption */}
+            <div className="absolute top-[10%] md:top-[20%] left-0 right-0 z-10">
+              <div className="mx-auto w-full max-w-[1200px] px-4">
+                <div className="max-w-[850px]">
+                  {headline && (
+                    <h1 className="text-white text-[30px] md:text-[50px] font-bold mb-2">
+                      {headline}
+                    </h1>
+                  )}
+                  {bullet.content && (
+                    <p
+                      className="text-white text-sm md:text-xl font-light pl-3 ml-1 mb-4"
+                      style={{ borderLeft: `5px solid ${accentColor}` }}
+                    >
+                      {bullet.content}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => setDialog(true)}
+                    style={{ backgroundColor: accentColor }}
+                    className="text-white px-6 py-3 mt-4 ml-1 font-medium hover:opacity-90 transition"
+                    aria-label={cta}
+                  >
+                    {cta}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )

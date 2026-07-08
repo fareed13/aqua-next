@@ -70,7 +70,7 @@ export function BlockedRightImage({ headline, subtitle, content, bullets, media 
                 <ul className="mt-5 ml-5">
                   {bulletList.map((bullet, i) => (
                     <li key={i} className="flex items-center mb-1">
-                      <span className="mr-2 text-2xl font-bold">&#8250;</span>
+                      <span className="mr-2 text-2xl font-normal">&#8250;</span>
                       <span dangerouslySetInnerHTML={{ __html: bullet }} />
                     </li>
                   ))}
@@ -82,7 +82,7 @@ export function BlockedRightImage({ headline, subtitle, content, bullets, media 
           {/* Full-width CTA button */}
           <button
             onClick={() => setDialog(true)}
-            className="w-full mt-3 mb-3 py-5 text-white font-bold rounded text-center block"
+            className="w-full mt-3 mb-3 py-5 text-white rounded text-center block"
             style={{ backgroundColor: accentColor }}
             aria-label="Secure your spot - Beginner classes enrolling right now"
           >

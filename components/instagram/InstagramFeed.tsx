@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { Heart, MessageCircle } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { SectionProps } from '@/components/sections/registry';
 import { useNonSecureCalls } from '@/hooks/apiCalls/useApiCalls';
@@ -128,7 +129,7 @@ export function InstagramFeed({ headline }: SectionProps) {
     >
       {/* Desktop heading */}
       <div className="max-w-screen-xl mx-auto px-4">
-        <h2 className="hidden md:block text-center text-2xl font-bold">
+        <h2 className="hidden md:block text-center text-[40px] font-bold uppercase leading-[1.2]">
           {headline || 'Follow us on Instagram'}
         </h2>
       </div>
@@ -143,7 +144,7 @@ export function InstagramFeed({ headline }: SectionProps) {
               <CloseIcon />
             </button>
           )}
-          <h3 className="flex items-center justify-center text-lg font-semibold py-2">
+          <h3 className="flex items-center justify-center text-2xl font-bold uppercase py-2">
             {headline || 'Follow us on Instagram'}
           </h3>
         </div>
@@ -220,15 +221,13 @@ export function InstagramFeed({ headline }: SectionProps) {
                     <div style={{ color: 'white', textAlign: 'center' }}>
                       <div className="flex flex-row justify-center post-reach">
                         <div className="flex flex-row items-center px-2">
-                          <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                          </svg>
+                          {/* outline heart (mdi:heart-outline) — not filled */}
+                          <Heart size={24} className="text-white" />
                           <span className="ml-1">{kFormatter(post.like_count)}</span>
                         </div>
                         <div className="flex flex-row items-center px-2">
-                          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" strokeWidth="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                          </svg>
+                          {/* round chat outline (mdi:chat-outline) */}
+                          <MessageCircle size={24} className="text-white" />
                           <span className="ml-1">{kFormatter(post.comments_count)}</span>
                         </div>
                       </div>
@@ -316,7 +315,7 @@ export function InstagramFeed({ headline }: SectionProps) {
       {instafeeds?.posts && instafeeds.posts.length > 8 && (
         <div className="text-center pb-2 load-more-btn">
           <button
-            className="px-6 py-2 bg-[var(--org-primary,#1976d2)] text-white rounded hover:opacity-90 transition-opacity"
+            className="px-6 py-2 bg-[#1976D2] text-white rounded hover:opacity-90 transition-opacity"
             onClick={() => {
               setShowMore(!showMore);
               setOpenFeed(false);

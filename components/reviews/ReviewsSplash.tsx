@@ -72,7 +72,12 @@ export function ReviewsSplash({ headline, media, backgroundImage }: SectionProps
                     >
                       <video
                         src={buildMediaUrl(review.media)}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
                         controls
+                        preload="metadata"
                         className="w-full"
                         aria-label={`Video testimonial from ${review.name}`}
                       />
@@ -89,7 +94,7 @@ export function ReviewsSplash({ headline, media, backgroundImage }: SectionProps
                       />
                     </div>
                   )}
-                  <p className="text-white text-left">
+                  <p className="text-white text-left !font-normal">
                     {review.content} - {review.name} - {review.date_created}
                   </p>
                 </div>

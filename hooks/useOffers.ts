@@ -15,8 +15,17 @@ interface UseOffersProps {
 
 export function useOffers(props: UseOffersProps = {}) {
   const organization = useOrgStore(s => s.organization)
+  const location = useOrgStore(s => s.location)
   const services = organization?.services ?? []
-  const currencySign = (organization as any)?.currency_sign ?? '$'
+  // Match Nuxt's getOrgCurrencySign: '$' by default, '£' when the location's
+  // state (or its parent state) is the United Kingdom.
+  const currencySign = useMemo(() => {
+    const st = (location as any)?.state
+    const isUk =
+      st?.name?.toLowerCase() === 'united kingdom' ||
+      st?.parent_state?.name?.toLowerCase() === 'united kingdom'
+    return isUk ? '£' : '$'
+  }, [location])
   const setDialog = useUiStore(s => s.setDialog)
 
   const [offerReady, setOfferReady] = useState(false)
