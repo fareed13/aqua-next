@@ -67,7 +67,7 @@ function NavItem({
           <ToggleArrow open={open} />
           {IconComp && <IconComp size={20} color="gray" className="ml-5 shrink-0" />}
           {/* .clickable-dropdown { margin-left:10px } */}
-          <p className="flex-1 m-0 pl-[10px] break-words whitespace-normal font-medium">
+          <p className="flex-1 m-0 pl-[10px] break-words whitespace-normal font-semibold">
             {item.name}
           </p>
         </div>
@@ -95,7 +95,7 @@ function NavItem({
         <Link2 size={20} color="gray" className="ml-5 shrink-0" />
       )}
       {/* .direct-child { margin-left:20px } */}
-      <span className="ml-5 flex-1 break-words whitespace-normal font-medium">
+      <span className="ml-5 flex-1 break-words whitespace-normal font-semibold">
         {item.name}
       </span>
     </div>

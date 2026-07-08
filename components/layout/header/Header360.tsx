@@ -31,11 +31,8 @@ export function Header360({ initialOrganization, initialLocation, initialLocatio
   const locations = storeLocations.length > 0 ? storeLocations : initialLocations
 
   const userToken = useAuthStore((s) => s.userToken)
-  const banner = useUiStore((s) => s.banner)
-  const dialog = useUiStore((s) => s.dialog)
   const setDialog = useUiStore((s) => s.setDialog)
 
-  const showBanner = organization.is_banner_enabled && banner && !dialog
   const isLoggedIn = !!userToken
 
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -70,11 +67,12 @@ export function Header360({ initialOrganization, initialLocation, initialLocatio
     <>
       <Banner initialOrganization={initialOrganization} />
 
-      {/* Black fixed header */}
+      {/* Black sticky header */}
       <header
         className={cn(
-          'fixed left-0 right-0 z-50 bg-black transition-[top,box-shadow] duration-300',
-          showBanner ? 'top-[57px]' : 'top-0',
+          // sticky (not fixed): the relative banner scrolls away, then the
+          // header sticks to the top. Stays put when checkout opens.
+          'sticky top-0 z-50 bg-black transition-[box-shadow] duration-300',
           scrolled && 'shadow-lg',
         )}
         aria-label="Main navigation"
@@ -191,12 +189,6 @@ export function Header360({ initialOrganization, initialLocation, initialLocatio
           </aside>
         </div>
       )}
-
-      {/* Spacer */}
-      <div
-        className="w-full transition-[height] duration-300"
-        style={{ height: 64 + (showBanner ? 57 : 0) }}
-      />
     </>
   )
 }

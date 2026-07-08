@@ -79,14 +79,17 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Measure the header's real bottom so the sidebar content starts just below
+  // it (header height varies with the stacked social/buttons rows and whether
+  // the banner is still in view). Re-measure when the banner is closed while
+  // the sidebar is open, otherwise the old (taller) offset leaves a top gap.
   useEffect(() => {
-    if (sidebarOpen) {
-      // Measure the header's real bottom before locking scroll so the sidebar
-      // content starts just below it (header height varies with the stacked
-      // social/buttons rows and whether the banner is still in view).
-      const bottom = headerRef.current?.getBoundingClientRect().bottom
-      if (bottom != null) setSidebarTop(Math.max(0, Math.round(bottom)))
-    }
+    if (!sidebarOpen) return
+    const bottom = headerRef.current?.getBoundingClientRect().bottom
+    if (bottom != null) setSidebarTop(Math.max(0, Math.round(bottom)))
+  }, [sidebarOpen, showBanner])
+
+  useEffect(() => {
     document.body.style.overflow = sidebarOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [sidebarOpen])
