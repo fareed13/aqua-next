@@ -135,7 +135,7 @@ export function ChatContainer() {
               )}
             </div>
             <div className="bg-white px-4 py-3 rounded-2xl shadow-sm max-w-xs">
-              <p className="text-sm text-gray-800">
+              <p className="text-sm text-gray-800 font-medium">
                 {greetingMessage ?? `Hello, what ${isUk ? 'programme' : 'program'} are you interested in?`}
               </p>
               <p className="text-xs text-gray-400 mt-1">Just now</p>
