@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronRight, MapPin, Phone } from 'lucide-react'
 import { useOrgStore } from '@/store/orgStore'
+import { fireCallClick } from '@/lib/utils/analyticsEvents'
 import { SocialIcon } from '@/components/layout/SocialIcon'
 import { buildMediaUrl } from '@/lib/utils/media'
 import type { Organization, Location } from '@/types/api'
@@ -145,7 +146,7 @@ export function SalonFooter({ initialOrganization, initialLocation, initialLocat
                     aria-hidden="true"
                   />
                   <a
-                    href={phoneLink}
+                    href={phoneLink} onClick={fireCallClick}
                     className="text-gray-700 hover:text-gray-900 text-sm no-underline"
                   >
                     {location.pretty_phone}

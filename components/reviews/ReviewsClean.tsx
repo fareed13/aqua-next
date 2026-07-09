@@ -29,6 +29,8 @@ const SOCIAL_SVG: Record<string, ReactElement> = {
   ),
 }
 
+const VISIBLE_COUNT = 3
+
 function getSocialIcon(platform?: string): ReactElement {
   if (!platform) return SOCIAL_SVG.default
   return SOCIAL_SVG[platform.toLowerCase()] ?? SOCIAL_SVG.default
@@ -76,15 +78,22 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const scrollToCard = useCallback((index: number) => {
-    const clamped = Math.max(0, Math.min(reviews.length - 1, index))
+  // Sliding window: 3 cards visible, each next/prev click moves the start
+  // index by exactly 1 (reviews 1-3 -> 2-4 -> 3-5). Clamp at bounds, no wrap.
+  const maxStart = Math.max(0, reviews.length - VISIBLE_COUNT)
+
+  const goToStart = useCallback((index: number) => {
+    const clamped = Math.max(0, Math.min(maxStart, index))
     setCurrentIndex(clamped)
-    cardRefs.current[clamped]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    })
-  }, [reviews.length])
+    const card = cardRefs.current[clamped]
+    const container = scrollRef.current
+    if (card && container) {
+      // Measure on the triggering event and left-align the start card.
+      const cardRect = card.getBoundingClientRect()
+      const containerRect = container.getBoundingClientRect()
+      container.scrollBy({ left: cardRect.left - containerRect.left, behavior: 'smooth' })
+    }
+  }, [maxStart])
 
   if (!reviews.length) return null
 
@@ -119,14 +128,14 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
   return (
     <div className="py-[70px] pb-[100px]">
       <div className="max-w-[1080px] mx-auto px-4">
-        <h2 className="capitalize text-center text-2xl md:text-3xl font-bold text-black mb-10">
+        <h2 className="capitalize text-center text-2xl md:text-3xl font-medium text-black mb-10">
           Hear what our members are saying
         </h2>
 
         {/* Desktop: arrows sit outside the scroll container as flex siblings */}
         <div className="hidden md:flex items-center">
           <button
-            onClick={() => scrollToCard(currentIndex - 1)}
+            onClick={() => goToStart(currentIndex - 1)}
             disabled={currentIndex === 0}
             className="shrink-0 text-black disabled:opacity-30 leading-none"
             aria-label="Previous review"
@@ -136,29 +145,28 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
 
           <div
             ref={scrollRef}
-            className="flex-1 overflow-x-auto flex items-center pb-6 hide-scrollbar"
+            className="flex-1 overflow-x-auto flex items-center py-14 hide-scrollbar"
           >
             {reviews.map((review: any, i: number) => {
-              const isExpanded = !readMore && selectedIndex === i
+              const isExpanded = readMore && selectedIndex === i
               const scaled = isScaled(i)
               return (
                 <div
                   key={i}
                   ref={(el) => { cardRefs.current[i] = el }}
-                  className="shrink-0 text-center border border-[#aaa] bg-[#eee] p-5 flex flex-col items-center"
+                  className="shrink-0 relative text-center border border-[#aaa] bg-[#eee] p-5"
                   style={{
                     width: 267,
                     minHeight: 331,
-                    margin: scaled ? '23px 55px' : '0 30px',
-                    transform: scaled ? 'scale(1.3)' : 'none',
-                    boxShadow: scaled ? '1px 1px 5px #ccc' : 'none',
-                    zIndex: scaled ? 9 : 'auto',
-                    position: 'relative',
+                    margin: scaled ? '0 55px 23px 55px' : '0 30px',
+                    transform: scaled ? 'scale(1.3)' : undefined,
+                    boxShadow: scaled ? '1px 1px 5px #ccc' : undefined,
+                    zIndex: scaled ? 9 : undefined,
                   }}
                 >
                   <Stars rating={review.rating} />
                   <p
-                    className="text-[#0e0e0e] text-[13px] whitespace-normal break-words mb-0 flex-1"
+                    className="pt-[3px] text-[#0e0e0e] text-[13px] whitespace-normal break-words mb-0"
                     style={!isExpanded ? {
                       display: '-webkit-box',
                       WebkitLineClamp: 5,
@@ -170,8 +178,7 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
                   </p>
                   <button
                     onClick={() => changeButtonClass(i)}
-                    className="capitalize text-[#0e0e0e] cursor-pointer"
-                    style={{ height: 18, padding: 0, fontSize: 9 }}
+                    className="capitalize text-[#0e0e0e] cursor-pointer text-[9px] h-[18px] p-0"
                     aria-label={isExpanded ? 'Collapse review text' : 'Read more review text'}
                   >
                     {isExpanded ? 'Collapse' : 'Read More'}
@@ -189,8 +196,8 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
           </div>
 
           <button
-            onClick={() => scrollToCard(currentIndex + 1)}
-            disabled={currentIndex === reviews.length - 1}
+            onClick={() => goToStart(currentIndex + 1)}
+            disabled={currentIndex >= maxStart}
             className="shrink-0 text-black disabled:opacity-30 leading-none"
             aria-label="Next review"
           >

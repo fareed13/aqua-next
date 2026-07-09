@@ -1,18 +1,19 @@
 'use client';
 
-import { useState } from 'react';
 import type { SectionProps } from '@/components/sections/registry';
 import { useOrgStore } from '@/store/orgStore';
 import { useFaqs } from '@/hooks/useFaqs';
 
-export function FaqTwo({ headline, plan }: SectionProps) {
+export function FaqTwo({ headline, id }: SectionProps) {
   const organization = useOrgStore((s) => s.organization);
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const accentColor = organization?.colors?.['app-main-accent-color'] ?? 'var(--org-primary)';
   const accentDark = organization?.colors?.['app-main-accent-dark'] ?? 'var(--org-primary-dark)';
 
-  const { faq, backgroundImage } = useFaqs({ id: plan ?? undefined, headline });
+  // Match Nuxt FaqTwo.vue exactly: it only declares `headline` and `id` props, so the
+  // section's `service_id`/`plan` never reach useFaqs — only `id` (= section.id) does.
+  // Passing `plan` here queried a different service and returned a different FAQ set.
+  const { faq, backgroundImage } = useFaqs({ id: id ?? undefined, headline });
 
   if (!faq || faq.length === 0) return null;
 
@@ -26,7 +27,7 @@ export function FaqTwo({ headline, plan }: SectionProps) {
           <div className="hidden md:block md:w-1/3" />
           <div className="w-full md:w-2/3">
             {headline && (
-              <h2 className="uppercase text-left my-12 mb-4 font-bold text-3xl md:text-4xl text-black md:text-left text-center">
+              <h2 className="uppercase text-left my-12 mb-4 font-semibold text-2xl md:text-3xl text-black md:text-left text-center">
                 {headline}
               </h2>
             )}
@@ -34,31 +35,13 @@ export function FaqTwo({ headline, plan }: SectionProps) {
               {faq.map((item, i) => (
                 <div
                   key={i}
-                  className="border border-[#ddd] rounded-sm shadow-none"
-                  style={openIndex === i ? { borderTop: `4px solid ${accentDark}`, color: accentDark } : {}}
+                  className="border border-[#ddd] rounded-sm shadow-none px-4 py-3 text-black"
+                  aria-label={`Question: ${item.question}`}
                 >
-                  <button
-                    className="w-full flex justify-between items-center text-left px-4 py-3 text-[20px] font-medium text-black"
-                    onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                    aria-expanded={openIndex === i}
-                    aria-label={`Question: ${item.question}`}
-                  >
-                    <span style={openIndex === i ? { color: accentDark } : {}}>{item.question}</span>
-                    <span
-                      className="ml-2 transition-transform duration-200 flex-shrink-0"
-                      style={{
-                        transform: openIndex === i ? 'rotate(180deg)' : 'rotate(0deg)',
-                        color: openIndex === i ? accentDark : 'inherit',
-                      }}
-                    >
-                      &#8964;
-                    </span>
-                  </button>
-                  {openIndex === i && (
-                    <div className="px-4 pb-4 text-[18px] text-black border-t border-[#eee]" style={{ fontFamily: 'Khand, sans-serif' }}>
-                      {item.answer}
-                    </div>
-                  )}
+                  <span className="text-[20px] font-medium">{item.question}</span>{' '}
+                  <span className="text-[18px]" style={{ fontFamily: 'Khand, sans-serif' }}>
+                    {item.answer}
+                  </span>
                 </div>
               ))}
             </div>

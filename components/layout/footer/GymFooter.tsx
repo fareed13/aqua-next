@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { MapPin, Phone, Smartphone } from 'lucide-react'
 import { useOrgStore } from '@/store/orgStore'
+import { fireCallClick } from '@/lib/utils/analyticsEvents'
 import { buildMediaUrl } from '@/lib/utils/media'
 import type { Organization, Location } from '@/types/api'
 
@@ -94,7 +95,7 @@ export function GymFooter({ initialOrganization, initialLocation, initialLocatio
               <div className="text-[rgba(255,255,255,0.75)] text-sm text-center md:text-right">
                 {location.pretty_phone ? (
                   <a
-                    href={phoneLink}
+                    href={phoneLink} onClick={fireCallClick}
                     className="text-[rgba(255,255,255,0.75)] hover:text-white no-underline block"
                   >
                     {location.pretty_phone}
@@ -104,7 +105,7 @@ export function GymFooter({ initialOrganization, initialLocation, initialLocatio
                 )}
                 {location.pretty_secondary_phone && secondaryPhoneLink && (
                   <a
-                    href={secondaryPhoneLink}
+                    href={secondaryPhoneLink} onClick={fireCallClick}
                     className="text-[rgba(255,255,255,0.75)] hover:text-white no-underline flex items-center gap-1 justify-center md:justify-end mt-1"
                   >
                     <Smartphone size={14} aria-hidden="true" />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronDown, X } from 'lucide-react'
@@ -32,14 +32,20 @@ export function Header2({ initialOrganization, initialLocation, initialLocations
 
   const userToken = useAuthStore((s) => s.userToken)
   const banner = useUiStore((s) => s.banner)
-  const dialog = useUiStore((s) => s.dialog)
   const setDialog = useUiStore((s) => s.setDialog)
 
-  const showBanner = organization.is_banner_enabled && banner && !dialog
+  // Banner stays visible when checkout opens — no !dialog.
+  const showBanner = organization.is_banner_enabled && banner
   const isLoggedIn = !!userToken
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [openMenuIdx, setOpenMenuIdx] = useState<number | null>(null)
+
+  const headerRef = useRef<HTMLElement>(null)
+  // Actual header bottom edge in the viewport, measured so the drawer starts
+  // just below the header (accounts for header height + whether the banner is
+  // still in view). Re-measured when the banner is closed while open.
+  const [sidebarTop, setSidebarTop] = useState(135 + (showBanner ? 57 : 0))
 
   const logoUrl = buildMediaUrl(organization?.primary_logo)
   const callToAction = location.call_to_action || 'Get Started Now'
@@ -55,6 +61,12 @@ export function Header2({ initialOrganization, initialLocation, initialLocations
     return () => { document.body.style.overflow = '' }
   }, [drawerOpen])
 
+  useEffect(() => {
+    if (!drawerOpen) return
+    const bottom = headerRef.current?.getBoundingClientRect().bottom
+    if (bottom != null) setSidebarTop(Math.max(0, Math.round(bottom)))
+  }, [drawerOpen, showBanner])
+
   function handleCtaClick() {
     if (underMaintenance) return
     setDialog(true)
@@ -66,9 +78,11 @@ export function Header2({ initialOrganization, initialLocation, initialLocations
 
       {/* semi-transparent fixed nav — same aesthetic as Nuxt version (rgba black bg) */}
       <nav
+        ref={headerRef}
         className={cn(
-          'fixed left-0 right-0 top-0 z-[100] mb-5 transition-[top] duration-300',
-          showBanner ? 'top-[57px]' : 'top-0',
+          // sticky (not fixed): the relative banner scrolls away, then the
+          // header sticks to the top. Stays put when checkout opens.
+          'sticky top-0 z-[100] mb-5 transition-[box-shadow] duration-300',
         )}
         style={{ background: 'rgba(0,0,0,0.85)' }}
         aria-label="Main navigation"
@@ -166,8 +180,8 @@ export function Header2({ initialOrganization, initialLocation, initialLocations
             aria-hidden="true"
           />
           <aside
-            className="relative z-10 mt-[80px] flex h-full w-full flex-col overflow-y-auto bg-black pb-24 text-center"
-            style={{ background: 'rgba(0,0,0,0.95)' }}
+            className="relative z-10 flex h-full w-full flex-col overflow-y-auto bg-black pb-24 text-center"
+            style={{ marginTop: sidebarTop, background: 'rgba(0,0,0,0.95)' }}
             aria-label="Mobile navigation menu"
           >
             <NavMenu items={menuItems} onNavigate={() => setDrawerOpen(false)} />
@@ -185,11 +199,6 @@ export function Header2({ initialOrganization, initialLocation, initialLocations
         </div>
       )}
 
-      {/* Spacer */}
-      <div
-        className="w-full transition-[height] duration-300"
-        style={{ height: (showBanner ? 57 : 0) + 135 }}
-      />
     </>
   )
 }

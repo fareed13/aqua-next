@@ -60,7 +60,7 @@ export function CTARightVideo({ headline, content, bullets, media }: SectionProp
             )}
             <button
               onClick={() => setDialog(true)}
-              className="w-full mt-3 py-4 text-white font-bold rounded block"
+              className="w-full mt-3 py-4 text-white font-bold rounded block cursor-pointer"
               style={{ backgroundColor: '#d5242c' }}
               aria-label="Secure your spot - beginner classes enrolling right now"
             >
@@ -75,8 +75,13 @@ export function CTARightVideo({ headline, content, bullets, media }: SectionProp
               isVideo ? (
                 <video
                   src={mediaUrl}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
                   controls
-                  className="w-full object-cover border-4 border-white rounded"
+                  preload="auto"
+                  className="w-full h-full object-cover border-[7px] border-white rounded-[3px]"
                   style={{ boxShadow: '10px 10px 10px rgba(0,0,0,0.3)', zIndex: 1 }}
                 />
               ) : (

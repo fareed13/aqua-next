@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Menu, User, X } from 'lucide-react'
@@ -38,11 +38,11 @@ export function WhiteHeader({ initialOrganization, initialLocation, initialLocat
 
   const userToken = useAuthStore((s) => s.userToken)
   const banner = useUiStore((s) => s.banner)
-  const dialog = useUiStore((s) => s.dialog)
   const setDialog = useUiStore((s) => s.setDialog)
   const { isMemberLoggedIn, getUser, isLoggedIn: isLoggedInFn, logOut } = useAuth()
 
-  const showBanner = organization.is_banner_enabled && banner && !dialog
+  // Banner stays visible when checkout opens (matches BlackHeader) — no !dialog.
+  const showBanner = organization.is_banner_enabled && banner
   const isLoggedIn = isLoggedInFn()
 
   const memberUser = isMemberLoggedIn() ? getUser() : null
@@ -56,6 +56,12 @@ export function WhiteHeader({ initialOrganization, initialLocation, initialLocat
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+
+  const headerRef = useRef<HTMLElement>(null)
+  // Actual header bottom edge in the viewport, measured so the sidebar starts
+  // just below the header (accounts for header height + whether the banner is
+  // still in view). Re-measured when the banner is closed while open.
+  const [sidebarTop, setSidebarTop] = useState(84 + (showBanner ? 57 : 0))
 
   const logoUrl = buildMediaUrl(organization?.primary_logo)
   const callToAction = location.call_to_action || 'Book Now'
@@ -76,6 +82,12 @@ export function WhiteHeader({ initialOrganization, initialLocation, initialLocat
     return () => { document.body.style.overflow = '' }
   }, [sidebarOpen])
 
+  useEffect(() => {
+    if (!sidebarOpen) return
+    const bottom = headerRef.current?.getBoundingClientRect().bottom
+    if (bottom != null) setSidebarTop(Math.max(0, Math.round(bottom)))
+  }, [sidebarOpen, showBanner])
+
   function handleCtaClick() {
     if (underMaintenance) return
     setDialog(true)
@@ -94,9 +106,11 @@ export function WhiteHeader({ initialOrganization, initialLocation, initialLocat
       <Banner initialOrganization={initialOrganization} />
 
       <nav
+        ref={headerRef}
         className={cn(
-          'fixed left-0 right-0 z-50 bg-white transition-[top,box-shadow] duration-300',
-          showBanner ? 'top-[57px]' : 'top-0',
+          // sticky (not fixed): the relative banner scrolls away, then the
+          // header sticks to the top. Stays put when checkout opens.
+          'sticky top-0 z-50 bg-white transition-[box-shadow] duration-300',
           scrolled && 'shadow-[3px_1px_11px_rgba(0,0,0,0.14)]',
         )}
         style={{ minHeight: 84 }}
@@ -226,7 +240,7 @@ export function WhiteHeader({ initialOrganization, initialLocation, initialLocat
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
           <aside
             className="relative z-10 flex flex-col overflow-y-auto bg-white shadow-2xl"
-            style={{ width: '20%', minWidth: 240, marginTop: 84 + (showBanner ? 57 : 0) }}
+            style={{ width: '20%', minWidth: 240, marginTop: sidebarTop }}
             aria-label="Main navigation menu"
           >
             <div className="flex items-center justify-between border-b px-4 py-3">
@@ -241,12 +255,6 @@ export function WhiteHeader({ initialOrganization, initialLocation, initialLocat
           </aside>
         </div>
       )}
-
-      {/* Spacer */}
-      <div
-        className="w-full transition-[height] duration-300"
-        style={{ height: 84 + (showBanner ? 57 : 0) }}
-      />
     </>
   )
 }

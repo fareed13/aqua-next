@@ -2,7 +2,9 @@
 
 html,
 body {
-  overflow-x: hidden;
+  /* `clip` (not `hidden`) prevents horizontal scroll WITHOUT creating a scroll
+     container — `hidden` here would break `position: sticky` on the header. */
+  overflow-x: clip;
 }
 
 @theme inline {
@@ -118,8 +120,11 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--org-font-heading);
   /* font-weight: 400; */
 }
-
+/* Nuxt has no global <p> weight, so paragraphs default to 400. The old
+   `p { font-weight: 600 }` made text app-wide semibold and caused many
+   "text too bold" mismatches. h1 stays semibold as a heading fallback. */
 h1 {
+  font-weight: 600;
   font-size: 50px;
 }
 /* Braintree hosted fields — the injected <iframe> defaults to 150px tall,

@@ -86,7 +86,7 @@ export function OfferDefault({ plan }: SectionProps) {
 
       {offerReady && (
         <div className="relative z-10 max-w-5xl mx-auto px-4">
-          <h2 className="text-white text-center mb-4 text-3xl md:text-[40px] font-bold capitalize leading-tight">
+          <h2 className="text-white text-center mb-4 text-3xl md:text-[40px] font-normal capitalize leading-tight">
             LIMITED TIME: Get your{' '}
             <span className="text-white">{currentMonth}</span>{' '}
             starter package now!
@@ -117,7 +117,7 @@ export function OfferDefault({ plan }: SectionProps) {
             {/* Bullets column */}
             <div className="md:w-1/2 flex flex-col justify-center px-4">
               <ul className="list-none p-0 m-0 space-y-2">
-                <li className="text-white text-lg md:text-[22px] font-semibold leading-snug">
+                <li className="text-white text-lg md:text-[22px] font-normal leading-snug">
                   {whatYouGet}
                 </li>
                 {offers.length === 0 ? (

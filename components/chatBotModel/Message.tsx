@@ -63,7 +63,7 @@ export function Message({ sender, message, avatar, id, liked: likedProp = null, 
           className="max-w-xs px-4 py-3 rounded-2xl shadow-sm"
           style={{ backgroundColor: isUser ? accentColor : 'white' }}
         >
-          <p className={`text-sm leading-relaxed ${isUser ? 'text-white' : 'text-gray-800'}`}>{message}</p>
+          <p className={`text-sm leading-relaxed font-medium ${isUser ? 'text-white' : 'text-gray-800'}`}>{message}</p>
           <p className={`text-xs mt-1 ${isUser ? 'text-white/70' : 'text-gray-400'}`}>{getCurrentTime()}</p>
         </div>
       </div>

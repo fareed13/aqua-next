@@ -50,21 +50,6 @@ export function BlackHeaderPreview({ initialOrganization, initialLocation, initi
   return (
     <div className="relative w-full overflow-hidden rounded border border-gray-200">
       <header className="bg-black" aria-label="Main navigation preview">
-        {/* Social icons */}
-        {socialMedia.length > 0 && (
-          <div className="flex justify-end gap-2 px-6 pt-2">
-            {socialMedia.map((sm, i) => (
-              <span
-                key={i}
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-[#666] text-white"
-                aria-label={sm.platform}
-              >
-                <SocialIcon platform={sm.platform} size={14} />
-              </span>
-            ))}
-          </div>
-        )}
-
         <div className="flex items-center justify-between px-4 py-3 md:px-6">
           {/* Left: hamburger + logo + classes */}
           <div className="flex items-center gap-3">
@@ -94,23 +79,40 @@ export function BlackHeaderPreview({ initialOrganization, initialLocation, initi
             )}
           </div>
 
-          {/* Right: CTA + login */}
-          <div className="flex items-center gap-2">
-            {!isLoggedIn && (
-              <span
-                className="hidden sm:block rounded px-4 py-2 text-sm font-medium uppercase text-white"
-                style={{ backgroundColor: 'var(--org-primary)' }}
-              >
-                {callToAction}
-              </span>
+          {/* Right: social icons on the first row, buttons on the second row
+              (right-aligned column, not full width) */}
+          <div className="flex flex-col items-end gap-2">
+            {socialMedia.length > 0 && (
+              <div className="flex items-center gap-2">
+                {socialMedia.map((sm, i) => (
+                  <span
+                    key={i}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-[#666] text-white"
+                    aria-label={sm.platform}
+                  >
+                    <SocialIcon platform={sm.platform} size={14} />
+                  </span>
+                ))}
+              </div>
             )}
-            <span
-              className="flex items-center gap-1 rounded border px-3 py-1.5 text-sm"
-              style={{ borderColor: loginColor, color: loginColor }}
-            >
-              <User size={15} />
-              Login
-            </span>
+            {/* Buttons row */}
+            <div className="flex items-center gap-2 md:gap-3">
+              {!isLoggedIn && (
+                <span
+                  className="hidden sm:block rounded px-4 py-2 text-sm font-medium uppercase text-white"
+                  style={{ backgroundColor: 'var(--org-primary)' }}
+                >
+                  {callToAction}
+                </span>
+              )}
+              <span
+                className="flex items-center gap-1 rounded border px-3 py-1.5 text-sm"
+                style={{ borderColor: loginColor, color: loginColor }}
+              >
+                <User size={15} />
+                Login
+              </span>
+            </div>
           </div>
         </div>
       </header>

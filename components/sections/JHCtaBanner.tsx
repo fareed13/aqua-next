@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useOrgStore } from '@/store/orgStore'
+import { fireCallClick } from '@/lib/utils/analyticsEvents'
 import { buildMediaUrl } from '@/lib/utils/media'
 import type { SectionProps } from '@/components/sections/registry'
 
@@ -30,6 +31,7 @@ export function JHCtaBanner({ headline, media }: SectionProps) {
         {loc?.pretty_phone && (
           <a
             href={`tel:${loc.pretty_phone}`}
+            onClick={fireCallClick}
             className="flex items-center gap-1.5 rounded-full bg-[#00a11a] px-5 py-2 text-sm font-semibold text-black no-underline md:px-6 md:py-2.5"
             aria-label="Call us"
           >

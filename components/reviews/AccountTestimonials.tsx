@@ -32,7 +32,10 @@ export function AccountTestimonials({ countOfReviews }: SectionProps) {
   }
 
   const scrollBy = (dir: number) => {
-    scrollRef.current?.scrollBy({ left: dir * 370, behavior: 'smooth' })
+    const el = scrollRef.current
+    if (!el) return
+    // Page by a full visible row per click, like Vuetify's v-slide-group.
+    el.scrollBy({ left: dir * el.clientWidth, behavior: 'smooth' })
   }
 
   return (
@@ -48,21 +51,21 @@ export function AccountTestimonials({ countOfReviews }: SectionProps) {
             Testimonials
             <span className="flex-1 border-t border-current mt-3 ml-2" />
           </h4>
-          <h2 className="text-center mt-1 font-bold" style={{ fontSize: 43, color: '#212529' }}>
+          <h2 className="text-center mt-1 font-semibold" style={{ fontSize: 43, color: '#212529' }}>
             What Clients Say About Us
           </h2>
         </div>
 
         {/* Carousel with arrows */}
         {reviews.length > 0 && (
-          <div className="relative">
-            {/* Left arrow */}
+          <div className="flex items-stretch">
+            {/* Left arrow — 52px gutter flanking the track, like Vuetify */}
             <button
               onClick={() => scrollBy(-1)}
               disabled={!canScrollLeft}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded-full w-8 h-8 flex items-center justify-center disabled:opacity-30"
+              className="flex items-center justify-center shrink-0 min-w-[52px] basis-[52px] cursor-pointer disabled:opacity-30"
               aria-label="Previous testimonial"
-              style={{ fontSize: 22 }}
+              style={{ fontSize: 30 }}
             >
               ‹
             </button>
@@ -70,8 +73,7 @@ export function AccountTestimonials({ countOfReviews }: SectionProps) {
             <div
               ref={scrollRef}
               onScroll={onScroll}
-              className="overflow-x-auto flex pb-4 hide-scrollbar"
-              style={{ scrollSnapType: 'x mandatory' }}
+              className="overflow-x-auto flex pb-4 hide-scrollbar flex-1"
             >
               {reviews.map((review: any, i: number) => {
                 const stars = getStars(review.rating)
@@ -86,7 +88,6 @@ export function AccountTestimonials({ countOfReviews }: SectionProps) {
                       maxWidth: 320,
                       margin: '30px 22px',
                       padding: 30,
-                      scrollSnapAlign: 'center',
                     }}
                   >
                     {/* Avatar */}
@@ -140,13 +141,13 @@ export function AccountTestimonials({ countOfReviews }: SectionProps) {
               })}
             </div>
 
-            {/* Right arrow */}
+            {/* Right arrow — 52px gutter flanking the track, like Vuetify */}
             <button
               onClick={() => scrollBy(1)}
               disabled={!canScrollRight}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow rounded-full w-8 h-8 flex items-center justify-center disabled:opacity-30"
+              className="flex items-center justify-center shrink-0 min-w-[52px] basis-[52px] cursor-pointer disabled:opacity-30"
               aria-label="Next testimonial"
-              style={{ fontSize: 22 }}
+              style={{ fontSize: 30 }}
             >
               ›
             </button>

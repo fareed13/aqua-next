@@ -64,7 +64,7 @@ export function NewMemberOffer({ media, backgroundImage, plan }: SectionProps) {
               style={{ background: 'rgba(0,0,0,1)' }}
             >
               <h2
-                className="uppercase text-center font-bold text-white leading-tight mb-2"
+                className="uppercase text-center font-semibold text-white leading-tight mb-2"
                 style={{ fontFamily: 'Khand, sans-serif', fontSize: 50 }}
               >
                 New member exclusive
@@ -73,10 +73,10 @@ export function NewMemberOffer({ media, backgroundImage, plan }: SectionProps) {
               <hr className="mx-auto my-2 border-t border-white max-w-[480px]" />
 
               <h3
-                className="uppercase text-center font-bold text-white mb-12 leading-tight"
+                className="uppercase text-center font-semibold text-white mb-12 leading-tight"
                 style={{ fontFamily: 'Khand, sans-serif', fontSize: 40 }}
               >
-                <span style={{ color: accentColor }}>{currentMonth}</span>{' '}
+                <span style={{ color: '#d5242c' }}>{currentMonth}</span>{' '}
                 online offer!
               </h3>
 

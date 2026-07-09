@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Menu, User } from 'lucide-react'
@@ -37,12 +37,13 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
 
   const userToken = useAuthStore((s) => s.userToken)
   const banner    = useUiStore((s) => s.banner)
-  const dialog    = useUiStore((s) => s.dialog)
   const setDialog = useUiStore((s) => s.setDialog)
   const { isMemberLoggedIn, getUser, isLoggedIn: isLoggedInFn, logOut } = useAuth()
 
-  // Mirror the Banner component's visibility logic to offset the header
-  const showBanner = organization.is_banner_enabled && banner && !dialog
+  // Mirror the Banner component's visibility logic to offset the header.
+  // (No longer gated on `dialog` — the banner stays visible while checkout is
+  // open, so the header must keep its offset too.)
+  const showBanner = organization.is_banner_enabled && banner
 
   const isLoggedIn = isLoggedInFn()
   const memberUser = isMemberLoggedIn() ? getUser() : null
@@ -56,7 +57,12 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
   const logoUrl = buildMediaUrl(organization?.primary_logo)
   const callToAction = location.call_to_action || 'Secure Your First Class'
   const socialMedia = location.social_media ?? []
-  const headerHeight = (socialMedia.length > 0 ? 100 : 72) + (showBanner ? 57 : 0)
+  // Fallback estimate; the real value is measured from the header once it opens.
+  const headerHeight = 72 + (showBanner ? 57 : 0)
+  const headerRef = useRef<HTMLElement>(null)
+  // Actual header bottom edge in the viewport — used so the sidebar starts
+  // exactly below the header with no overlap, regardless of header height.
+  const [sidebarTop, setSidebarTop] = useState(headerHeight)
   const enableLogin = organization.enable_login
   const underMaintenance = organization.under_maintenance
   const topLevelServices = organization.services?.filter((s) => !s.parent_service) ?? []
@@ -73,6 +79,16 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Measure the header's real bottom so the sidebar content starts just below
+  // it (header height varies with the stacked social/buttons rows and whether
+  // the banner is still in view). Re-measure when the banner is closed while
+  // the sidebar is open, otherwise the old (taller) offset leaves a top gap.
+  useEffect(() => {
+    if (!sidebarOpen) return
+    const bottom = headerRef.current?.getBoundingClientRect().bottom
+    if (bottom != null) setSidebarTop(Math.max(0, Math.round(bottom)))
+  }, [sidebarOpen, showBanner])
+
   useEffect(() => {
     document.body.style.overflow = sidebarOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
@@ -87,32 +103,17 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
     <>
       <Banner initialOrganization={initialOrganization} />
       <header
+        ref={headerRef}
         className={cn(
-          'fixed left-0 right-0 z-50 bg-black transition-[top,box-shadow] duration-300',
-          showBanner ? 'top-[57px]' : 'top-0',
+          // sticky (not fixed): the banner above scrolls away with the page,
+          // then the header sticks to the top. Stays put when checkout opens.
+          'sticky top-0 z-50 bg-black transition-[box-shadow] duration-300',
           scrolled && 'shadow-lg',
         )}
         aria-label="Main navigation"
       >
-        {/* Social icons top bar */}
-        {socialMedia.length > 0 && (
-          <div className="flex justify-end gap-2 px-6 pt-2">
-            {socialMedia.map((sm, i) => (
-              <a
-                key={i}
-                href={sm.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Visit our ${sm.platform} page`}
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-[#666] text-white hover:bg-[#888] transition-colors"
-              >
-                <SocialIcon platform={sm.platform} size={14} />
-              </a>
-            ))}
-          </div>
-        )}
-
-        {/* Main nav row */}
+        {/* Main nav row — everything (menu+logo | social+buttons) on one
+            vertically-centered row */}
         <div className="flex items-center justify-between px-4 py-3 md:px-6">
           {/* Left: hamburger + logo */}
           <div className="flex items-center gap-3">
@@ -156,12 +157,31 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
             )}
           </div>
 
-          {/* Right: CTA + login */}
-          <div className="flex items-center gap-2">
+          {/* Right: social icons on the first row, buttons on the second row
+              (right-aligned column, not full width) */}
+          <div className="flex flex-col items-end gap-2">
+            {socialMedia.length > 0 && (
+              <div className="flex items-center gap-2">
+                {socialMedia.map((sm, i) => (
+                  <a
+                    key={i}
+                    href={sm.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Visit our ${sm.platform} page`}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-[#666] text-white hover:bg-[#888] transition-colors"
+                  >
+                    <SocialIcon platform={sm.platform} size={14} />
+                  </a>
+                ))}
+              </div>
+            )}
+            {/* Buttons row */}
+            <div className="flex items-center gap-2 md:gap-3">
             {!isLoggedIn && (
               <button
                 onClick={handleCtaClick}
-                className="hidden sm:block rounded px-4 py-[7px] text-sm font-medium uppercase text-white transition-opacity hover:opacity-90 md:tracking-[1px] lg:text-[11px]"
+                className="hidden sm:block rounded px-4 py-2 text-sm font-medium uppercase tracking-[1px] text-white transition-opacity hover:opacity-90"
                 style={{ backgroundColor: 'var(--org-primary)' }}
                 aria-label={callToAction}
               >
@@ -205,16 +225,17 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
                 ) : (
                   <Link
                     href="/login"
-                    className="flex items-center gap-1 rounded border px-4 py-1.5 text-sm transition-colors hover:opacity-80 md:text-xs md:h-[39px]"
+                    className="flex items-center gap-1 rounded border px-4 py-2 text-sm uppercase h-[39px] transition-colors hover:opacity-80"
                     style={{ borderColor: 'var(--org-primary)', color: 'var(--org-primary)' }}
                     aria-label="Log in to your account"
                   >
-                    <User size={15} />
+                    <User size={16} />
                     Login
                   </Link>
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
 
@@ -243,27 +264,14 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
           />
           {/* Panel: white, fixed, starts from top of page, responsive width */}
           <aside
-            className="fixed left-0 z-[40] w-full overflow-y-auto bg-white pb-20 md:w-1/2 lg:w-1/3 xl:w-[20%]"
-            style={{
-              top: 0,
-              height: '100vh',
-              boxShadow: '0px 6px 9px #cccccc59',
-              paddingTop: headerHeight,
-            }}
+            className="fixed left-0 top-0 z-[40] h-screen w-full overflow-y-auto bg-white pb-20 shadow-[0px_6px_9px_#cccccc59] md:w-1/2 lg:w-1/3 xl:w-[20%]"
+            style={{ paddingTop: sidebarTop }}
             aria-label="Main navigation menu"
           >
             <NavMenu items={menuItems} onNavigate={() => setSidebarOpen(false)} />
           </aside>
         </>
       )}
-
-      {/* Spacer: header height + banner height when banner is visible */}
-      <div
-        className="w-full transition-[height] duration-300"
-        style={{
-          height: (socialMedia.length > 0 ? 100 : 72) + (showBanner ? 57 : 0),
-        }}
-      />
     </>
   )
 }

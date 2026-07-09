@@ -38,11 +38,11 @@ export function HeaderDefault({ initialOrganization, initialLocation, initialLoc
 
   const userToken = useAuthStore((s) => s.userToken)
   const banner = useUiStore((s) => s.banner)
-  const dialog = useUiStore((s) => s.dialog)
   const setDialog = useUiStore((s) => s.setDialog)
   const { isMemberLoggedIn, getUser, isLoggedIn: isLoggedInFn, logOut } = useAuth()
 
-  const showBanner = organization.is_banner_enabled && banner && !dialog
+  // Banner stays visible when checkout opens (matches BlackHeader) — no !dialog.
+  const showBanner = organization.is_banner_enabled && banner
   const isLoggedIn = isLoggedInFn()
 
   const memberUser = isMemberLoggedIn() ? getUser() : null
@@ -57,6 +57,11 @@ export function HeaderDefault({ initialOrganization, initialLocation, initialLoc
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLElement>(null)
+  // Actual header bottom edge in the viewport, measured so the sidebar starts
+  // just below the header (accounts for header height + whether the banner is
+  // still in view). Re-measured when the banner is closed while open.
+  const [sidebarTop, setSidebarTop] = useState(85 + (showBanner ? 57 : 0))
 
   const logoUrl = buildMediaUrl(organization?.primary_logo)
   const callToAction = location.call_to_action || 'Secure Your First Class'
@@ -79,6 +84,12 @@ export function HeaderDefault({ initialOrganization, initialLocation, initialLoc
     document.body.style.overflow = sidebarOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [sidebarOpen])
+
+  useEffect(() => {
+    if (!sidebarOpen) return
+    const bottom = headerRef.current?.getBoundingClientRect().bottom
+    if (bottom != null) setSidebarTop(Math.max(0, Math.round(bottom)))
+  }, [sidebarOpen, showBanner])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -105,9 +116,11 @@ export function HeaderDefault({ initialOrganization, initialLocation, initialLoc
 
       {/* Top nav bar */}
       <header
+        ref={headerRef}
         className={cn(
-          'fixed left-0 right-0 z-50 bg-black border-b border-[#cccccc8f] transition-[top,box-shadow] duration-300',
-          showBanner ? 'top-[57px]' : 'top-0',
+          // sticky (not fixed): the relative banner scrolls away, then the
+          // header sticks to the top. Stays put when checkout opens.
+          'sticky top-0 z-50 bg-black border-b border-[#cccccc8f] transition-[box-shadow] duration-300',
           scrolled && 'shadow-lg',
         )}
         style={{ minHeight: 85, maxHeight: 85 }}
@@ -227,7 +240,7 @@ export function HeaderDefault({ initialOrganization, initialLocation, initialLoc
           <aside
             ref={sidebarRef}
             className="relative z-10 flex h-full w-4/5 max-w-[20%] md:w-[20%] flex-col overflow-y-auto bg-white shadow-2xl"
-            style={{ marginTop: 85 }}
+            style={{ marginTop: sidebarTop }}
             aria-label="Main navigation menu"
           >
             <div className="flex items-center justify-between border-b px-4 py-3">
@@ -243,11 +256,6 @@ export function HeaderDefault({ initialOrganization, initialLocation, initialLoc
         </div>
       )}
 
-      {/* Spacer */}
-      <div
-        className="w-full transition-[height] duration-300"
-        style={{ height: 85 + (showBanner ? 57 : 0) }}
-      />
     </>
   )
 }

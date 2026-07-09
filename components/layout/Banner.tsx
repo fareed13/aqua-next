@@ -44,12 +44,13 @@ export function Banner({ initialOrganization }: Props) {
   const organization = storeOrg ?? initialOrganization
 
   const banner    = useUiStore((s) => s.banner)
-  const dialog    = useUiStore((s) => s.dialog)
   const setBanner = useUiStore((s) => s.setBanner)
   const setDialog = useUiStore((s) => s.setDialog)
   const router    = useRouter()
 
-  if (!organization.is_banner_enabled || !banner || dialog) return null
+  // Banner stays visible when the checkout drawer is open (the drawer is a
+  // right-side panel and doesn't cover the banner), so the header doesn't jump.
+  if (!organization.is_banner_enabled || !banner) return null
 
   const bannerHtml  = extractBannerHtml(organization.banner_text)
   const uncolored   = bannerHtml ? hasUncoloredText(bannerHtml) : false
@@ -58,7 +59,7 @@ export function Banner({ initialOrganization }: Props) {
   return (
     <div
       id="top-banner"
-      className="fixed left-0 right-0 top-0 z-[70] flex h-[57px] items-center justify-between gap-4 bg-white px-4 shadow-sm"
+      className="relative z-[70] flex h-[57px] items-center justify-between gap-4 bg-white px-4 shadow-sm"
     >
       <div
         className="flex-1 text-xs font-semibold uppercase leading-[31px] sm:text-sm md:leading-10 lg:text-xl lg:leading-[31px] xl:text-3xl"

@@ -14,8 +14,6 @@ import { useInterestedServices } from '@/hooks/useInterestedServices'
 export function OfferJoinUs({ headline, subtitle, media, plan }: SectionProps) {
   const setSelectedPlan = useUiStore(s => s.setSelectedPlan)
   const accentColor = useOrgStore(s => s.organization?.colors?.['app-main-accent-color']) ?? '#d5242c'
-  const loc = useOrgStore(s => s.location)
-  const cta = loc?.call_to_action || 'Secure Your First Class'
 
   const { setDialog, offerReady, classOfferOnly, newPrice, currencySign, getComponentPlan } = useOffers({ component_plan_id: plan ?? null })
   const { getDeal, specialOffer } = useOfferDeal()
@@ -78,7 +76,9 @@ export function OfferJoinUs({ headline, subtitle, media, plan }: SectionProps) {
             src={imageUrl}
             alt={headline || 'Offer image'}
             fill
-            className="object-cover object-center w-full h-full"
+            /* Nuxt stretches the image to fill on desktop (no crop); only
+               mobile/tablet use cover. object-cover was cropping it heavily. */
+            className="object-cover lg:object-fill object-center w-full h-full"
             priority
             sizes="(max-width: 767px) 640px, (max-width: 1024px) 960px, 1920px"
           />
@@ -156,7 +156,7 @@ export function OfferJoinUs({ headline, subtitle, media, plan }: SectionProps) {
 
           {/* Price */}
           {offerReady && newPrice ? (
-            <h5 className="text-center flex justify-center text-white font-bold leading-none text-[60px] md:text-[80px]">
+            <h5 className="text-center flex justify-center text-white font-bold leading-[0.8] text-[60px] md:text-[80px]">
               <sub className="text-[28px] md:text-[36px] mt-1">
                 {!isFree ? currencySign : ''}
               </sub>
@@ -164,18 +164,19 @@ export function OfferJoinUs({ headline, subtitle, media, plan }: SectionProps) {
             </h5>
           ) : null}
 
-          {/* CTA button */}
+          {/* CTA button — Nuxt hard-codes this label (ignores call_to_action)
+              and the effective top margin is mt-10 (40px), not 50px. */}
           <button
             onClick={handleCta}
-            aria-label={cta}
-            className="text-white border-2 border-white px-[20px] py-[12px] md:px-[42px] md:py-[15px] text-[20px] md:text-[25px] font-bold tracking-wide mt-[50px]"
+            aria-label="Secure Your First Class"
+            className="text-white border-2 border-white px-[20px] py-[12px] md:px-[42px] md:py-[15px] text-[20px] md:text-[25px] font-bold tracking-wide mt-10"
             style={{
               fontFamily: 'Khand, sans-serif',
               borderRadius: '0px',
               letterSpacing: '1px',
             }}
           >
-            {cta}
+            Secure Your First Class
           </button>
         </div>
       </div>

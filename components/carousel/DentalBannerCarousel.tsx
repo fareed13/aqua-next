@@ -58,19 +58,19 @@ export function DentalBannerCarousel({ customBullets }: SectionProps) {
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10 text-center px-4">
               <div className="max-w-[850px] mx-auto mt-[80px] md:mt-0">
                 <div className="flex items-center justify-center h-[90px]">
-                  <h3 className="text-white text-[31px] md:text-[40px] font-light text-center leading-[37px]">
+                  <h3 className="text-black text-[31px] md:text-[40px] font-light text-center leading-[37px]">
                     {bullet.headline || ''}
                   </h3>
                 </div>
                 {bullet.content && (
-                  <p className="text-white text-base md:text-[18px] font-light text-center">
+                  <p className="text-black text-base md:text-[18px] font-light text-center">
                     {bullet.content}
                   </p>
                 )}
                 <button
                   onClick={() => setDialog(true)}
                   style={{ backgroundColor: accentColor }}
-                  className="text-white px-7 py-3 mt-4 mx-auto block tracking-wider font-medium hover:opacity-90 transition"
+                  className="text-white uppercase px-7 py-3 mt-4 mx-auto block tracking-wider font-medium hover:opacity-90 transition"
                   aria-label={cta}
                 >
                   {cta}

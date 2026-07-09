@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { User, X } from 'lucide-react'
@@ -37,15 +37,21 @@ export function HeaderAbbi({ initialOrganization, initialLocation, initialLocati
 
   const userToken = useAuthStore((s) => s.userToken)
   const banner = useUiStore((s) => s.banner)
-  const dialog = useUiStore((s) => s.dialog)
   const setDialog = useUiStore((s) => s.setDialog)
 
-  const showBanner = organization.is_banner_enabled && banner && !dialog
+  // Banner stays visible when checkout opens — no !dialog.
+  const showBanner = organization.is_banner_enabled && banner
   const isLoggedIn = !!userToken
   const enableLogin = organization.enable_login
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+
+  const headerRef = useRef<HTMLElement>(null)
+  // Actual header bottom edge in the viewport, measured so the drawer starts
+  // just below the header (accounts for header height + whether the banner is
+  // still in view). Re-measured when the banner is closed while open.
+  const [sidebarTop, setSidebarTop] = useState(80 + (showBanner ? 57 : 0))
 
   const logoUrl = buildMediaUrl(organization?.primary_logo)
   const underMaintenance = organization.under_maintenance
@@ -70,6 +76,12 @@ export function HeaderAbbi({ initialOrganization, initialLocation, initialLocati
     return () => { document.body.style.overflow = '' }
   }, [drawerOpen])
 
+  useEffect(() => {
+    if (!drawerOpen) return
+    const bottom = headerRef.current?.getBoundingClientRect().bottom
+    if (bottom != null) setSidebarTop(Math.max(0, Math.round(bottom)))
+  }, [drawerOpen, showBanner])
+
   function handleCtaClick() {
     if (underMaintenance) return
     setDialog(true)
@@ -80,9 +92,9 @@ export function HeaderAbbi({ initialOrganization, initialLocation, initialLocati
       <Banner initialOrganization={initialOrganization} />
 
       <header
+        ref={headerRef}
         className={cn(
-          'fixed left-0 right-0 z-50 transition-[top,box-shadow] duration-300',
-          showBanner ? 'top-[57px]' : 'top-0',
+          'sticky top-0 z-50 transition-[box-shadow] duration-300',
           scrolled && 'shadow-lg',
         )}
         style={{ background: 'rgba(0,0,0,0.2)' }}
@@ -156,7 +168,7 @@ export function HeaderAbbi({ initialOrganization, initialLocation, initialLocati
           <div className="absolute inset-0 bg-black/50" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
           <aside
             className="relative z-10 flex h-full w-full flex-col overflow-y-auto pb-24 text-center"
-            style={{ background: '#4b5ee9', marginTop: '80px' }}
+            style={{ background: '#4b5ee9', marginTop: sidebarTop }}
             aria-label="Mobile navigation menu"
           >
             <NavMenu items={menuItems} onNavigate={() => setDrawerOpen(false)} />
@@ -173,12 +185,6 @@ export function HeaderAbbi({ initialOrganization, initialLocation, initialLocati
           </aside>
         </div>
       )}
-
-      {/* Spacer */}
-      <div
-        className="w-full transition-[height] duration-300"
-        style={{ height: 80 + (showBanner ? 57 : 0) }}
-      />
     </>
   )
 }

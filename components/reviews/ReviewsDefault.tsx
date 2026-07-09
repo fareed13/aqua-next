@@ -20,29 +20,36 @@ export function ReviewsDefault({ countOfReviews }: SectionProps) {
     <div>
       <div className="grid grid-cols-1 md:grid-cols-3 text-center">
         {reviews.map((review: any, i: number) => (
-          <div key={i} className="my-2 py-10 px-10 flex flex-col justify-center">
-            {review.media && isVideo(review.media.extension) && (
-              <div style={{ boxShadow: `-10px -10px 0 ${accentDark}`, zIndex: 1 }}>
-                <video
-                  src={buildMediaUrl(review.media)}
-                  controls
-                  className="w-full"
-                  aria-label={`Video testimonial from ${review.name}`}
-                />
-              </div>
-            )}
-            {review.media && isImg(review.media.extension) && (
-              <div className="w-full mb-2">
-                <Image
-                  src={buildMediaUrl(review.media)}
-                  alt={review.media.name || review.name || 'Review image'}
-                  width={400}
-                  height={300}
-                  className="w-full h-auto"
-                />
-              </div>
-            )}
-            <p className="text-left">
+          <div key={i}>
+            <div className="my-2 p-10 flex flex-col justify-center">
+              {review.media && isVideo(review.media.extension) && (
+                <div style={{ boxShadow: `-10px -10px 0 ${accentDark}`, zIndex: 1 }}>
+                  <video
+                    src={buildMediaUrl(review.media)}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    controls
+                    preload="metadata"
+                    className="w-full"
+                    aria-label={`Video testimonial from ${review.name}`}
+                  />
+                </div>
+              )}
+              {review.media && isImg(review.media.extension) && (
+                <div className="w-full">
+                  <Image
+                    src={buildMediaUrl(review.media)}
+                    alt={review.media.name || review.name || 'Review image'}
+                    width={400}
+                    height={300}
+                    className="w-full h-auto"
+                  />
+                </div>
+              )}
+            </div>
+            <p className="!font-normal">
               {review.content} - {review.name} - {review.date_created}
             </p>
           </div>

@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import { parseApiError } from '@/lib/utils/parseApiError'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { MapPin, ChevronDown } from 'lucide-react'
 
 const AppointmentBooking = dynamic(
   () => import('./AppointmentBooking').then((m) => m.AppointmentBooking),
@@ -88,6 +89,20 @@ export function Checkout() {
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  // Location dropdown (custom select so the caret rotates like Vuetify's v-select)
+  const [locationMenuOpen, setLocationMenuOpen] = useState(false)
+  const locationMenuRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!locationMenuOpen) return
+    const onDocClick = (e: MouseEvent) => {
+      if (locationMenuRef.current && !locationMenuRef.current.contains(e.target as Node)) {
+        setLocationMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [locationMenuOpen])
+
   const isUk = useMemo(() => {
     const st = primaryLocation?.state
     if (!st?.name) return false
@@ -129,6 +144,19 @@ export function Checkout() {
   const arrangedProgress = useMemo(() => {
     return Math.ceil((50 / 3) * ((step === 0 ? 1 : step) - 1)) + 50
   }, [step])
+
+  // Promo discount % from service plans (matches Nuxt store.promoCode.discount).
+  // Default 100 == no offer, so the "Get X% off" banner stays hidden.
+  const promoDiscount = useMemo(() => {
+    const services = (organization as any)?.services ?? []
+    const allPlans = services.flatMap((s: any) => s.service_plans ?? [])
+    const withDiscount = allPlans.filter((sp: any) => sp.plan?.discounted_price)
+    if (withDiscount.length > 0) {
+      const plan = withDiscount[0].plan
+      return ((plan.price - plan.discounted_price) / plan.price) * 100
+    }
+    return 100
+  }, [organization])
 
   const isOnCheckoutPage = pathname?.includes('/checkout')
 
@@ -459,15 +487,12 @@ export function Checkout() {
           name="website"
         />
 
-        {/* Promo code banner */}
-        {!selectedEvent &&
-          (organization as any)?.promoCode?.discount &&
-          (organization as any)?.promoCode?.discount !== 100 && (
-            <p className="text-center text-sm font-semibold mb-2">
-              Get {Number((organization as any).promoCode.discount).toFixed(0)}% off on next
-              page
-            </p>
-          )}
+        {/* Promo code banner — "Get X% off on next page" (matches Nuxt h3) */}
+        {!selectedEvent && promoDiscount && promoDiscount !== 100 && (
+          <h3 className="text-center text-base font-semibold text-black mb-0">
+            Get {promoDiscount.toFixed(0)}% off on next page
+          </h3>
+        )}
 
         {/* First Name */}
         <div className="center-input max-w-[300px] mx-auto mb-3">
@@ -510,13 +535,7 @@ export function Checkout() {
             name="phone"
             value={mobile}
             onChange={(e) => handlePhoneChange(e.target.value)}
-            placeholder={
-              isAustralia || isNewZealand
-                ? 'Phone Number (10 digits)'
-                : isUk
-                ? 'Phone Number (10–11 digits)'
-                : '(###)-###-####'
-            }
+            placeholder="Phone Number"
             inputMode="numeric"
             autoComplete="tel-national"
             className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 h-[38px]"
@@ -581,36 +600,64 @@ export function Checkout() {
           <div className="center-input max-w-[300px] mx-auto mb-3">
             <label className="block text-sm text-black mb-1">Location</label>
             <div className="flex gap-2">
-              <select
-                value={selectedLocationObject?.id ?? ''}
-                disabled={!!(selectedScheduleLocation as any)?.target_locations?.[0] && scheduleBookNowClicked && locations.length > 1}
-                onChange={(e) => {
-                  const loc = locations.find(
-                    (l: any) => l.id === Number(e.target.value)
-                  )
-                  if (loc) {
-                    setSelectedLocationObject(loc)
-                    locationChanged()
-                  }
-                }}
-                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500 h-[38px] disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-              >
-                <option value="">Select a Location</option>
-                {locations.map((loc: any) => (
-                  <option key={loc.id} value={loc.id}>
-                    {locationLabel(loc)}
-                  </option>
-                ))}
-              </select>
+              {(() => {
+                const locDisabled = !!(selectedScheduleLocation as any)?.target_locations?.[0] && scheduleBookNowClicked && locations.length > 1
+                return (
+              <div className="relative flex-1" ref={locationMenuRef}>
+                <button
+                  type="button"
+                  disabled={locDisabled}
+                  onClick={() => setLocationMenuOpen((o) => !o)}
+                  aria-haspopup="listbox"
+                  aria-expanded={locationMenuOpen}
+                  className="w-full flex items-center justify-between gap-2 border border-gray-300 rounded px-3 py-2 text-sm text-left h-[38px] focus:outline-none focus:border-gray-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                >
+                  <span className={selectedLocationObject?.id ? 'text-black truncate' : 'text-gray-500 truncate'}>
+                    {selectedLocationObject?.id ? locationLabel(selectedLocationObject) : 'Select a Location'}
+                  </span>
+                  <ChevronDown
+                    size={20}
+                    className="shrink-0 transition-transform duration-200"
+                    style={{ color: 'rgba(0,0,0,0.54)', transform: locationMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  />
+                </button>
+                {locationMenuOpen && !locDisabled && (
+                  <ul
+                    role="listbox"
+                    className="absolute z-[80] mt-1 max-h-60 w-full overflow-auto rounded border border-gray-200 bg-white shadow-lg"
+                  >
+                    {locations.map((loc: any) => (
+                      <li
+                        key={loc.id}
+                        role="option"
+                        aria-selected={selectedLocationObject?.id === loc.id}
+                        onClick={() => {
+                          setSelectedLocationObject(loc)
+                          locationChanged()
+                          setLocationMenuOpen(false)
+                        }}
+                        className={
+                          'cursor-pointer px-3 py-2 text-sm hover:bg-gray-100 ' +
+                          (selectedLocationObject?.id === loc.id ? 'bg-gray-50 font-medium' : '')
+                        }
+                      >
+                        {locationLabel(loc)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+                )
+              })()}
               {locations.length > 2 && (
                 <button
                   type="button"
                   onClick={() => getLocationCoordinates?.()}
                   title="Get Nearest Location"
-                  className="border border-gray-300 rounded px-2 text-gray-500 hover:bg-gray-50 h-[38px]"
+                  className="flex items-center justify-center border border-gray-300 rounded px-2 hover:bg-gray-50 h-[38px]"
                   aria-label="Get nearest location"
                 >
-                  &#9679;
+                  <MapPin size={23} style={{ color: '#7D7D7D' }} />
                 </button>
               )}
             </div>
@@ -671,12 +718,12 @@ export function Checkout() {
 
         {/* UK opt-in notice */}
         {isUk && (
-          <div className="px-5 pb-5 text-xs text-gray-600">
+          <div className="px-5 pb-5 text-xs text-black font-medium">
             <p>
               By opting in, You agree to receive periodic text messages &amp;
               emails from {organization?.name}. Your information will never be
               shared. Reply STOP to cancel. Standard rate may apply. View our{' '}
-              <Link href="/privacy-policy" className="underline">
+              <Link href="/privacy-policy" className="underline text-[#1976D2]">
                 Terms of service &amp; Privacy Policy
               </Link>
               .
@@ -777,7 +824,7 @@ export function Checkout() {
                 {/* Title */}
                 <h2
                   id="stepperId"
-                  className="text-center text-white font-semibold py-6 pl-10 pr-4 mb-0"
+                  className="text-center text-white font-semibold uppercase pl-10 pr-4 mb-0"
                   style={{
                     fontSize: 25,
                     backgroundColor: '#000',
@@ -786,16 +833,19 @@ export function Checkout() {
                   {selectedEvent ? String((selectedEvent as any).name ?? '') : organization?.stepper_text}
                 </h2>
 
-                {/* Progress bar */}
+                {/* Progress bar — fill on the left, "% Completed" centered over
+                    the FULL width (matches Nuxt's v-progress-linear) */}
                 <div
-                  className="relative h-[30px] bg-gray-200"
+                  className="relative h-[30px] overflow-hidden"
+                  style={{ backgroundColor: 'rgba(25,118,210,0.2)' }}
                   aria-label={`Checkout progress: ${arrangedProgress}% completed`}
                 >
                   <div
-                    className="absolute inset-y-0 left-0 flex items-center justify-center text-white text-sm font-bold transition-all"
+                    className="absolute inset-y-0 left-0 transition-all"
                     style={{ width: `${arrangedProgress}%`, backgroundColor: '#1976D2' }}
-                  >
-                    <strong>{arrangedProgress}% Completed</strong>
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center text-base font-semibold text-black">
+                    {arrangedProgress}% Completed
                   </div>
                 </div>
 

@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useOrgStore } from '@/store/orgStore'
+import { fireCallClick } from '@/lib/utils/analyticsEvents'
 import { SocialIcon } from '@/components/layout/SocialIcon'
 import { buildMediaUrl } from '@/lib/utils/media'
 import type { Organization, Location } from '@/types/api'
@@ -54,7 +55,7 @@ export function FooterAbbi({ initialOrganization, initialLocation, initialLocati
             {location.pretty_phone && (
               <div className="mt-3">
                 <a
-                  href={phoneLink}
+                  href={phoneLink} onClick={fireCallClick}
                   className="text-[rgba(255,255,255,0.7)] hover:text-white text-sm no-underline"
                 >
                   {location.pretty_phone}

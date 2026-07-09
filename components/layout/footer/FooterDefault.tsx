@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useOrgStore } from '@/store/orgStore'
+import { fireCallClick } from '@/lib/utils/analyticsEvents'
 import { buildMediaUrl } from '@/lib/utils/media'
 import type { Organization, Location } from '@/types/api'
 
@@ -55,7 +56,7 @@ export function FooterDefault({ initialOrganization, initialLocation, initialLoc
             )}
             {location.pretty_phone && (
               <p className="text-[rgba(255,255,255,0.7)] text-sm mt-1">
-                <a href={phoneLink} className="text-[rgba(255,255,255,0.7)] hover:text-white no-underline">
+                <a href={phoneLink} onClick={fireCallClick} className="text-[rgba(255,255,255,0.7)] hover:text-white no-underline">
                   {location.pretty_phone}
                 </a>
               </p>

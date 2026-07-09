@@ -73,7 +73,7 @@ export function AbbiRightImage({ headline, content, bullets, media }: SectionPro
           <div className="w-full md:w-7/12 lg:w-7/12">
             {headline && (
               <h2
-                className="text-[20px] md:text-[36px] font-bold leading-[1.108] mt-8 md:mt-24 mb-2"
+                className="text-[20px] md:text-[36px] font-semibold leading-[1.108] mt-8 md:mt-24 mb-2"
                 dangerouslySetInnerHTML={{ __html: headline }}
               />
             )}
