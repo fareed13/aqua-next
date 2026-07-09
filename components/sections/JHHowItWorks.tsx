@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useOrgStore } from '@/store/orgStore'
+import { fireCallClick } from '@/lib/utils/analyticsEvents'
 import { buildMediaUrl } from '@/lib/utils/media'
 import type { SectionProps } from '@/components/sections/registry'
 
@@ -34,6 +35,7 @@ export function JHHowItWorks({ headline, content, media, customBullets, backgrou
                 <div className="w-2/5 md:w-[40%]">
                   <a
                     href={`tel:${loc.pretty_phone}`}
+                    onClick={fireCallClick}
                     className="flex items-center gap-2.5 rounded-full bg-[#00a11a] px-4 py-2.5 text-black no-underline"
                     aria-label={`Call ${loc.pretty_phone}`}
                   >

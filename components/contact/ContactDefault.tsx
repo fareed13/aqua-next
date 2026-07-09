@@ -2,6 +2,7 @@
 
 import type { SectionProps } from '@/components/sections/registry';
 import { useOrgStore } from '@/store/orgStore';
+import { fireCallClick } from '@/lib/utils/analyticsEvents';
 
 const SOCIAL_ICONS: Record<string, string> = {
   linkedin: 'in',
@@ -49,6 +50,7 @@ export function ContactDefault(_props: SectionProps) {
                 <span className="mr-8 text-2xl flex-shrink-0">&#9990;</span>
                 <a
                   href={`tel:${phone}`}
+                  onClick={fireCallClick}
                   className="no-underline text-black hover:underline"
                   aria-label={`Call us at ${phone}`}
                 >

@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useOrgStore } from '@/store/orgStore'
+import { fireCallClick } from '@/lib/utils/analyticsEvents'
 import { SocialIcon } from '@/components/layout/SocialIcon'
 import { buildMediaUrl } from '@/lib/utils/media'
 import type { Organization, Location } from '@/types/api'
@@ -92,13 +93,13 @@ export function FooterWavy({ initialOrganization, initialLocation, initialLocati
             <PhoneIcon />
             <p style={{ color: '#fff', fontSize: 13, marginTop: 5, position: 'relative' }}>
               {location.pretty_phone ? (
-                <a href={phoneLink} style={{ color: '#fff', textDecoration: 'none' }}>
+                <a href={phoneLink} onClick={fireCallClick} style={{ color: '#fff', textDecoration: 'none' }}>
                   {location.pretty_phone}
                 </a>
               ) : null}
               {location.pretty_phone && location.pretty_secondary_phone ? ' / ' : null}
               {location.pretty_secondary_phone ? (
-                <a href={secondaryPhoneLink} style={{ color: '#fff', textDecoration: 'none' }}>
+                <a href={secondaryPhoneLink} onClick={fireCallClick} style={{ color: '#fff', textDecoration: 'none' }}>
                   {location.pretty_secondary_phone}
                 </a>
               ) : null}

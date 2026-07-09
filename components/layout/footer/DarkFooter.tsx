@@ -1,6 +1,7 @@
 'use client'
 
 import { useOrgStore } from '@/store/orgStore'
+import { fireCallClick } from '@/lib/utils/analyticsEvents'
 import { SocialIcon } from '@/components/layout/SocialIcon'
 import { parseTime24, formatTime12 } from '@/lib/utils/time'
 import { MapPin } from 'lucide-react'
@@ -79,7 +80,7 @@ export function DarkFooter({ initialOrganization, initialLocation, initialLocati
             <div className="space-y-2 text-sm">
               {location.pretty_phone && (
                 <p className="text-2xl font-semibold">
-                  <a href={phoneLink} className="text-white no-underline hover:underline">
+                  <a href={phoneLink} onClick={fireCallClick} className="text-white no-underline hover:underline">
                     {location.pretty_phone}
                   </a>
                 </p>
@@ -88,13 +89,13 @@ export function DarkFooter({ initialOrganization, initialLocation, initialLocati
                 {location.pretty_phone && (
                   <>
                     Call:{' '}
-                    <a href={phoneLink} className="text-white hover:underline">
+                    <a href={phoneLink} onClick={fireCallClick} className="text-white hover:underline">
                       {location.pretty_phone}
                     </a>
                     {location.pretty_secondary_phone && secondaryPhoneLink && (
                       <>
                         {' / '}
-                        <a href={secondaryPhoneLink} className="text-white hover:underline">
+                        <a href={secondaryPhoneLink} onClick={fireCallClick} className="text-white hover:underline">
                           {location.pretty_secondary_phone}
                         </a>
                       </>

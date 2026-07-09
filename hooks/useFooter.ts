@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useOrgStore } from '@/store/orgStore'
 import { useUiStore } from '@/store/uiStore'
 import { useAuth } from './useAuth'
+import { fireCallClick } from '@/lib/utils/analyticsEvents'
 
 interface UseFooterProps {
   previewColors?: Record<string, string> | null
@@ -123,10 +124,8 @@ export function useFooter(props: UseFooterProps = {}) {
     return `mailto:${location?.email ?? ''}`
   }, [location])
 
-  const trackCallClick = () => {
-    try { (window as any).gtag?.('event', 'call_click', {}) } catch {}
-    try { (window as any).fbq?.('track', 'call_click') } catch {}
-  }
+  // Fans out to ABBI (leadAndPurchaseEvent) + Facebook + GA4, matching Nuxt useFooter.js.
+  const trackCallClick = () => fireCallClick()
 
   return {
     organization,

@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useOrgStore } from '@/store/orgStore'
+import { fireCallClick } from '@/lib/utils/analyticsEvents'
 import { buildMediaUrl } from '@/lib/utils/media'
 import type { Organization, Location } from '@/types/api'
 
@@ -98,7 +99,7 @@ export function Footer360({ initialOrganization, initialLocation, initialLocatio
             {location.pretty_phone && (
               <div className="flex items-center gap-1 flex-wrap">
                 <a
-                  href={phoneLink}
+                  href={phoneLink} onClick={fireCallClick}
                   className="text-[rgba(255,255,255,0.702)] hover:text-white text-sm no-underline"
                 >
                   {location.pretty_phone}
@@ -107,7 +108,7 @@ export function Footer360({ initialOrganization, initialLocation, initialLocatio
                   <>
                     <span className="text-[rgba(255,255,255,0.702)]"> / </span>
                     <a
-                      href={secondaryPhoneLink}
+                      href={secondaryPhoneLink} onClick={fireCallClick}
                       className="text-[rgba(255,255,255,0.702)] hover:text-white text-sm no-underline"
                     >
                       {location.pretty_secondary_phone}

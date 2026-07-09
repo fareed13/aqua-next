@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useOrgStore } from '@/store/orgStore'
+import { fireCallClick } from '@/lib/utils/analyticsEvents'
 import { useUiStore } from '@/store/uiStore'
 import { buildMediaUrl } from '@/lib/utils/media'
 import type { SectionProps } from '@/components/sections/registry'
@@ -45,6 +46,7 @@ export function SalonCareCenter({ headline, subtitle, content, media }: SectionP
                   Call:{' '}
                   <a
                     href={`tel:${loc.pretty_phone}`}
+                    onClick={fireCallClick}
                     className="text-black no-underline"
                     aria-label={`Call ${loc.pretty_phone}`}
                   >

@@ -10,19 +10,26 @@ export function AnalyticsScripts() {
   const domain       = useOrgStore(s => s.domain)
   const userToken    = useAuthStore(s => s.userToken)
 
-  // abbiEvents-nuxt3.js reads window.__NUXT__.pinia.abbi.* directly (Nuxt SSR shape).
-  // We replicate that structure from Zustand so the script works without Pinia.
+  // abbiEvents-nuxt3.js reads the store from window.pinia / window.__abbiStoreGetter
+  // (see Nuxt plugins/06.eventsCaptureScript.client.js). We have no Pinia, so we expose
+  // the same __abbiStoreGetter contract — shape must match exactly: { organization,
+  // location, auth, domain, domainName }. window.__NUXT__.pinia.abbi is kept too for any
+  // code path that reads the Nuxt payload shape.
   useEffect(() => {
-    window.__NUXT__ = {
-      pinia: {
-        abbi: {
-          organization: organization ?? {},
-          location:     location     ?? {},
-          domain:       domain ?? '',
-        },
-      },
+    const snapshot = () => {
+      const org = useOrgStore.getState()
+      const auth = useAuthStore.getState()
+      return {
+        organization: org.organization ?? {},
+        location:     org.location ?? {},
+        auth:         { loggedIn: !!auth.userToken, user: auth.sessionUser || null },
+        domain:       org.domain ?? '',
+        domainName:   (org.organization as { domain?: string } | null)?.domain ?? org.domain ?? '',
+      }
     }
-  }, [organization, location, domain])
+    window.__abbiStoreGetter = snapshot
+    window.__NUXT__ = { pinia: { abbi: snapshot() } }
+  }, [organization, location, domain, userToken])
 
   // GTM
   useEffect(() => {
@@ -108,6 +115,8 @@ export function AnalyticsScripts() {
 
     const load = () => {
       if (document.querySelector('script[src*="abbiEvents"]')) return
+      // The external script checks window.evntsScript before initialising (Nuxt 06 plugin).
+      window.evntsScript = window.evntsScript || { loaded: true }
       const s = document.createElement('script')
       s.src = 'https://d3s21nfz1lzlqc.cloudfront.net/abbiEvents-nuxt3.js'
       s.async = true
@@ -216,12 +225,22 @@ declare global {
     gtag: (...args: unknown[]) => void
     fbq: ((...args: unknown[]) => void) & { callMethod?: (...args: unknown[]) => void; queue: unknown[]; loaded: boolean; version: string; push: unknown }
     _fbq: Window['fbq']
+    evntsScript?: { loaded: boolean }
+    __abbiStoreGetter?: () => {
+      organization: object
+      location: object
+      auth: { loggedIn: boolean; user: string | null }
+      domain: string
+      domainName: string
+    }
     __NUXT__?: {
       pinia: {
         abbi: {
           organization: object
           location: object
+          auth?: { loggedIn: boolean; user: string | null }
           domain: string
+          domainName?: string
         }
       }
     }
