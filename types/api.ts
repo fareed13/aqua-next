@@ -38,6 +38,8 @@ export interface ServicePlan {
 
 export interface ComponentContent {
   component: string
+  id?: number
+  service_id?: number
   headline?: string
   subtitle?: string
   content?: string
