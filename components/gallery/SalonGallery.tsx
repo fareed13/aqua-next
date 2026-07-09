@@ -64,8 +64,8 @@ export function SalonGallery({ media }: SectionProps) {
         <div className="text-center" style={{ marginTop: -10 }}>
           <button
             onClick={() => setShowAll((v) => !v)}
-            className="inline-flex items-center gap-1 font-semibold text-white px-4 py-2"
-            style={{ color: accentColor }}
+            className="inline-flex items-center justify-center gap-1 uppercase"
+            style={{ color: accentColor, width: 153, height: 55, fontSize: 13, fontWeight: 500, background: 'none' }}
             aria-label={showAll ? 'View fewer gallery images' : 'View more gallery images'}
           >
             {showAll ? (

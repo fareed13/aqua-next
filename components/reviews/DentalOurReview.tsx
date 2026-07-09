@@ -23,7 +23,7 @@ export function DentalOurReview({ content, countOfReviews }: SectionProps) {
       <div className="container mx-auto px-4">
         {/* Section heading */}
         <div className="text-center max-w-[750px] mx-auto">
-          <h3 className="text-[28px] leading-[41px] text-black font-normal">
+          <h3 className="text-[28px] leading-[41px] text-black font-semibold">
             What Our Patients Say
           </h3>
           {content && (
@@ -65,10 +65,10 @@ export function DentalOurReview({ content, countOfReviews }: SectionProps) {
                 <div className="flex flex-col items-center justify-center h-full" aria-label={`Review by ${review.name}`}>
                   <div style={{ marginTop: -50 }}>
                     <div className="mb-6">
-                      <p className="text-[22px] md:text-[16px] text-[#333] mb-[25px]">{review.content}</p>
+                      <p className="text-[22px] md:text-[16px] text-[#333] mb-[25px] font-semibold">{review.content}</p>
                     </div>
                     <h4
-                      className="text-[15px] text-center font-normal tracking-[1px]"
+                      className="text-[15px] text-center font-normal tracking-[1px] font-semibold"
                       style={{ color: accentColor }}
                     >
                       - {review.name}
@@ -94,16 +94,16 @@ export function DentalOurReview({ content, countOfReviews }: SectionProps) {
 
         {/* Review CTA */}
         <div className="text-center mt-10">
-          <strong
-            className="uppercase tracking-[1px] block"
+          <p
+            className="uppercase tracking-[1px] block font-semibold"
             style={{ color: accentColor }}
           >
             Find Our Reviews Online:
-          </strong>
-          <div className="flex justify-center mt-[29px] flex-wrap gap-4">
+          </p>
+          <div className="flex justify-center mt-[29px] flex-wrap gap-4 uppercase font-semibold">
             <Link
               href="/reviews"
-              className="inline-flex items-center justify-center gap-2 min-w-[250px] px-4 py-[16px] text-white rounded-[44px] font-normal no-underline text-sm"
+              className="inline-flex uppercase items-center justify-center gap-2 min-w-[250px] px-4 py-[10px] text-white rounded-[44px] font-normal no-underline text-md tracking-wider"
               style={{ backgroundColor: accentColor }}
               aria-label="View all reviews"
             >

@@ -50,6 +50,9 @@ export function BigImageBackground({
   }, [])
 
   function onVideoMeta(e: React.SyntheticEvent<HTMLVideoElement>) {
+    // Match Nuxt: only adapt to the video's native ratio on mobile. On desktop the
+    // video stays locked to the fixed 1000/712 box (object-contain letterboxes it).
+    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 959px)').matches) return
     const v = e.currentTarget
     if (!v.videoWidth || !v.videoHeight) return
     setVideoAspectRatio(`${v.videoWidth} / ${v.videoHeight}`)
@@ -134,7 +137,7 @@ export function BigImageBackground({
                 <div className="w-full md:w-1/2">
                   <div
                     ref={videoWrapperRef}
-                    className={`relative min-h-[250px] md:min-h-[427px] ${isVerticalVideo ? 'max-w-[600px] mx-auto' : ''}`}
+                    className={`relative min-h-0 md:min-h-[427px] mx-auto md:mx-0 md:w-full ${isVerticalVideo ? 'w-[min(96vw,600px)]' : 'w-[92vw]'}`}
                   >
                     {!isVideo ? (
                       <Image
@@ -149,13 +152,15 @@ export function BigImageBackground({
                       <video
                         ref={videoRef}
                         aria-label={headline || 'Video content'}
+                        width={1000}
+                        height={712}
                         style={{ aspectRatio: videoAspectRatio }}
                         preload="none"
                         autoPlay
                         loop
                         muted
                         playsInline
-                        className="w-full h-auto block object-contain"
+                        className="w-full h-auto block object-contain object-center"
                         onLoadedMetadata={onVideoMeta}
                       >
                         <source src={mediaUrl} type="video/mp4" />
