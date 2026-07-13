@@ -8,6 +8,7 @@ import { useOrgStore } from '@/store/orgStore'
 import { useAuthStore } from '@/store/authStore'
 import { useUiStore } from '@/store/uiStore'
 import { useAuth } from '@/hooks/useAuth'
+import { useScrollLock } from '@/hooks/useScrollLock'
 import { buildMenuItems } from '@/lib/utils/menuItems'
 import { buildMediaUrl } from '@/lib/utils/media'
 import { NavMenu } from '@/components/layout/NavMenu'
@@ -80,10 +81,7 @@ export function HeaderDefault({ initialOrganization, initialLocation, initialLoc
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  useEffect(() => {
-    document.body.style.overflow = sidebarOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [sidebarOpen])
+  useScrollLock(sidebarOpen)
 
   useEffect(() => {
     if (!sidebarOpen) return

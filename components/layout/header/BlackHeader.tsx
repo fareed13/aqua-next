@@ -8,6 +8,7 @@ import { useOrgStore } from '@/store/orgStore'
 import { useAuthStore } from '@/store/authStore'
 import { useUiStore } from '@/store/uiStore'
 import { useAuth } from '@/hooks/useAuth'
+import { useScrollLock } from '@/hooks/useScrollLock'
 import { buildMenuItems } from '@/lib/utils/menuItems'
 import { buildMediaUrl } from '@/lib/utils/media'
 import { NavMenu } from '@/components/layout/NavMenu'
@@ -89,10 +90,7 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
     if (bottom != null) setSidebarTop(Math.max(0, Math.round(bottom)))
   }, [sidebarOpen, showBanner])
 
-  useEffect(() => {
-    document.body.style.overflow = sidebarOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [sidebarOpen])
+  useScrollLock(sidebarOpen)
 
   function handleCtaClick() {
     if (underMaintenance) return
