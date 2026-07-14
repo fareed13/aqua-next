@@ -169,7 +169,7 @@ export function OfferJoinUs({ headline, subtitle, media, plan }: SectionProps) {
           <button
             onClick={handleCta}
             aria-label="Secure Your First Class"
-            className="text-white border-2 border-white px-[20px] py-[12px] md:px-[42px] md:py-[15px] text-[20px] md:text-[25px] font-bold tracking-wide mt-10"
+            className="text-white uppercase border-2 border-white px-[20px] py-[12px] md:px-[42px] md:py-[15px] text-[20px] md:text-[25px] font-bold tracking-wide mt-10"
             style={{
               fontFamily: 'Khand, sans-serif',
               borderRadius: '0px',

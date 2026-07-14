@@ -9,6 +9,27 @@ export interface MenuItem {
 }
 
 /**
+ * Admin sidebar menu shown below the public menu when an org-admin or
+ * superadmin is logged in. Ported from useHeaderHelper.getAdminMenu /
+ * getSuperAdminMenu (identical lists in Nuxt).
+ */
+export function buildAdminMenu(organization: Organization): MenuItem[] {
+  return [
+    { name: 'Home', url: '/', icon: 'home' },
+    { name: 'Dashboard', url: '/admin/dashboard', icon: 'layout-dashboard' },
+    { name: 'All Leads', url: '/customers', icon: 'users' },
+    { name: 'Class Schedule', url: '/schedule', icon: 'timer' },
+    { name: 'Event Calenders', url: '/admin/events', icon: 'book-copy' },
+    ...(organization.is_booking_enabled
+      ? [{ name: 'Appointments', url: '/admin/bookings', icon: 'check-square' }]
+      : []),
+    { name: 'Plans & Pricing', url: '/admin/plan', icon: 'notebook' },
+    { name: 'Reputation Settings', url: '/admin/review-approval', icon: 'message-cog' },
+    { name: 'All Settings', url: '/admin/all-settings', icon: 'settings' },
+  ]
+}
+
+/**
  * Builds the public navigation menu from org/location data.
  * Ported from useHeaderHelper.getDefaultMenu + getAdditionalHeaders.
  * Pure function — no store access, safe to call anywhere.

@@ -1,8 +1,12 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import type { ReactElement } from 'react'
+import { PlusCircle } from 'lucide-react'
 import { useOrgStore } from '@/store/orgStore'
+import { useReviews } from '@/hooks/useReviews'
+import { ReviewsAddEdit } from './ReviewsAddEdit'
+import { DeleteWarning } from '@/components/warnings/DeleteWarning'
 
 interface ReviewsCleanProps {
   countOfReviews?: number
@@ -52,6 +56,56 @@ function ChevronRight({ size }: { size: number }) {
   )
 }
 
+// Material (filled) icons — same family and metrics so the pair reads uniform
+const MDI_PATHS = {
+  pencil: 'M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z',
+  trash: 'M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19V4M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z',
+} as const
+
+function MdiIcon({ path, size = 19 }: { path: string; size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
+      <path d={path} />
+    </svg>
+  )
+}
+
+// Compact, professional-looking admin icon buttons for review cards
+function ReviewAdminActions({
+  name,
+  onEdit,
+  onDelete,
+}: {
+  name: string
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const btnBase =
+    'inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1'
+  return (
+    <div className="flex justify-center gap-0.5 mt-2">
+      <button
+        type="button"
+        onClick={onEdit}
+        className={`${btnBase} text-gray-500 hover:text-gray-800 hover:bg-gray-200/70 focus-visible:ring-gray-400`}
+        aria-label={`Edit review by ${name}`}
+        title="Edit review"
+      >
+        <MdiIcon path={MDI_PATHS.pencil} />
+      </button>
+      <button
+        type="button"
+        onClick={onDelete}
+        className={`${btnBase} text-red-700 hover:text-red-800 hover:bg-red-100/80 focus-visible:ring-red-500`}
+        aria-label={`Delete review by ${name}`}
+        title="Delete review"
+      >
+        <MdiIcon path={MDI_PATHS.trash} />
+      </button>
+    </div>
+  )
+}
+
 function Stars({ rating, size = 25 }: { rating: any; size?: number }) {
   const stars = rating ? Math.round(Number(rating)) : 0
   return (
@@ -65,10 +119,32 @@ function Stars({ rating, size = 25 }: { rating: any; size?: number }) {
 
 export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
   const organization = useOrgStore(s => s.organization)
+  const accentColor = organization?.colors?.['app-main-accent-color'] ?? '#d5242c'
   const country = organization?.country?.toLowerCase() ?? ''
   const isEuroDate = country.includes('uk') || country.includes('gb') || country.includes('australia') || country.includes('new zealand')
 
-  const allReviews = organization?.org_reviews ?? []
+  // Admin add/edit/delete controls (ported from Nuxt ReviewsClean.vue)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  const {
+    editPopup,
+    selectedReview,
+    deletePopup,
+    toggleDeletePopup,
+    toggleEditPopup,
+    checkUserRole,
+    deleteReview,
+  } = useReviews()
+  const [removedIds, setRemovedIds] = useState<number[]>([])
+  const isAdmin = mounted && checkUserRole()
+
+  const handleConfirmDelete = useCallback(async () => {
+    const id = selectedReview?.id
+    await deleteReview()
+    if (id) setRemovedIds(ids => [...ids, id])
+  }, [selectedReview, deleteReview])
+
+  const allReviews = (organization?.org_reviews ?? []).filter(r => !removedIds.includes(r.id))
   const reviews = countOfReviews != null ? allReviews.slice(0, countOfReviews) : allReviews
 
   const [activeSlide, setActiveSlide] = useState(0)
@@ -78,8 +154,8 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  // Sliding window: 3 cards visible, each next/prev click moves the start
-  // index by exactly 1 (reviews 1-3 -> 2-4 -> 3-5). Clamp at bounds, no wrap.
+  // Paged window like Nuxt's v-slide-group: 3 cards visible, each next/prev
+  // click advances a full page (reviews 1-3 -> 4-6). Clamp at bounds, no wrap.
   const maxStart = Math.max(0, reviews.length - VISIBLE_COUNT)
 
   const goToStart = useCallback((index: number) => {
@@ -95,7 +171,7 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
     }
   }, [maxStart])
 
-  if (!reviews.length) return null
+  if (!reviews.length && !isAdmin) return null
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr)
@@ -127,6 +203,33 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
 
   return (
     <div className="py-[70px] pb-[100px]">
+      {isAdmin && (
+        <div className="w-full mb-6">
+          <ReviewsAddEdit
+            popup={editPopup}
+            review={selectedReview}
+            onToggleEditPopup={() => toggleEditPopup(null)}
+          />
+          <DeleteWarning
+            popup={deletePopup}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => toggleDeletePopup(null)}
+            loading={false}
+            message="Are you sure you want to delete this review?"
+          />
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => toggleEditPopup('new')}
+              className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white shadow-sm hover:opacity-90 transition-opacity"
+              style={{ background: accentColor }}
+            >
+              <PlusCircle size={16} />
+              Add Review (admin)
+            </button>
+          </div>
+        </div>
+      )}
       <div className="max-w-[1080px] mx-auto px-4">
         <h2 className="capitalize text-center text-2xl md:text-3xl font-medium text-black mb-10">
           Hear what our members are saying
@@ -135,7 +238,7 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
         {/* Desktop: arrows sit outside the scroll container as flex siblings */}
         <div className="hidden md:flex items-center">
           <button
-            onClick={() => goToStart(currentIndex - 1)}
+            onClick={() => goToStart(currentIndex - VISIBLE_COUNT)}
             disabled={currentIndex === 0}
             className="shrink-0 text-black disabled:opacity-30 leading-none"
             aria-label="Previous review"
@@ -176,9 +279,12 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
                   >
                     {review.content}
                   </p>
+                  {/* Vuetify v-btn (elevated) look: white bg, elevation-2 shadow,
+                      rounded, medium weight + letter-spacing; card scss pins
+                      height 18px / font 9px / no padding-y. */}
                   <button
                     onClick={() => changeButtonClass(i)}
-                    className="capitalize text-[#0e0e0e] cursor-pointer text-[9px] h-[18px] p-0"
+                    className="capitalize text-[#0e0e0e] cursor-pointer text-[9px] h-[18px] px-2 my-1 inline-flex items-center justify-center rounded bg-white font-medium tracking-wider shadow-[0_3px_1px_-2px_rgba(0,0,0,0.2),0_2px_2px_0_rgba(0,0,0,0.14),0_1px_5px_0_rgba(0,0,0,0.12)]"
                     aria-label={isExpanded ? 'Collapse review text' : 'Read more review text'}
                   >
                     {isExpanded ? 'Collapse' : 'Read More'}
@@ -190,13 +296,20 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
                   <span className="flex justify-center">
                     {getSocialIcon(review.platform ?? undefined)}
                   </span>
+                  {isAdmin && (
+                    <ReviewAdminActions
+                      name={review.name}
+                      onEdit={() => toggleEditPopup(review)}
+                      onDelete={() => toggleDeletePopup(review)}
+                    />
+                  )}
                 </div>
               )
             })}
           </div>
 
           <button
-            onClick={() => goToStart(currentIndex + 1)}
+            onClick={() => goToStart(currentIndex + VISIBLE_COUNT)}
             disabled={currentIndex >= maxStart}
             className="shrink-0 text-black disabled:opacity-30 leading-none"
             aria-label="Next review"
@@ -222,9 +335,11 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
                           __html: truncatedContent(review.content || '', !isExpanded),
                         }}
                       />
+                      {/* Nuxt .mobile-readmore: default v-btn (elevated, uppercase,
+                          36px tall) forced to 100px wide, centered. */}
                       <button
                         onClick={() => changeButtonClass(activeSlide)}
-                        className="text-xs capitalize underline mb-2 mx-auto cursor-pointer w-[100px]"
+                        className="w-[100px] h-9 mb-2 mx-auto inline-flex items-center justify-center rounded bg-white uppercase text-xs font-medium tracking-wider whitespace-nowrap cursor-pointer shadow-[0_3px_1px_-2px_rgba(0,0,0,0.2),0_2px_2px_0_rgba(0,0,0,0.14),0_1px_5px_0_rgba(0,0,0,0.12)]"
                         aria-label={isExpanded ? 'Collapse review text' : 'Read more review text'}
                       >
                         {isExpanded ? 'Collapse' : 'Read More'}
@@ -236,6 +351,13 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
                       <span className="flex justify-center mb-5 text-[#2783ef]">
                         {getSocialIcon(review.platform ?? undefined)}
                       </span>
+                      {isAdmin && (
+                        <ReviewAdminActions
+                          name={review.name ?? ''}
+                          onEdit={() => toggleEditPopup(review)}
+                          onDelete={() => toggleDeletePopup(review)}
+                        />
+                      )}
                     </>
                   )
                 })()}

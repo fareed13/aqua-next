@@ -1,9 +1,10 @@
 // @ts-nocheck
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
+import { Pencil, Trash2, PlusCircle, Upload, Bot } from 'lucide-react';
 import type { SectionProps } from '@/components/sections/registry';
 import { useOrgStore } from '@/store/orgStore';
 import { useUiStore } from '@/store/uiStore';
@@ -68,13 +69,24 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
   const [closeDatePopup, setCloseDatePopup] = useState(false);
   const [uploadPopup, setUploadPopup] = useState(false);
 
-  const currentLocationId = propLocation ?? selectedLocationId;
+  // On a location page (/location/[slug] or /locations/[slug]) the schedule must be
+  // scoped to THAT location (Nuxt sets scheduleSelectedLocation = slug location id).
+  // The section renderer doesn't pass selectedLocation, so resolve it from the route.
+  const params = useParams();
+  const routeSlug = typeof params?.slug === 'string' ? params.slug.toLowerCase() : '';
+  const slugLocationId = useMemo(
+    () => locations.find((l: any) => l.slug?.toLowerCase() === routeSlug)?.id,
+    [locations, routeSlug],
+  );
 
-  // Initialise location from prop or default to first location
+  const currentLocationId = propLocation ?? slugLocationId ?? selectedLocationId;
+
+  // Initialise location: explicit prop → route slug location → first location.
   useEffect(() => {
-    if (propLocation) { selectLocation(propLocation); return; }
+    const target = propLocation ?? slugLocationId;
+    if (target) { selectLocation(target); return; }
     if (!selectedLocationId && locations.length > 0) selectLocation(locations[0].id);
-  }, [propLocation, locations]);
+  }, [propLocation, slugLocationId, locations]);
 
   const fetchPublicSchedule = useCallback(async () => {
     if (!currentLocationId) return;
@@ -288,20 +300,22 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
       {isAdmin && (
         <div className="flex flex-wrap justify-center gap-3 py-4">
           <button onClick={() => openEdit('new')}
-            className="flex items-center gap-1 px-4 py-2 rounded text-white text-sm font-semibold"
+            className="flex items-center gap-1.5 px-4 py-2 rounded text-white text-sm font-semibold"
             style={{ background: accentColor }}>
-            + Add Schedule
+            <PlusCircle size={18} /> Add Schedule
           </button>
           <button onClick={() => setCloseDatePopup(true)}
-            className="flex items-center gap-1 px-4 py-2 rounded text-white text-sm font-semibold"
+            className="flex items-center gap-1.5 px-4 py-2 rounded text-white text-sm font-semibold"
             style={{ background: accentColor }}>
-            + Add Close Date
+            <PlusCircle size={18} /> Add Close Date
           </button>
           <button onClick={() => setUploadPopup(true)}
             className="flex items-center gap-2 px-4 py-2 rounded text-white text-sm font-semibold"
             style={{ background: accentColor }}>
-            ↑ Upload Schedules
-            <span className="text-xs px-1.5 py-0.5 rounded-full bg-purple-500 font-bold">AI</span>
+            <Upload size={18} /> Upload Schedules
+            <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] font-bold">
+              <Bot size={12} /> AI
+            </span>
           </button>
         </div>
       )}
@@ -437,9 +451,15 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
                   )}
                 </div>
                 {isAdmin && (
-                  <div className="flex gap-1">
-                    <button onClick={() => openEdit(sch)} className="text-blue-600 hover:text-blue-800 text-lg p-1">✏</button>
-                    <button onClick={() => setDeletePopup(sch)} className="text-red-500 hover:text-red-700 text-lg p-1">🗑</button>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => openEdit(sch)} title="Edit schedule" aria-label="Edit schedule"
+                      className="w-8 h-8 inline-flex items-center justify-center rounded-full text-[#1976d2] hover:bg-[#1976d2]/10 transition-colors">
+                      <Pencil size={18} />
+                    </button>
+                    <button onClick={() => setDeletePopup(sch)} title="Delete schedule" aria-label="Delete schedule"
+                      className="w-8 h-8 inline-flex items-center justify-center rounded-full text-red-600 hover:bg-red-600/10 transition-colors">
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 )}
               </div>
@@ -455,9 +475,15 @@ export function VirtualScheduleDefault({ headline, selectedLocation: propLocatio
                     {capacity !== null && <div className="text-sm text-gray-500 mt-1">👥 Available: {capacity} seats</div>}
                   </div>
                   {isAdmin && (
-                    <div className="flex gap-1">
-                      <button onClick={() => openEdit(sch)} className="text-blue-600 text-lg p-1">✏</button>
-                      <button onClick={() => setDeletePopup(sch)} className="text-red-500 text-lg p-1">🗑</button>
+                    <div className="flex items-center gap-1 ml-2">
+                      <button onClick={() => openEdit(sch)} title="Edit schedule" aria-label="Edit schedule"
+                        className="w-8 h-8 inline-flex items-center justify-center rounded-full text-[#1976d2] hover:bg-[#1976d2]/10 transition-colors">
+                        <Pencil size={18} />
+                      </button>
+                      <button onClick={() => setDeletePopup(sch)} title="Delete schedule" aria-label="Delete schedule"
+                        className="w-8 h-8 inline-flex items-center justify-center rounded-full text-red-600 hover:bg-red-600/10 transition-colors">
+                        <Trash2 size={18} />
+                      </button>
                     </div>
                   )}
                 </div>

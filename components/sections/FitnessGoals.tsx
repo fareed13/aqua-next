@@ -13,7 +13,7 @@ export function FitnessGoals({ headline, content, customBullets }: SectionProps)
         {/* Heading */}
         <div className="mb-8">
           {headline && (
-            <h3 className="text-[33px] md:text-[56px] leading-[44px] md:leading-[64px] tracking-wide uppercase text-center font-semibold text-[#111111] mb-5 max-w-[550px] mx-auto">
+            <h3 className="text-[33px] md:text-[56px] leading-[44px] md:leading-[64px] tracking-wide uppercase text-center font-bold text-[#111111] mb-5 max-w-[550px] mx-auto">
               {headline}
             </h3>
           )}

@@ -11,6 +11,7 @@ import { buildMenuItems } from '@/lib/utils/menuItems'
 import { buildMediaUrl } from '@/lib/utils/media'
 import { NavMenu } from '@/components/layout/NavMenu'
 import { Banner } from '@/components/layout/Banner'
+import { useScrollLock } from '@/hooks/useScrollLock'
 import { cn } from '@/lib/utils'
 import type { Organization, Location } from '@/types/api'
 
@@ -53,10 +54,7 @@ export function Header360({ initialOrganization, initialLocation, initialLocatio
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  useEffect(() => {
-    document.body.style.overflow = drawerOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [drawerOpen])
+  useScrollLock(drawerOpen)
 
   function handleCtaClick() {
     if (underMaintenance) return

@@ -11,6 +11,7 @@ import { buildMenuItems } from '@/lib/utils/menuItems'
 import { buildMediaUrl } from '@/lib/utils/media'
 import { NavMenu } from '@/components/layout/NavMenu'
 import { Banner } from '@/components/layout/Banner'
+import { useScrollLock } from '@/hooks/useScrollLock'
 import { cn } from '@/lib/utils'
 import type { Organization, Location } from '@/types/api'
 
@@ -66,10 +67,7 @@ export function SalonHeader({ initialOrganization, initialLocation, initialLocat
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  useEffect(() => {
-    document.body.style.overflow = sidebarOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [sidebarOpen])
+  useScrollLock(sidebarOpen)
 
   useEffect(() => {
     if (!sidebarOpen) return

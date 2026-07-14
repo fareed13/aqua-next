@@ -14,10 +14,10 @@ export function AboutMe({ headline, media, customBullets }: SectionProps) {
     <div className="bg-[#f2f2f2] py-16">
       {/* Heading */}
       <div className="text-center pt-10 mb-4">
-        <h6 className="text-2xl font-bold text-[#d5242c]">
+        <h6 className="text-2xl font-semibold text-[#d5242c]">
           ABOUT ME
         </h6>
-        <h3 className="text-4xl font-bold text-[#171d29] leading-[39px] tracking-[0.1px]">
+        <h3 className="text-4xl font-semibold text-[#171d29] leading-[39px] tracking-[0.1px]">
           {headline}
         </h3>
       </div>
@@ -65,7 +65,7 @@ export function AboutMe({ headline, media, customBullets }: SectionProps) {
             {oddBullets.map((bullet: any, i: number) => (
               <div key={i} className="flex mb-10 justify-end">
                 <div className="text-right mr-8">
-                  <h6 className="text-[22px] font-bold mb-[15px]">{bullet.headline}</h6>
+                  <h6 className="text-[22px] font-semibold mb-[15px]">{bullet.headline}</h6>
                   <p>{bullet.content}</p>
                 </div>
                 <div className="relative flex-shrink-0">

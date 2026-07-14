@@ -5,6 +5,8 @@ import Link from 'next/link'
 import {
   BookOpen, MapPin, Star, GraduationCap, Clock,
   Calendar, Newspaper, FileText, Gift, Phone, Link2,
+  Home, LayoutDashboard, Users, Timer, BookCopy,
+  CheckSquare, Notebook, MessageSquare, Settings,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -21,6 +23,15 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'file-text': FileText,
   'gift': Gift,
   'phone': Phone,
+  'home': Home,
+  'layout-dashboard': LayoutDashboard,
+  'users': Users,
+  'timer': Timer,
+  'book-copy': BookCopy,
+  'check-square': CheckSquare,
+  'notebook': Notebook,
+  'message-cog': MessageSquare,
+  'settings': Settings,
 }
 
 // Downward-pointing filled triangle, same path as Nuxt's TreeView toggle-icon

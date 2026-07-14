@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useOrgStore } from '@/store/orgStore'
 import { useUiStore } from '@/store/uiStore'
 import { useAuth } from './useAuth'
-import { buildMenuItems, type MenuItem } from '@/lib/utils/menuItems'
+import { buildMenuItems, buildAdminMenu, type MenuItem } from '@/lib/utils/menuItems'
 
 interface UseHeaderProps {
   previewColors?: Record<string, string> | null
@@ -89,8 +89,9 @@ export function useHeader(props: UseHeaderProps = {}) {
   useEffect(() => {
     const loggedIn = isLoggedIn()
     setMenuItems(loggedIn ? loggedInMenu : defaultMenu)
+    setAdminMenu(isAdminLoggedIn() && organization ? buildAdminMenu(organization) : [])
     setReady(true)
-  }, [defaultMenu, loggedInMenu, isLoggedIn])
+  }, [defaultMenu, loggedInMenu, isLoggedIn, isAdminLoggedIn, organization])
 
   return {
     organization,
