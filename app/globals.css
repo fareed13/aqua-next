@@ -1,4 +1,12 @@
 @import "tailwindcss";
+/*
+  Quill content styles (alignment, indents) for saved rich-text HTML rendered
+  on public pages — the admin editors load snow.css themselves, but public
+  sections need these. core.css only, to skip the editor toolbar chrome.
+  layer(components) keeps it below Tailwind utilities in the cascade, so
+  font/text utility classes on the same element still win.
+*/
+@import "quill/dist/quill.core.css" layer(components);
 
 html,
 body {
@@ -120,12 +128,15 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--org-font-heading);
   /* font-weight: 400; */
 }
-/* Nuxt has no global <p> weight, so paragraphs default to 400. The old
-   `p { font-weight: 600 }` made text app-wide semibold and caused many
-   "text too bold" mismatches. h1 stays semibold as a heading fallback. */
 h1 {
   font-weight: 600;
   font-size: 50px;
+}
+
+@layer base {
+  p {
+    font-weight: 500;
+  }
 }
 /* Braintree hosted fields — the injected <iframe> defaults to 150px tall,
    so pin it to fill the 36px container (matches Nuxt .braintree-frame-input). */
