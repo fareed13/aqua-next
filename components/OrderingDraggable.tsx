@@ -6,6 +6,10 @@ import { GripVertical, Trash2, X, LayoutDashboard } from 'lucide-react'
 import { DeleteWarning } from './warnings/DeleteWarning'
 import { useSecureCalls } from '@/hooks/apiCalls/useApiCalls'
 import { useAdminService } from '@/hooks/admin/useAdminService'
+import { SectionRenderer } from './sections/SectionRenderer'
+import { PreviewBoundary } from './sections/PreviewBoundary'
+import { ensureContentWrapper } from '@/lib/utils/quillHelpers'
+import type { ComponentContent } from '@/types/api'
 
 interface Section {
   component: string
@@ -32,6 +36,23 @@ interface Props {
   page_id?: string | number | null
   service_id?: string | number | null
   location_id?: string | number | null
+}
+
+// Normalize a stored section into what SectionRenderer expects for the live
+// preview — same transform as SectionEdit's previewSection.
+function toPreview(section: Section): ComponentContent {
+  const preview: Record<string, any> = { ...section }
+  if (preview.content) preview.content = ensureContentWrapper(preview.content)
+  if (typeof preview.bullets === 'string' && preview.bullets) {
+    try {
+      const parsed = JSON.parse(preview.bullets)
+      preview.bullets = Array.isArray(parsed) ? parsed : [preview.bullets]
+    } catch {
+      preview.bullets = [preview.bullets]
+    }
+  }
+  if (preview.plan !== undefined) preview.component_plan_id = preview.plan
+  return preview as ComponentContent
 }
 
 export function OrderingDraggable({ popup, updateData, closePopup, loading = false, page_id, service_id, location_id }: Props) {
@@ -91,9 +112,9 @@ export function OrderingDraggable({ popup, updateData, closePopup, loading = fal
   if (!popup) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={closePopup} />
-      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="bg-[#124e66] px-4 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -123,15 +144,33 @@ export function OrderingDraggable({ popup, updateData, closePopup, loading = fal
                           className="bg-white rounded-xl border border-gray-200 shadow-sm hover:border-gray-300 hover:shadow transition-all"
                         >
                           <div className="px-4 py-3 flex items-center gap-3">
-                            <div {...draggable.dragHandleProps} className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing">
+                            <div {...draggable.dragHandleProps} className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing flex-shrink-0">
                               <GripVertical size={18} />
+                            </div>
+                            {/* Scaled-down live component preview (mirrors Nuxt .component-preview-ordering) */}
+                            <div
+                              className="flex-shrink-0 rounded border border-gray-200 overflow-hidden bg-white"
+                              style={{ width: 280, height: 152 }}
+                            >
+                              <div
+                                style={{
+                                  pointerEvents: 'none',
+                                  transform: 'scale(0.25)',
+                                  transformOrigin: 'top left',
+                                  width: '400%',
+                                }}
+                              >
+                                <PreviewBoundary resetKey={`${section.component}-${index}`}>
+                                  <SectionRenderer section={toPreview(section)} />
+                                </PreviewBoundary>
+                              </div>
                             </div>
                             <div className="flex-1 text-sm font-medium text-gray-700 truncate">
                               {section.component}
                             </div>
                             <button
                               onClick={() => { setDeleteIndex(index); setDeletePopup(true) }}
-                              className="text-red-400 hover:text-red-600 transition-colors"
+                              className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
                             >
                               <Trash2 size={18} />
                             </button>

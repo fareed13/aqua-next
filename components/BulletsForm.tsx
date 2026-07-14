@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useId } from 'react'
-import { X } from 'lucide-react'
+import { X, Plus } from 'lucide-react'
 
 interface Props {
   initialBullets?: string[]
@@ -46,9 +46,10 @@ export function BulletsForm({ initialBullets = [], onChange }: Props) {
         <button
           type="button"
           onClick={add}
-          className="text-[#124e66] text-sm hover:underline"
+          className="inline-flex items-center gap-1.5 rounded-md border border-[#124e66] px-3 py-1.5 text-sm font-medium text-[#124e66] hover:bg-[#124e66] hover:text-white transition-colors"
         >
-          Add bullet +
+          <Plus size={16} />
+          Add bullet
         </button>
       </div>
       {bullets.map((bullet, i) => (

@@ -1,7 +1,7 @@
 import { fetchOrganization } from '@/lib/api/serverInit'
 import { getDomain } from '@/lib/utils/getDomain'
 import { buildPageMetadata } from '@/lib/utils/metaTags'
-import { SectionRenderer } from '@/components/sections/SectionRenderer'
+import { HomePageSections } from '@/components/pages/HomePageSections'
 import type { Metadata } from 'next'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,11 +23,5 @@ export default async function HomePage() {
     return null
   }
 
-  return (
-    <>
-      {homepage.content.map((section, i) => (
-        <SectionRenderer key={`${section.component}-${i}`} section={section} />
-      ))}
-    </>
-  )
+  return <HomePageSections page={homepage} />
 }

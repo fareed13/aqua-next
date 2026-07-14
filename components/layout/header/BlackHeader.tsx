@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useUiStore } from '@/store/uiStore'
 import { useAuth } from '@/hooks/useAuth'
 import { useScrollLock } from '@/hooks/useScrollLock'
-import { buildMenuItems } from '@/lib/utils/menuItems'
+import { buildMenuItems, buildAdminMenu } from '@/lib/utils/menuItems'
 import { buildMediaUrl } from '@/lib/utils/media'
 import { NavMenu } from '@/components/layout/NavMenu'
 import { SocialIcon } from '@/components/layout/SocialIcon'
@@ -39,7 +39,7 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
   const userToken = useAuthStore((s) => s.userToken)
   const banner    = useUiStore((s) => s.banner)
   const setDialog = useUiStore((s) => s.setDialog)
-  const { isMemberLoggedIn, getUser, isLoggedIn: isLoggedInFn, logOut } = useAuth()
+  const { isMemberLoggedIn, isAdminLoggedIn, getUser, isLoggedIn: isLoggedInFn, logOut } = useAuth()
 
   // Mirror the Banner component's visibility logic to offset the header.
   // (No longer gated on `dialog` — the banner stays visible while checkout is
@@ -72,6 +72,12 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
   const menuItems = useMemo(
     () => buildMenuItems(organization, location, locations, isLoggedIn, storeDomain),
     [organization, location, locations, isLoggedIn, storeDomain],
+  )
+
+  const adminLoggedIn = isAdminLoggedIn()
+  const adminMenu = useMemo(
+    () => (adminLoggedIn ? buildAdminMenu(organization) : []),
+    [adminLoggedIn, organization],
   )
 
   useEffect(() => {
@@ -112,7 +118,7 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
       >
         {/* Main nav row — everything (menu+logo | social+buttons) on one
             vertically-centered row */}
-        <div className="flex items-center justify-between px-4 py-3 md:px-6">
+        <div className="flex items-center justify-between px-6 py-3 md:px-10">
           {/* Left: hamburger + logo */}
           <div className="flex items-center gap-3">
             <button
@@ -267,6 +273,12 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
             aria-label="Main navigation menu"
           >
             <NavMenu items={menuItems} onNavigate={() => setSidebarOpen(false)} />
+            {adminMenu.length > 0 && (
+              <>
+                <hr className="my-2 border-gray-200" />
+                <NavMenu items={adminMenu} onNavigate={() => setSidebarOpen(false)} />
+              </>
+            )}
           </aside>
         </>
       )}

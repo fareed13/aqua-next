@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useEffect } from 'react'
-import { SectionRenderer } from '@/components/sections/SectionRenderer'
+import { EditableSections } from '@/components/sections/EditableSections'
 import { ReviewsClean } from '@/components/reviews/ReviewsClean'
 import { InstructorDefault } from '@/components/instructor/InstructorDefault'
 import { FaqDefault } from '@/components/faqs/FaqDefault'
@@ -88,9 +88,12 @@ export function ServiceDetail({ service, serviceName, showProgramChildren }: Ser
         />
       )}
 
-      {sections.map((section, i) => (
-        <SectionRenderer key={i} section={section} />
-      ))}
+      <EditableSections
+        target="service"
+        targetId={service.id}
+        sections={sections}
+        showReorder
+      />
 
       <ReviewsClean />
 

@@ -3,7 +3,7 @@ import { getDomain } from '@/lib/utils/getDomain'
 import { buildPageMetadata } from '@/lib/utils/metaTags'
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
 import { LocationContact } from '@/components/contact/LocationContact'
-import { SectionRenderer } from '@/components/sections/SectionRenderer'
+import { EditableSections } from '@/components/sections/EditableSections'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
@@ -56,9 +56,12 @@ export default async function LocationPage({ params }: PageProps) {
     <div>
       <LandingPageBanner component="LandingPageBanner" headline={title} />
       <LocationContact locationId={locationObj.id} />
-      {sections.map((section, i) => (
-        <SectionRenderer key={`${section.component}-${i}`} section={section} />
-      ))}
+      <EditableSections
+        target="location"
+        targetId={locationObj.id}
+        sections={sections}
+        showReorder
+      />
     </div>
   )
 }

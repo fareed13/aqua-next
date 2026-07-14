@@ -1,8 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useOrgStore } from '@/store/orgStore'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { buildMediaUrl } from '@/lib/utils/media'
+
+const isVideoExt = (ext?: string) => ext === 'webm' || ext === 'mp4'
+const isImageExt = (ext?: string) => ext === 'png' || ext === 'jpg' || ext === 'jpeg'
 
 const PLATFORMS = [
   { text: 'Facebook', value: 'Facebook' },
@@ -37,6 +41,9 @@ export function ReviewsAddEdit({ popup, review, onToggleEditPopup }: ReviewsAddE
   const [mediaFile, setMediaFile] = useState<File | null>(null)
   const [mediaUrl, setMediaUrl] = useState<string | null>(null)
   const [mediaType, setMediaType] = useState<string | null>(null)
+  // The media already attached to the review (shown until a new file is chosen)
+  const [existingMedia, setExistingMedia] = useState<Record<string, any> | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [errors, setErrors] = useState<string[]>([])
   const [topicInput, setTopicInput] = useState('')
 
@@ -53,6 +60,8 @@ export function ReviewsAddEdit({ popup, review, onToggleEditPopup }: ReviewsAddE
       setServiceId(review.services ?? [])
       setIsApproved(review.is_approved ?? false)
       setDatetime(review.date_created ?? '')
+      setExistingMedia(review.media ?? null)
+      setMediaFile(null)
     } else {
       setId(null)
       setContent('')
@@ -67,6 +76,7 @@ export function ReviewsAddEdit({ popup, review, onToggleEditPopup }: ReviewsAddE
       setMediaFile(null)
       setMediaUrl(null)
       setMediaType(null)
+      setExistingMedia(null)
     }
   }, [review])
 
@@ -293,28 +303,70 @@ export function ReviewsAddEdit({ popup, review, onToggleEditPopup }: ReviewsAddE
               />
             </div>
 
-            {/* Media preview */}
+            {/* Media preview — newly selected file takes priority, else the media already on the review */}
             {isImagePreview && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={mediaUrl!} alt="Review image preview" className="w-full" />
+              <img src={mediaUrl!} alt="Review image preview" className="w-full rounded" />
             )}
             {isVideoPreview && (
-              <video src={mediaUrl!} controls className="w-full" aria-label="Review video preview" />
+              <video src={mediaUrl!} controls className="w-full rounded" aria-label="Review video preview" />
+            )}
+            {!mediaUrl && existingMedia && (
+              <div>
+                {isImageExt(existingMedia.extension) && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={buildMediaUrl(existingMedia as any, 700)}
+                    alt={existingMedia.name || 'Review image'}
+                    className="w-full rounded"
+                  />
+                )}
+                {isVideoExt(existingMedia.extension) && (
+                  <video
+                    src={buildMediaUrl(existingMedia as any, 700)}
+                    controls
+                    className="w-full rounded"
+                    aria-label="Review video"
+                  />
+                )}
+              </div>
             )}
 
-            {/* File upload */}
+            {/* File upload — custom picker so the current file name is shown
+                (a native input always reads "no file chosen" and can't be preset) */}
             <div>
               <label className="block text-sm font-medium mb-1">Upload Media</label>
               <input
+                ref={fileInputRef}
                 type="file"
                 accept="image/*,video/mp4,video/webm"
                 onChange={e => setMediaFile(e.target.files?.[0] ?? null)}
-                className="w-full text-sm"
+                className="hidden"
               />
-              {mediaFile && (
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setMediaFile(null)}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 whitespace-nowrap"
+                >
+                  Choose File
+                </button>
+                <span className="text-sm text-gray-600 truncate">
+                  {mediaFile
+                    ? mediaFile.name
+                    : existingMedia
+                      ? (existingMedia.name || `Current ${isVideoExt(existingMedia.extension) ? 'video' : 'image'}`)
+                      : 'No file chosen'}
+                </span>
+              </div>
+              {(mediaFile || existingMedia) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMediaFile(null)
+                    setExistingMedia(null)
+                    if (fileInputRef.current) fileInputRef.current.value = ''
+                  }}
                   className="mt-1 text-xs text-red-600 underline"
                 >
                   Clear file

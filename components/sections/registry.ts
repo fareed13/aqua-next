@@ -149,7 +149,7 @@ export const SECTION_REGISTRY: Record<string, ComponentType<SectionProps>> = {
 
   // ── Gallery ───────────────────────────────────────────────────────────
   GalleryDefault: dynamic(() => import('@/components/gallery/GalleryDefault').then(m => m.GalleryDefault)),
-  LocationFacilityMedias: TODO, // not yet migrated
+  LocationFacilityMedias: dynamic(() => import('@/components/facilities/LocationFacilityMedias').then(m => m.LocationFacilityMedias)),
   SalonGallery: dynamic(() => import('@/components/gallery/SalonGallery').then(m => m.SalonGallery)),
   SalonInstaGallery: dynamic(() => import('@/components/gallery/SalonInstaGallery').then(m => m.SalonInstaGallery)),
 
