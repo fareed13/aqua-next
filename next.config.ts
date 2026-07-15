@@ -18,10 +18,11 @@ const mediaHostname = (() => {
 
 const nextConfig: NextConfig = {
   images: {
-    // All media is served from CloudFront which is already a CDN.
-    // unoptimized skips the /_next/image proxy so the browser fetches
-    // directly from CloudFront — avoids 403s from proxy-blocked requests.
-    unoptimized: true,
+    // CloudFront serves the original PNG/JPEG at full size, so going direct
+    // ships ~2.6 MB of images on the home page. /_next/image resizes to the
+    // device width and re-encodes to WebP/AVIF (~76% smaller on a 10-image
+    // sample). CloudFront answers the optimizer's server-side fetch with 200,
+    // so the 403s that previously forced `unoptimized: true` no longer occur.
     remotePatterns: [
       { protocol: 'https', hostname: backendHostname },
       { protocol: 'https', hostname: mediaHostname },

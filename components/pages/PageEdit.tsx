@@ -1,14 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useOrgStore } from '@/store/orgStore'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
 import { isGlobalPage, checkPageInMenu } from '@/lib/utils/pageUtils'
-import { OrderingDraggable } from '@/components/OrderingDraggable'
 import type { Page, ComponentContent } from '@/types/api'
+
+const OrderingDraggable = dynamic(
+  () => import('@/components/OrderingDraggable').then(m => m.OrderingDraggable),
+  { ssr: false },
+)
 
 interface Props {
   page: Page
