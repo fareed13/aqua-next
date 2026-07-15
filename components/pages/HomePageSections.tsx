@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useAuth } from '@/hooks/useAuth'
 import { EditableSections } from '@/components/sections/EditableSections'
-import { PageEdit } from './PageEdit'
 import type { Page } from '@/types/api'
+
+const PageEdit = dynamic(() => import('./PageEdit').then(m => m.PageEdit), { ssr: false })
 
 /**
  * Home page sections with admin controls — mirrors Nuxt pages/index.vue,

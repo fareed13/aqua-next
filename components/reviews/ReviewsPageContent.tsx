@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useOrgStore } from '@/store/orgStore'
 import { ReviewsClean } from './ReviewsClean'
-import { PageEdit } from '@/components/pages/PageEdit'
 import { PopupFormReview } from '@/components/popupForm/PopupFormReview'
 import { useAuth } from '@/hooks/useAuth'
 import type { Review, Page } from '@/types/api'
+
+const PageEdit = dynamic(() => import('@/components/pages/PageEdit').then(m => m.PageEdit), { ssr: false })
 
 interface Props {
   initialReviews?: Review[]
