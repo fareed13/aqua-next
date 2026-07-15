@@ -145,7 +145,11 @@ export function ReviewsClean({ countOfReviews }: ReviewsCleanProps) {
   }, [selectedReview, deleteReview])
 
   const allReviews = (organization?.org_reviews ?? []).filter(r => !removedIds.includes(r.id))
-  const reviews = countOfReviews != null ? allReviews.slice(0, countOfReviews) : allReviews
+  // Nuxt's ReviewsClean.vue calls useReviews() with no props, so the composable's
+  // `slice(0, props.count_of_reviews ?? 6)` always caps it at 6. Falling back to
+  // the unsliced list here showed every org review on class pages instead.
+  // The /reviews page still opts out by passing countOfReviews={100}.
+  const reviews = allReviews.slice(0, countOfReviews ?? 6)
 
   const [activeSlide, setActiveSlide] = useState(0)
   const [readMore, setReadMore] = useState(true)

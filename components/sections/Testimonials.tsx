@@ -41,7 +41,7 @@ export function Testimonials({ media }: SectionProps) {
                     {imgSrc ? (
                       <Image
                         src={imgSrc}
-                        alt={title.text}
+                        alt={title.text || 'Testimonial image'}
                         width={600}
                         height={400}
                         className="w-full h-auto object-cover"

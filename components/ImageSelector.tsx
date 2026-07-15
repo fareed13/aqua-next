@@ -457,7 +457,7 @@ export function ImageSelector({ medias, onImageSelected, preSelected, buttonText
                           <video src={getMediaUrl(media)} className="w-full h-full object-cover" />
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={getMediaUrl(media)} alt={media.name} className="w-full h-full object-cover" />
+                          <img src={getMediaUrl(media)} alt={media.name || 'Media preview'} className="w-full h-full object-cover" />
                         )}
                       </div>
                     ))}

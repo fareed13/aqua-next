@@ -135,7 +135,13 @@ export function ServicePlans({ service }: Props) {
                 {/* Image */}
                 <div className="relative h-[180px] bg-gray-100">
                   {imgUrl ? (
-                    <Image src={imgUrl} alt={sp.plan.name} fill className="object-cover" />
+                    <Image
+                      src={imgUrl}
+                      alt={sp.plan.name || 'Plan image'}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover"
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-200">
                       <span className="text-gray-400 text-sm">No image</span>

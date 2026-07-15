@@ -16,6 +16,18 @@ const mediaHostname = (() => {
   }
 })()
 
+// Videos live on their own CDN (buildMediaUrl switches to it for mp4/webm).
+// It has to be listed too: next/image validates the hostname before it ever
+// looks at whether the image is optimized, so a poster or a stray video URL
+// reaching <Image> hard-errors the page without this.
+const videoHostname = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_VIDEO_URL ?? 'https://duvyeenkq0cxj.cloudfront.net').hostname
+  } catch {
+    return 'duvyeenkq0cxj.cloudfront.net'
+  }
+})()
+
 const nextConfig: NextConfig = {
   images: {
     // CloudFront serves the original PNG/JPEG at full size, so going direct
@@ -26,7 +38,14 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: backendHostname },
       { protocol: 'https', hostname: mediaHostname },
+      { protocol: 'https', hostname: videoHostname },
       { protocol: 'http', hostname: 'localhost' },
+      // Instagram serves each post from a rotating, region-specific host
+      // (scontent-ord5-3, scontent-lax3-1, …) so only a wildcard can match.
+      // These are validated even for `unoptimized` images, which the feed uses
+      // because the URLs carry an expiring signature.
+      { protocol: 'https', hostname: '**.cdninstagram.com' },
+      { protocol: 'https', hostname: '**.fbcdn.net' },
     ],
   },
 }

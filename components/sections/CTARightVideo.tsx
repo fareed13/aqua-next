@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import type { SectionProps } from '@/components/sections/registry'
+import { LazyVideo } from '@/components/media/LazyVideo'
 import { buildMediaUrl } from '@/lib/utils/media'
 import { useUiStore } from '@/store/uiStore'
 
@@ -73,14 +74,12 @@ export function CTARightVideo({ headline, content, bullets, media }: SectionProp
           <div className="w-full md:w-7/12 flex flex-col justify-center">
             {mediaUrl && (
               isVideo ? (
-                <video
+                <LazyVideo
                   src={mediaUrl}
-                  autoPlay
                   muted
                   loop
                   playsInline
                   controls
-                  preload="auto"
                   className="w-full h-full object-cover border-[7px] border-white rounded-[3px]"
                   style={{ boxShadow: '10px 10px 10px rgba(0,0,0,0.3)', zIndex: 1 }}
                 />

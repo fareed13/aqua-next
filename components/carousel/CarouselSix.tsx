@@ -35,8 +35,9 @@ export function CarouselSix({ headline, subtitle }: SectionProps) {
               {item.src ? (
                 <Image
                   src={item.src}
-                  alt={item.alt}
+                  alt={item.alt || 'Carousel image'}
                   fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
                   className="object-cover"
                   priority={i < 3}
                 />

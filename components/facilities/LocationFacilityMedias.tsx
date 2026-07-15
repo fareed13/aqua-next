@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { useOrgStore } from '@/store/orgStore'
-import { buildMediaUrl } from '@/lib/utils/media'
+import { buildMediaUrl, isVideoMedia } from '@/lib/utils/media'
 import type { SectionProps } from '@/components/sections/registry'
 
 /**
@@ -31,6 +31,12 @@ export function LocationFacilityMedias(_props: SectionProps) {
       .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
       .map(el => el.media)
       .filter((m): m is NonNullable<typeof m> => !!m?.uuid && !!m.extension)
+      // Nuxt builds every entry off the image CDN regardless of extension, so a
+      // video in locationmedias renders as a broken <img> there. buildMediaUrl
+      // correctly routes mp4 to the video CDN instead, which then hard-errors
+      // next/image ("Invalid src prop"). This gallery is titled "Images", so
+      // drop videos rather than hand a .mp4 to <Image>.
+      .filter(m => !isVideoMedia(m))
       .map(m => buildMediaUrl(m, 700))
   }, [locations, slug])
 

@@ -1,6 +1,7 @@
 'use client'
 
 import type { SectionProps } from '@/components/sections/registry'
+import { LazyVideo } from '@/components/media/LazyVideo'
 import { buildMediaUrl } from '@/lib/utils/media'
 
 const MONTHS = [
@@ -22,16 +23,14 @@ export function CarouselVideo({ media }: SectionProps) {
     >
       {/* Background video */}
       {videoUrl && (
-        <video
-          autoPlay
+        <LazyVideo
+          src={videoUrl}
           loop
           muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover z-[1]"
           aria-label="Background video"
-        >
-          <source src={videoUrl} type="video/mp4" />
-        </video>
+        />
       )}
 
       {/* Dark overlay + content */}
