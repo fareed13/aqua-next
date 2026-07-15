@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { EditableSections } from '@/components/sections/EditableSections'
 import { ReviewsClean } from '@/components/reviews/ReviewsClean'
 import { InstructorDefault } from '@/components/instructor/InstructorDefault'
@@ -12,6 +13,12 @@ import { useUiStore } from '@/store/uiStore'
 import { buildMediaUrl } from '@/lib/utils/media'
 import { interestedServiceSetter } from '@/hooks/useCheckoutDetails'
 import type { Service, ComponentContent } from '@/types/api'
+
+// Admin-only: keep it out of the public bundle (see EditableSections/PageEdit).
+const ServiceAdminBar = dynamic(
+  () => import('@/components/service/ServiceAdminBar').then(m => m.ServiceAdminBar),
+  { ssr: false },
+)
 
 interface ServiceDetailProps {
   service: Service
@@ -78,6 +85,10 @@ export function ServiceDetail({ service, serviceName, showProgramChildren }: Ser
 
   const isBannerEnabled = organization?.is_landing_page_banner_enabled !== false
 
+  // Auth is client-only, so defer the admin row to avoid a hydration mismatch.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   return (
     <div className={!isBannerEnabled ? 'pt-[110px] max-[767px]:pt-[155px]' : undefined}>
       {isBannerEnabled && (
@@ -87,6 +98,8 @@ export function ServiceDetail({ service, serviceName, showProgramChildren }: Ser
           backgroundImage={backgroundImage}
         />
       )}
+
+      {mounted && <ServiceAdminBar service={service} />}
 
       <EditableSections
         target="service"
