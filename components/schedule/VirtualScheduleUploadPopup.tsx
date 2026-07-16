@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useOrgStore } from '@/store/orgStore'
+import { useOrgStore, useOrgServices } from '@/store/orgStore'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -36,7 +36,7 @@ function isComplete(s: UploadedSchedule) {
 }
 
 export function VirtualScheduleUploadPopup({ popup, toggleUploadPopup, selectedLocationId }: VirtualScheduleUploadPopupProps) {
-  const services = useOrgStore(s => s.organization?.services ?? [])
+  const services = useOrgServices()
   const { postSecure } = useSecureCalls()
 
   const fileInputRef = useRef<HTMLInputElement>(null)

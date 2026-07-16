@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { useOrgStore } from '@/store/orgStore'
+import { useOrgStore, useOrgServices } from '@/store/orgStore'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
 import { useContentBuilder } from '@/hooks/admin/useContentBuilder'
 import { ImageSelector } from '@/components/ImageSelector'
@@ -31,7 +31,7 @@ export function ServiceEdit({ serviceId }: Props) {
   const router = useRouter()
   const organization = useOrgStore(s => s.organization)
   const location = useOrgStore(s => s.location)
-  const services = useOrgStore(s => s.organization?.services ?? [])
+  const services = useOrgServices()
   const { getSecure, putSecure, postSecure } = useSecureCalls()
   const { fetchMediaByOrganization } = useContentBuilder()
 

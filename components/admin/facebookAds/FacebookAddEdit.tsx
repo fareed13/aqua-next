@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { useOrgStore } from '@/store/orgStore'
+import { useOrgStore, useOrgServices } from '@/store/orgStore'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
 
 interface FacebookAddEditProps {
@@ -23,7 +23,7 @@ interface BasicAdForm {
 export function FacebookAddEdit({ adsId }: FacebookAddEditProps) {
   const router = useRouter()
   const { isAdminLoggedIn } = useAuth()
-  const services = useOrgStore(s => s.organization?.services ?? [])
+  const services = useOrgServices()
   const { getSecure, postSecure } = useSecureCalls()
 
   const [loading, setLoading] = useState(false)

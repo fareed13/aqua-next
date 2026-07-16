@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { useAuth } from '@/hooks/useAuth'
-import { useOrgStore } from '@/store/orgStore'
+import { useOrgStore, useOrgServices } from '@/store/orgStore'
 import { ProgramDefault } from '@/components/programBlocks/ProgramDefault'
 
 // Admin-only — keep all three out of the public bundle (see admin-ui lazy pattern).
@@ -23,7 +23,7 @@ const ServiceSettings = dynamic(
 export function ServiceClasses() {
   const { isAdminLoggedIn } = useAuth()
   const organization = useOrgStore(s => s.organization)
-  const services = useOrgStore(s => s.organization?.services ?? [])
+  const services = useOrgServices()
 
   const [backgroundImage, setBackgroundImage] = useState('bg_striped_orange.png')
 

@@ -100,6 +100,87 @@ export function Autocomplete({ label, items, value, onChange, required, placehol
   )
 }
 
+interface MultiSelectProps<T extends string | number> {
+  label: string
+  options: Array<{ value: T; label: string }>
+  value: T[]
+  onChange: (next: T[]) => void
+  /** Vuetify `chips` — selections as removable pills instead of comma text. */
+  chips?: boolean
+  placeholder?: string
+}
+
+/**
+ * Multi-select over id-valued options — Vuetify `v-select multiple chips`.
+ *
+ * Distinct from MultiCombobox: a v-select has no free text entry, and its value
+ * is the option's `item-value` (usually an id) rather than its label, so a
+ * string-keyed combobox can't stand in for it without collapsing duplicate names.
+ */
+export function MultiSelect<T extends string | number>({
+  label, options, value, onChange, chips = true, placeholder,
+}: MultiSelectProps<T>) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useOutsideClose(ref, open, () => setOpen(false))
+
+  const toggle = (v: T) =>
+    onChange(value.includes(v) ? value.filter(x => x !== v) : [...value, v])
+
+  const labelFor = (v: T) => options.find(o => o.value === v)?.label ?? String(v)
+
+  return (
+    <div className="relative" ref={ref}>
+      <label className={LABEL_CLASS}>{label}</label>
+      <div
+        onClick={() => setOpen(o => !o)}
+        className="relative w-full min-h-[42px] border border-gray-300 rounded px-3 pr-8 py-1.5 text-sm bg-white cursor-pointer flex flex-wrap items-center gap-1"
+      >
+        {value.length === 0 && <span className="text-gray-400 py-1">{placeholder}</span>}
+        {chips
+          ? value.map(v => (
+              <span key={String(v)} className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-full px-2 py-0.5 text-xs">
+                {labelFor(v)}
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); toggle(v) }}
+                  className="text-gray-500 hover:text-gray-800"
+                  aria-label={`Remove ${labelFor(v)}`}
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))
+          : value.length > 0 && <span className="py-1">{value.map(labelFor).join(', ')}</span>}
+        <ChevronDown
+          size={16}
+          className={`absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </div>
+      {open && (
+        <div className="absolute z-30 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg py-1">
+          {options.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-gray-400">No options</div>
+          ) : (
+            options.map(o => (
+              <label key={String(o.value)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={value.includes(o.value)}
+                  onChange={() => toggle(o.value)}
+                  className="accent-[#124e66]"
+                />
+                <span className="truncate">{o.label}</span>
+              </label>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface MultiComboboxProps {
   label: string
   items: string[]
