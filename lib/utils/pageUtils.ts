@@ -23,3 +23,8 @@ export function isGlobalPage(page: Page): boolean {
 export function checkPageInMenu(organization: Organization, page: Page): boolean {
   return !!organization.additional_headers?.find(ah => ah.text === page.name)
 }
+
+/** Mirrors Nuxt's check_content_http — blocks saving editor content with insecure links. */
+export function checkContentHttp(content: string | null | undefined): boolean {
+  return !!content && content.includes('http://')
+}

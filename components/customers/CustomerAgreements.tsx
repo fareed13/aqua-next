@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
 import { useOrgStore } from '@/store/orgStore'
+import { SignAgreement } from './SignAgreement'
 
 interface Contact {
   id: number
@@ -152,6 +153,12 @@ export function CustomerAgreements({ contact }: CustomerAgreementsProps) {
     }
   }
 
+  // Nuxt agreementUpdated: drop the stale record, unshift the freshly-signed one.
+  const agreementUpdated = (updated: any) => {
+    setCustomerAgreements(prev => [updated, ...prev.filter(a => a.id !== updated.id)])
+    setShowSignPopup(false)
+  }
+
   const openAgreement = async (item: CustomerAgreement) => {
     if (item.status === 'signed') {
       try {
@@ -273,14 +280,12 @@ export function CustomerAgreements({ contact }: CustomerAgreementsProps) {
       )}
 
       {showSignPopup && agreementContent && agreementId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded shadow-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div dangerouslySetInnerHTML={{ __html: agreementContent }} />
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setShowSignPopup(false)} className="px-4 py-2 rounded bg-gray-200">Close</button>
-            </div>
-          </div>
-        </div>
+        <SignAgreement
+          agreementContent={agreementContent}
+          agreementId={agreementId}
+          onClose={() => setShowSignPopup(false)}
+          onAgreementUpdated={agreementUpdated}
+        />
       )}
     </div>
   )

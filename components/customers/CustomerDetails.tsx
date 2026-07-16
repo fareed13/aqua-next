@@ -3,8 +3,15 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSecureCalls, SECURE_ENDPOINTS, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { toast } from 'sonner'
+import {
+  useSecureCalls,
+  useNonSecureCalls,
+  SECURE_ENDPOINTS,
+  NON_SECURE_ENDPOINTS,
+} from '@/hooks/apiCalls/useApiCalls'
 import { useOrgStore } from '@/store/orgStore'
+import { emailRule, zipCodeValidation, min, max } from '@/hooks/useValidation'
 import { CognitoDialogue } from './CognitoDialogue'
 
 interface Contact {
@@ -58,8 +65,9 @@ const ACTION_OPTIONS = [
 
 export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsProps) {
   const router = useRouter()
-  const { getSecure, putSecure, postSecure } = useSecureCalls()
-  const { getNonSecure } = useSecureCalls() as any
+  const { putSecure, postSecure } = useSecureCalls()
+  const { getPublic } = useNonSecureCalls()
+  const { getSecure } = useSecureCalls()
   const orgStore = useOrgStore() as any
 
   const [loading, setLoading] = useState(false)
@@ -94,8 +102,8 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
     const init = async () => {
       setLoading(true)
       try {
-        // Fetch states via non-secure
-        const statesRes = await (getSecure as any)(NON_SECURE_ENDPOINTS.PUBLIC_STATE, { country: 'US' })
+        // States come from the PUBLIC (non-secure) API — Nuxt uses getApiCallsPublic.
+        const statesRes = await getPublic(NON_SECURE_ENDPOINTS.PUBLIC_STATE, { country: 'US' })
         setStates(Array.isArray(statesRes) ? statesRes : statesRes?.results ?? [])
         const tagsRes = await getSecure<any>(SECURE_ENDPOINTS.TAGS)
         setTagsList(Array.isArray(tagsRes) ? tagsRes : tagsRes?.results ?? [])
@@ -132,6 +140,26 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
     }
   }, [contact])
 
+  // Nuxt watch(is_related): a related contact has no email of its own and inherits
+  // the parent link; an unrelated contact must not carry a parent.
+  const onToggleRelated = (checked: boolean) => {
+    setIsRelated(checked)
+    if (checked) {
+      setEmail('')
+    } else {
+      setParentId(null)
+      setParentRelationship('')
+    }
+  }
+
+  // Nuxt watch(parent_id): picking a parent clears the (now-inherited) email;
+  // clearing the parent clears the relationship that no longer applies.
+  const onSelectParent = (id: number | null) => {
+    setParentId(id)
+    if (id) setEmail('')
+    else setParentRelationship('')
+  }
+
   const filteredContacts = useMemo(() => {
     const results = allContacts
       .filter(c => c.email != null)
@@ -151,19 +179,33 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
     const required = isRelated
       ? [firstName, lastName, street, zipcode, city, phone]
       : [firstName, lastName, street, zipcode, city, phone, email]
-    return required.every(v => v && v.trim())
+    if (!required.every(v => v && v.trim())) {
+      toast.error('Please fill out the required fields', { duration: 15000 })
+      return false
+    }
+    // Format rules ported from Nuxt's Vuetify :rules (phone min10/max11, zip, email).
+    const checks: Array<true | string> = [
+      min(10)(phone),
+      max(11)(phone),
+      zipCodeValidation(zipcode),
+    ]
+    if (!isRelated) checks.push(emailRule(email))
+    const firstError = checks.find(r => r !== true)
+    if (firstError) {
+      toast.error(firstError as string, { duration: 15000 })
+      return false
+    }
+    return true
   }
 
   const update = async () => {
     if (isRelated && (!parentRelationship || !parentId)) {
-      alert('Please select related contact and its relationship.')
+      toast.error('Please select related contact and its relationship.', { duration: 15000 })
       return
     }
-    if (!validate()) {
-      alert('Please fill out the required fields')
-      return
-    }
+    if (!validate()) return
     try {
+      setLoading(true)
       await putSecure(SECURE_ENDPOINTS.CUSTOMER, {
         id: contact!.id,
         first_name: firstName,
@@ -185,22 +227,23 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
         enable_referrals: enableReferrals,
         barcode,
       })
+      toast.success('Customer Updated Successfully', { duration: 15000 })
       router.push('/customers')
     } catch (error) {
       console.error(error)
+    } finally {
+      setLoading(false)
     }
   }
 
   const create = async () => {
     if (isRelated && (!parentRelationship || !parentId)) {
-      alert('Please select related contact and its relationship.')
+      toast.error('Please select related contact and its relationship.', { duration: 15000 })
       return
     }
-    if (!validate()) {
-      alert('Please fill out the required fields')
-      return
-    }
+    if (!validate()) return
     try {
+      setLoading(true)
       await postSecure(SECURE_ENDPOINTS.CUSTOMER, {
         first_name: firstName,
         last_name: lastName,
@@ -223,9 +266,12 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
         barcode,
         lead_origin: 'non-digital',
       })
+      toast.success('Customer created Successfully', { duration: 15000 })
       router.push('/customers')
     } catch (error) {
       console.error(error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -270,7 +316,7 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
         {/* Family member section */}
         <div className="flex flex-wrap gap-4 items-start">
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={isRelated} onChange={e => setIsRelated(e.target.checked)} className="accent-red-500 w-4 h-4" />
+            <input type="checkbox" checked={isRelated} onChange={e => onToggleRelated(e.target.checked)} className="accent-red-500 w-4 h-4" />
             <span className="text-sm">Does this contact have a family member at the school?</span>
           </label>
 
@@ -287,7 +333,7 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
             <select
               className="border rounded px-3 py-2 bg-gray-50 w-48"
               value={parentId ?? ''}
-              onChange={e => setParentId(e.target.value ? Number(e.target.value) : null)}
+              onChange={e => onSelectParent(e.target.value ? Number(e.target.value) : null)}
               disabled={!isRelated}
             >
               <option value="">None</option>

@@ -6,6 +6,7 @@ import { secureClient } from '@/lib/api/secureClient'
 export const SECURE_ENDPOINTS = {
   RESERVATIONS: '/booking/class/reservations/',
   CUSTOMER: '/customer/',
+  CUSTOMER_LITE: '/customer/lite/',
   CUSTOMER_CREATE: '/customer/create/',
   AGREEMENTS: '/organization/agreement/',
   BLOG: '/location/blog/',
@@ -54,7 +55,7 @@ export const SECURE_ENDPOINTS = {
   NOTES: '/customer/notes/',
   LOCATION_AQUILA_SETUP: '/location/aquila-setup/',
   LOCATION_AQUILA_PAYMENT_SETUP: '/location/aquila-payment-setup/',
-  INVOKE_AQUILA: '/location/invoke-aquila/',
+  INVOKE_AQUILA: '/customer/invoke-aquila/',
   LIBRARY_CLR_SCHEME: '/library/color-scheme/',
   LIBRARY_AD_TEMPLATE: '/library/ad-template/',
   LESSON: '/schedule/lesson/',
