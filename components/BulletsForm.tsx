@@ -14,12 +14,16 @@ export function BulletsForm({ initialBullets = [], onChange }: Props) {
 
   useEffect(() => {
     const raw = initialBullets
-    const formatted =
-      raw.length > 0 && typeof raw[0] === 'object'
-        ? (raw[0] as unknown as string[])
-        : raw
-    const initial = formatted.length ? formatted : ['']
-    setBullets(initial)
+    // Callers pass [field.value], so a saved list arrives double-wrapped as [[...]] and
+    // needs one level unwrapped. A newly added field is {key: null, value: null} though,
+    // which makes raw [null] — and since typeof null === 'object', the unwrap yields null.
+    // Nuxt tolerates that via `!initialBulletsFormatted ? []`; that guard was lost in the
+    // port, so this read null.length and threw. Array.isArray restores it: anything that
+    // isn't a list (null, a bare object) falls back to one empty bullet, as in Nuxt.
+    const unwrapped = typeof raw[0] === 'object' ? raw[0] : raw
+    const list = Array.isArray(unwrapped) ? (unwrapped as unknown[]) : []
+    // Keep every slot but never hand null/undefined to a controlled <input>.
+    setBullets(list.length ? list.map(b => (typeof b === 'string' ? b : '')) : [''])
   }, [])
 
   const update = (next: string[]) => {

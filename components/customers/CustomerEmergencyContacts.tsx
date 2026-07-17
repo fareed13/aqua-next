@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { User, Mail, Phone, Users, Trash2 } from 'lucide-react'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { FIELD } from './fieldStyles'
+import { MobileCard } from './MobileCard'
 
 interface Contact {
   id: number
@@ -156,16 +159,16 @@ export function CustomerEmergencyContacts({ contact, allContacts = [] }: Custome
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
         <h1 className="text-lg font-bold">Add Emergency Contact</h1>
         <div className="flex flex-wrap gap-2 items-center">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <input
               type="text"
               placeholder="Search contacts..."
-              className="border rounded px-3 py-2 text-sm bg-gray-50 w-48"
+              className={`${FIELD} w-64`}
               value={contactSearch}
               onChange={e => setContactSearch(e.target.value)}
             />
             <select
-              className="border rounded px-3 py-2 bg-gray-50 w-48"
+              className={`${FIELD} w-64`}
               value={emergencyContact ?? ''}
               onChange={e => setEmergencyContact(e.target.value ? Number(e.target.value) : null)}
             >
@@ -176,7 +179,7 @@ export function CustomerEmergencyContacts({ contact, allContacts = [] }: Custome
             </select>
           </div>
           <select
-            className="border rounded px-3 py-2 bg-gray-50 w-48"
+            className={`${FIELD} w-64`}
             value={selectedRelationship}
             onChange={e => setSelectedRelationship(e.target.value)}
           >
@@ -193,40 +196,60 @@ export function CustomerEmergencyContacts({ contact, allContacts = [] }: Custome
       {loading ? (
         <div className="text-center py-8 text-gray-500">Loading...</div>
       ) : (
-        <div className="overflow-x-auto bg-white border rounded shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Contact</th>
-                <th className="px-4 py-3 font-semibold">Email</th>
-                <th className="px-4 py-3 font-semibold">Phone</th>
-                <th className="px-4 py-3 font-semibold">Relation</th>
-                <th className="px-4 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedItems.map(item => (
-                <tr key={item.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3">{item.emergency_contact.first_name} {item.emergency_contact.last_name}</td>
-                  <td className="px-4 py-3">{item.emergency_contact.email ?? ''}</td>
-                  <td className="px-4 py-3">{item.emergency_contact.phone ?? ''}</td>
-                  <td className="px-4 py-3">{item.relationship ?? ''}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => { setSelectedEcToDelete(item); setDeletePopup(true) }}
-                      className="text-red-600 hover:text-red-800 text-xs"
-                    >
-                      Delete
-                    </button>
-                  </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto bg-white border rounded shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Contact</th>
+                  <th className="px-4 py-3 font-semibold">Email</th>
+                  <th className="px-4 py-3 font-semibold">Phone</th>
+                  <th className="px-4 py-3 font-semibold">Relation</th>
+                  <th className="px-4 py-3 font-semibold">Actions</th>
                 </tr>
-              ))}
-              {pagedItems.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No Emergency Contacts Found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {pagedItems.map(item => (
+                  <tr key={item.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-3">{item.emergency_contact.first_name} {item.emergency_contact.last_name}</td>
+                    <td className="px-4 py-3">{item.emergency_contact.email ?? ''}</td>
+                    <td className="px-4 py-3">{item.emergency_contact.phone ?? ''}</td>
+                    <td className="px-4 py-3">{item.relationship ?? ''}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => { setSelectedEcToDelete(item); setDeletePopup(true) }}
+                        className="text-red-600 hover:text-red-800 text-xs"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {pagedItems.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No Emergency Contacts Found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card view */}
+          <div className="md:hidden space-y-3">
+            {pagedItems.map(item => (
+              <MobileCard
+                key={item.id}
+                header={<><User size={18} className="text-[#6D6D6D]" /><span className="truncate">{item.emergency_contact.first_name} {item.emergency_contact.last_name}</span></>}
+                action={<button onClick={() => { setSelectedEcToDelete(item); setDeletePopup(true) }} aria-label="Delete" className="text-red-600"><Trash2 size={18} /></button>}
+                rows={[
+                  { icon: <Mail size={18} />, value: item.emergency_contact.email ?? '' },
+                  { icon: <Phone size={18} />, value: item.emergency_contact.phone ?? '' },
+                  { icon: <Users size={18} />, value: item.relationship ?? '' },
+                ]}
+              />
+            ))}
+            {pagedItems.length === 0 && <div className="py-8 text-center text-gray-500">No Emergency Contacts Found</div>}
+          </div>
+        </>
       )}
 
       {customerEmergencyContacts.length > 0 && (

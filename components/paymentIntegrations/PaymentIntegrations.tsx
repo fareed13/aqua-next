@@ -70,33 +70,28 @@ export function PaymentIntegrations() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const getLocationPaymentIntegration = async () => {
+  const getLocationPaymentIntegration = async (loc?: any) => {
+    const id = loc?.id ?? selectedLocation?.id ?? location?.id;
+    if (!id) return;
     setOverlay(true);
     try {
-      const endpoint =
-        secureEndpoint?.LOCATION_SECURE ||
-        `/api/locations/${selectedLocation?.id || location?.id}/payment-integrations`;
-      const response = await getApiCalls(endpoint);
-      if (response) {
-        setAllIntegrations(response);
-        setIntegrationData(response);
-        if (response.active_payment_method) {
-          setActivePaymentMethod(response.active_payment_method);
-        }
-      }
-
-      const aquilaEndpoint =
-        secureEndpoint?.LOCATION_AQUILA_PAYMENT_SETUP ||
-        `/api/locations/${selectedLocation?.id || location?.id}/aquila-payment-setup`;
-      const aquilaResponse = await getApiCalls(aquilaEndpoint);
+      // Aquila setup (auth url + sub-locations) — needs location_id.
+      const aquilaResponse: any = await getApiCalls(secureEndpoint.LOCATION_AQUILA_PAYMENT_SETUP, { location_id: id });
       if (aquilaResponse) {
-        if (aquilaResponse.auth_url) {
-          setAquilaAuthUrl(aquilaResponse.auth_url);
-        }
+        if (aquilaResponse.auth_url) setAquilaAuthUrl(aquilaResponse.auth_url);
         if (aquilaResponse.locations && aquilaResponse.locations.length > 1) {
           setMultipleAquilaLocations(true);
           setAquilaLocations(aquilaResponse.locations);
         }
+      }
+
+      // LOCATION_SECURE returns an array; the record holds active_payment_method + payment_integration.
+      const response: any = await getApiCalls(secureEndpoint.LOCATION_SECURE, { id });
+      const data = Array.isArray(response) ? response[0] : response;
+      if (data) {
+        setAllIntegrations(data);
+        setActivePaymentMethod(data.active_payment_method || '');
+        setIntegrationData(data.payment_integration || {});
       }
     } catch (error) {
       console.error('Failed to fetch payment integrations:', error);
@@ -131,14 +126,14 @@ export function PaymentIntegrations() {
   };
 
   const savePaymentSettings = async () => {
+    const id = selectedLocation?.id ?? location?.id;
     setOverlay(true);
     try {
-      const endpoint =
-        secureEndpoint?.LOCATION_SECURE ||
-        `/api/locations/${selectedLocation?.id || location?.id}/payment-integrations`;
-      await putApiCalls(endpoint, {
-        ...payment_integration,
+      await putApiCalls(secureEndpoint.LOCATION_SECURE, {
+        id,
         active_payment_method,
+        payment_integration,
+        organization_id: organization?.id,
       });
     } catch (error) {
       console.error('Failed to save payment settings:', error);
@@ -153,8 +148,9 @@ export function PaymentIntegrations() {
     }
   };
 
+  // Accordion: opening one panel closes the others (Nuxt v-expansion-panels, no `multiple`).
   const togglePanel = (key: string) => {
-    setOpenPanels((prev) => ({ ...prev, [key]: !prev[key] }));
+    setOpenPanels((prev) => (prev[key] ? {} : { [key]: true }));
   };
 
   const inputClass =
@@ -179,12 +175,12 @@ export function PaymentIntegrations() {
             onChange={(e) => {
               const loc = locations.find((l: any) => String(l.id) === e.target.value);
               setSelectedLocation(loc || null);
-              getLocationPaymentIntegration();
+              getLocationPaymentIntegration(loc);
             }}
           >
             {locations.map((loc: any) => (
               <option key={loc.id} value={loc.id}>
-                {loc.name}
+                {(loc.target_locations && loc.target_locations[0]) || loc.city}
               </option>
             ))}
           </select>

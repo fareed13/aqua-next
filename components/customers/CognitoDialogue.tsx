@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
 import { useOrgStore } from '@/store/orgStore'
+import { FIELD_FULL } from './fieldStyles'
 
 interface Contact {
   id: number
@@ -56,10 +57,10 @@ export function CognitoDialogue({ contact, cognitoDialog, togglePopup }: Cognito
           </h2>
         </div>
         <div className="px-6 py-4">
-          <label className="block text-sm font-medium mb-1">New Password *</label>
+          <label className="block text-sm font-medium mb-1.5 text-gray-700">New Password *</label>
           <input
             type="password"
-            className="w-full border rounded px-3 py-2"
+            className={FIELD_FULL}
             value={resetPassword}
             onChange={e => setResetPassword(e.target.value)}
             required

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { Organization, Location } from '@/types/api'
+import type { Organization, Location, Service } from '@/types/api'
 
 interface OrgState {
   organization: Organization | null
@@ -52,3 +52,21 @@ export const useOrgStore = create<OrgState>()(
       }),
   }))
 )
+
+/** Stable identity — see useOrgServices. Never mutate or return a copy of this. */
+const EMPTY_SERVICES: Service[] = []
+
+/**
+ * `organization.services`, or a stable empty array until the org loads.
+ *
+ * Use this instead of `useOrgStore(s => s.organization?.services ?? [])`.
+ * zustand v5 hands the selector straight to useSyncExternalStore as BOTH
+ * getSnapshot and getServerSnapshot with no memoisation of the result
+ * (zustand/esm/react.mjs:6-10). `organization` starts as null, so a `?? []`
+ * inside the selector mints a fresh array on every call and React warns
+ * "The result of getServerSnapshot should be cached to avoid an infinite loop".
+ * Coalescing outside the selector — to a constant, not a literal — keeps the
+ * reference stable for both the snapshot check and any downstream deps.
+ */
+export const useOrgServices = (): Service[] =>
+  useOrgStore((s) => s.organization?.services) ?? EMPTY_SERVICES

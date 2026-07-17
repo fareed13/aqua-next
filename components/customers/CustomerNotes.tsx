@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { FIELD_FULL } from './fieldStyles'
 
 interface Contact {
   id: number
@@ -156,7 +157,7 @@ export function CustomerNotes({ contact }: CustomerNotesProps) {
       <div id="add-note">
         <h1 className="text-lg font-bold mb-5">Notes</h1>
         <textarea
-          className="w-full border rounded px-3 py-2 bg-gray-50 resize-none"
+          className={`${FIELD_FULL} resize-none`}
           rows={3}
           placeholder="Text goes here..."
           value={content}

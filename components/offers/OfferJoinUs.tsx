@@ -1,5 +1,6 @@
 'use client'
 
+import { LazyVideo } from '@/components/media/LazyVideo'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import type { SectionProps } from '@/components/sections/registry'
@@ -92,18 +93,15 @@ export function OfferJoinUs({ headline, subtitle, media, plan }: SectionProps) {
           style={{ zIndex: 1 }}
         >
           {videoReady && videoUrl ? (
-            <video
+            <LazyVideo
               ref={videoRef}
+              src={videoUrl}
               className="w-full h-full object-cover block"
               loop
-              autoPlay
               muted
               playsInline
-              preload="none"
               aria-label={headline || 'Offer video'}
-            >
-              <source src={videoUrl} type="video/mp4" />
-            </video>
+            />
           ) : (
             <div
               className="w-full h-full min-h-[530px] md:min-h-[700px]"

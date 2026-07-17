@@ -164,7 +164,7 @@ export function MediaAddEdit({ mediaId }: MediaAddEditProps) {
               {mediaObj.extension === 'mp4' || mediaObj.media_type === 'video' ? (
                 <video controls className="w-full rounded border max-h-64 object-cover" />
               ) : (
-                <img alt={mediaObj.name} className="w-full rounded border max-h-64 object-cover" />
+                <img alt={mediaObj.name || 'Media preview'} className="w-full rounded border max-h-64 object-cover" />
               )}
             </div>
             <div className="space-y-4">
@@ -225,7 +225,7 @@ export function MediaAddEdit({ mediaId }: MediaAddEditProps) {
                     {entry.file.type.includes('video') ? (
                       <video src={entry.preview} controls className="w-full rounded border max-h-48 object-cover" />
                     ) : (
-                      <img src={entry.preview} alt={entry.file.name} className="w-full rounded border max-h-48 object-cover" />
+                      <img src={entry.preview} alt={entry.file.name || 'Upload preview'} className="w-full rounded border max-h-48 object-cover" />
                     )}
                   </div>
                   <div className="space-y-3">

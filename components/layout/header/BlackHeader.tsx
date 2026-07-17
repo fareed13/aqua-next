@@ -46,8 +46,17 @@ export function BlackHeader({ initialOrganization, initialLocation, initialLocat
   // open, so the header must keep its offset too.)
   const showBanner = organization.is_banner_enabled && banner
 
-  const isLoggedIn = isLoggedInFn()
-  const memberUser = isMemberLoggedIn() ? getUser() : null
+  // Auth lives in client-only storage, so the server always renders the
+  // logged-out header. Reading it during the first client render made that pass
+  // disagree with the server HTML and React threw away the whole header tree
+  // ("hydration failed"). Gate on `mounted` — the same pattern HomePageSections
+  // and DynamicPage use — so the first client render matches the server and the
+  // logged-in header appears on the next paint.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  const isLoggedIn = mounted && isLoggedInFn()
+  const memberUser = mounted && isMemberLoggedIn() ? getUser() : null
   const avatarLogo = memberUser
     ? `${memberUser.first_name?.[0] ?? ''}${memberUser.last_name?.[0] ?? ''}`.toUpperCase()
     : ''

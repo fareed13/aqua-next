@@ -14,6 +14,12 @@ const SIZE_MAP: Record<string, number> = {
 
 const VIDEO_EXTS = new Set(['mp4', 'webm'])
 
+/** True when the media is a video, so callers can keep it away from <Image>. */
+export function isVideoMedia(media: Media | null | undefined): boolean {
+  if (!media) return false
+  return VIDEO_EXTS.has(media.extension?.toLowerCase() ?? '') || media.type === 'video'
+}
+
 export function buildMediaUrl(
   media: Media | null | undefined,
   size: number | string = 350,

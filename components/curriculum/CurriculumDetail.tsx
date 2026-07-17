@@ -1,8 +1,9 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useOrgStore } from '@/store/orgStore'
+import { useAuth } from '@/hooks/useAuth'
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
 import type { Curriculum } from '@/types/api'
 
@@ -14,16 +15,24 @@ export function CurriculumDetail({ curriculum }: Props) {
   const organization = useOrgStore((s) => s.organization)
   const requiresLogin = organization?.require_login_for_virtual_classes ?? false
   const accentDark = organization?.colors?.['app-main-accent-dark'] ?? '#333'
+  const { isLoggedIn } = useAuth()
+
+  // Gate the client-only auth read behind mount to avoid a hydration mismatch
+  // on the enabled/disabled button (see CurriculumDefault for the same pattern).
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  const authed = mounted && isLoggedIn()
 
   const lessons = useMemo(() => {
     return (curriculum.lessons ?? []).map((lesson: any) => {
+      // Nuxt: disabled only when login required AND the user is NOT logged in.
       let disabled = false
-      if (requiresLogin) {
+      if (requiresLogin && !authed) {
         disabled = curriculum.is_public ? !lesson.is_public : true
       }
       return { ...lesson, disabled }
     })
-  }, [curriculum, requiresLogin])
+  }, [curriculum, requiresLogin, authed])
 
   return (
     <div>

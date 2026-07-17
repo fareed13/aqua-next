@@ -44,9 +44,14 @@ export function WhiteHeader({ initialOrganization, initialLocation, initialLocat
 
   // Banner stays visible when checkout opens (matches BlackHeader) — no !dialog.
   const showBanner = organization.is_banner_enabled && banner
-  const isLoggedIn = isLoggedInFn()
+  // Auth is client-only storage; reading it during the first client render
+  // disagrees with the server HTML and fails hydration (see BlackHeader).
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
-  const memberUser = isMemberLoggedIn() ? getUser() : null
+  const isLoggedIn = mounted && isLoggedInFn()
+
+  const memberUser = mounted && isMemberLoggedIn() ? getUser() : null
   const avatarLogo = memberUser
     ? `${memberUser.first_name?.[0] ?? ''}${memberUser.last_name?.[0] ?? ''}`.toUpperCase()
     : ''

@@ -195,8 +195,13 @@ export function InstagramFeed({ headline }: SectionProps) {
                         (post.media_type === 'VIDEO' ? 'Instagram video post' : 'Instagram post')
                       }
                       fill
+                      sizes="(max-width: 768px) 50vw, 25vw"
                       className="object-cover insta-post-image"
                       loading="lazy"
+                      // Instagram URLs are pre-sized by their CDN and signed with an
+                      // expiring token, so proxying them through /_next/image would
+                      // cache a URL that stops resolving.
+                      unoptimized
                     />
                   </div>
 

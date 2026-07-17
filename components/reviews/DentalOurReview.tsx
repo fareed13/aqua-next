@@ -9,7 +9,10 @@ export function DentalOurReview({ content, countOfReviews }: SectionProps) {
   const organization = useOrgStore(s => s.organization)
   const accentColor = organization?.colors?.['app-main-accent-color'] ?? '#0f4f8f'
   const allReviews = (organization as any)?.org_reviews ?? []
-  const reviews = countOfReviews ? allReviews.slice(0, countOfReviews) : allReviews
+  // Nuxt's DentalOurReview.vue calls useReviews() with no props, so it always
+  // caps at 6 (`slice(0, props.count_of_reviews ?? 6)`) — don't fall back to the
+  // full list when the prop is absent.
+  const reviews = allReviews.slice(0, countOfReviews ?? 6)
 
   const [carousel, setCarousel] = useState(0)
 

@@ -3,8 +3,15 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSecureCalls, SECURE_ENDPOINTS, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { toast } from 'sonner'
+import {
+  useSecureCalls,
+  useNonSecureCalls,
+  SECURE_ENDPOINTS,
+  NON_SECURE_ENDPOINTS,
+} from '@/hooks/apiCalls/useApiCalls'
 import { useOrgStore } from '@/store/orgStore'
+import { emailRule, zipCodeValidation, min, max } from '@/hooks/useValidation'
 import { CognitoDialogue } from './CognitoDialogue'
 
 interface Contact {
@@ -58,8 +65,9 @@ const ACTION_OPTIONS = [
 
 export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsProps) {
   const router = useRouter()
-  const { getSecure, putSecure, postSecure } = useSecureCalls()
-  const { getNonSecure } = useSecureCalls() as any
+  const { putSecure, postSecure } = useSecureCalls()
+  const { getPublic } = useNonSecureCalls()
+  const { getSecure } = useSecureCalls()
   const orgStore = useOrgStore() as any
 
   const [loading, setLoading] = useState(false)
@@ -94,8 +102,8 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
     const init = async () => {
       setLoading(true)
       try {
-        // Fetch states via non-secure
-        const statesRes = await (getSecure as any)(NON_SECURE_ENDPOINTS.PUBLIC_STATE, { country: 'US' })
+        // States come from the PUBLIC (non-secure) API — Nuxt uses getApiCallsPublic.
+        const statesRes = await getPublic(NON_SECURE_ENDPOINTS.PUBLIC_STATE, { country: 'US' })
         setStates(Array.isArray(statesRes) ? statesRes : statesRes?.results ?? [])
         const tagsRes = await getSecure<any>(SECURE_ENDPOINTS.TAGS)
         setTagsList(Array.isArray(tagsRes) ? tagsRes : tagsRes?.results ?? [])
@@ -132,6 +140,26 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
     }
   }, [contact])
 
+  // Nuxt watch(is_related): a related contact has no email of its own and inherits
+  // the parent link; an unrelated contact must not carry a parent.
+  const onToggleRelated = (checked: boolean) => {
+    setIsRelated(checked)
+    if (checked) {
+      setEmail('')
+    } else {
+      setParentId(null)
+      setParentRelationship('')
+    }
+  }
+
+  // Nuxt watch(parent_id): picking a parent clears the (now-inherited) email;
+  // clearing the parent clears the relationship that no longer applies.
+  const onSelectParent = (id: number | null) => {
+    setParentId(id)
+    if (id) setEmail('')
+    else setParentRelationship('')
+  }
+
   const filteredContacts = useMemo(() => {
     const results = allContacts
       .filter(c => c.email != null)
@@ -151,19 +179,33 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
     const required = isRelated
       ? [firstName, lastName, street, zipcode, city, phone]
       : [firstName, lastName, street, zipcode, city, phone, email]
-    return required.every(v => v && v.trim())
+    if (!required.every(v => v && v.trim())) {
+      toast.error('Please fill out the required fields', { duration: 15000 })
+      return false
+    }
+    // Format rules ported from Nuxt's Vuetify :rules (phone min10/max11, zip, email).
+    const checks: Array<true | string> = [
+      min(10)(phone),
+      max(11)(phone),
+      zipCodeValidation(zipcode),
+    ]
+    if (!isRelated) checks.push(emailRule(email))
+    const firstError = checks.find(r => r !== true)
+    if (firstError) {
+      toast.error(firstError as string, { duration: 15000 })
+      return false
+    }
+    return true
   }
 
   const update = async () => {
     if (isRelated && (!parentRelationship || !parentId)) {
-      alert('Please select related contact and its relationship.')
+      toast.error('Please select related contact and its relationship.', { duration: 15000 })
       return
     }
-    if (!validate()) {
-      alert('Please fill out the required fields')
-      return
-    }
+    if (!validate()) return
     try {
+      setLoading(true)
       await putSecure(SECURE_ENDPOINTS.CUSTOMER, {
         id: contact!.id,
         first_name: firstName,
@@ -185,22 +227,23 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
         enable_referrals: enableReferrals,
         barcode,
       })
+      toast.success('Customer Updated Successfully', { duration: 15000 })
       router.push('/customers')
     } catch (error) {
       console.error(error)
+    } finally {
+      setLoading(false)
     }
   }
 
   const create = async () => {
     if (isRelated && (!parentRelationship || !parentId)) {
-      alert('Please select related contact and its relationship.')
+      toast.error('Please select related contact and its relationship.', { duration: 15000 })
       return
     }
-    if (!validate()) {
-      alert('Please fill out the required fields')
-      return
-    }
+    if (!validate()) return
     try {
+      setLoading(true)
       await postSecure(SECURE_ENDPOINTS.CUSTOMER, {
         first_name: firstName,
         last_name: lastName,
@@ -223,9 +266,12 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
         barcode,
         lead_origin: 'non-digital',
       })
+      toast.success('Customer created Successfully', { duration: 15000 })
       router.push('/customers')
     } catch (error) {
       console.error(error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -252,7 +298,7 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
           <h1 className="text-lg font-bold">{contact ? 'Edit' : 'Add'} customer</h1>
           <div className="flex gap-2">
             <select
-              className="border rounded px-3 py-2 bg-gray-50"
+              className="rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]"
               value={customerAction ?? ''}
               onChange={e => setCustomerAction(e.target.value ? Number(e.target.value) : null)}
             >
@@ -267,27 +313,27 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
       <hr className="mb-6" />
 
       <form onSubmit={e => e.preventDefault()} className="space-y-4 mt-6">
-        {/* Family member section */}
-        <div className="flex flex-wrap gap-4 items-start">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={isRelated} onChange={e => setIsRelated(e.target.checked)} className="accent-red-500 w-4 h-4" />
+        {/* Family member section — Nuxt lays this out as a full-width 6/3/3 row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-4 items-start">
+          <label className="md:col-span-2 flex items-center gap-2 cursor-pointer md:self-center">
+            <input type="checkbox" checked={isRelated} onChange={e => onToggleRelated(e.target.checked)} className="accent-red-500 w-4 h-4" />
             <span className="text-sm">Does this contact have a family member at the school?</span>
           </label>
 
-          <div>
-            <label className="block text-xs font-medium mb-1">Related Contact</label>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium mb-1.5 text-gray-700">Related Contact</label>
             <input
               type="text"
               placeholder="Search contacts..."
-              className="border rounded px-3 py-2 text-sm mb-1 w-48"
+              className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base mb-2 focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]"
               value={contactSearch}
               onChange={e => setContactSearch(e.target.value)}
               disabled={!isRelated}
             />
             <select
-              className="border rounded px-3 py-2 bg-gray-50 w-48"
+              className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]"
               value={parentId ?? ''}
-              onChange={e => setParentId(e.target.value ? Number(e.target.value) : null)}
+              onChange={e => onSelectParent(e.target.value ? Number(e.target.value) : null)}
               disabled={!isRelated}
             >
               <option value="">None</option>
@@ -297,10 +343,10 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium mb-1">Relationship with parent</label>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium mb-1.5 text-gray-700">Relationship with parent</label>
             <select
-              className="border rounded px-3 py-2 bg-gray-50 w-48"
+              className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]"
               value={parentRelationship}
               onChange={e => setParentRelationship(e.target.value)}
               disabled={!isRelated}
@@ -311,73 +357,73 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+          <div className="space-y-5 self-start">
             <div>
-              <label className="block text-sm font-medium mb-1">First name *</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={firstName} onChange={e => setFirstName(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">First name *</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={firstName} onChange={e => setFirstName(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Last name *</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={lastName} onChange={e => setLastName(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Last name *</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={lastName} onChange={e => setLastName(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Middle name</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={middleName} onChange={e => setMiddleName(e.target.value)} />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Middle name</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={middleName} onChange={e => setMiddleName(e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Street *</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={street} onChange={e => setStreet(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Street *</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={street} onChange={e => setStreet(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">ZIP *</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={zipcode} onChange={e => setZipcode(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">ZIP *</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={zipcode} onChange={e => setZipcode(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">City *</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={city} onChange={e => setCity(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">City *</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={city} onChange={e => setCity(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">State</label>
-              <select className="w-full border rounded px-3 py-2 bg-gray-50" value={stateId ?? ''} onChange={e => setStateId(e.target.value ? Number(e.target.value) : null)}>
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">State</label>
+              <select className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={stateId ?? ''} onChange={e => setStateId(e.target.value ? Number(e.target.value) : null)}>
                 <option value="">Select State</option>
                 {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-5 self-start">
             <div>
-              <label className="block text-sm font-medium mb-1">Phone *</label>
-              <input type="tel" className="w-full border rounded px-3 py-2 bg-gray-50" value={phone} onChange={e => setPhone(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Phone *</label>
+              <input type="tel" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={phone} onChange={e => setPhone(e.target.value)} required />
             </div>
             {(orgStore?.organization?.show_custom_field) && (
               <div>
-                <label className="block text-sm font-medium mb-1">{orgStore?.organization?.customer_custom_field || 'Custom Field'}</label>
-                <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={customField} onChange={e => setCustomField(e.target.value)} />
+                <label className="block text-sm font-medium mb-1.5 text-gray-700">{orgStore?.organization?.customer_custom_field || 'Custom Field'}</label>
+                <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={customField} onChange={e => setCustomField(e.target.value)} />
               </div>
             )}
             {(orgStore?.organization?.show_reason_for_joining) && (
               <div>
-                <label className="block text-sm font-medium mb-1">Reason for Joining</label>
-                <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={reasonForJoining} onChange={e => setReasonForJoining(e.target.value)} />
+                <label className="block text-sm font-medium mb-1.5 text-gray-700">Reason for Joining</label>
+                <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={reasonForJoining} onChange={e => setReasonForJoining(e.target.value)} />
               </div>
             )}
             {!isRelated && (
               <div>
-                <label className="block text-sm font-medium mb-1">Email *</label>
-                <input type="email" className="w-full border rounded px-3 py-2 bg-gray-50" value={email} onChange={e => setEmail(e.target.value.toLowerCase())} required={!isRelated} />
+                <label className="block text-sm font-medium mb-1.5 text-gray-700">Email *</label>
+                <input type="email" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={email} onChange={e => setEmail(e.target.value.toLowerCase())} required={!isRelated} />
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium mb-1">Birthday</label>
-              <input type="date" className="w-full border rounded px-3 py-2 bg-gray-50" value={birthday} onChange={e => setBirthday(e.target.value)} />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Birthday</label>
+              <input type="date" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={birthday} onChange={e => setBirthday(e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Select Tags</label>
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Select Tags</label>
               <select
                 multiple
-                className="w-full border rounded px-3 py-2 bg-gray-50 h-24"
+                className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2 text-base h-28 focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]"
                 value={tags.map(t => String(t.id))}
                 onChange={e => {
                   const selected = Array.from(e.target.selectedOptions).map(o => Number(o.value))
@@ -388,8 +434,8 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Barcode</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={barcode} onChange={e => setBarcode(e.target.value)} />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Barcode</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={barcode} onChange={e => setBarcode(e.target.value)} />
             </div>
             <div className="flex gap-6 mt-2">
               <label className="flex items-center gap-2 cursor-pointer">

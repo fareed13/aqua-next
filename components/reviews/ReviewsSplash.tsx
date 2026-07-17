@@ -87,7 +87,9 @@ export function ReviewsSplash({ headline, media, backgroundImage }: SectionProps
                     <div className="mb-4 w-full">
                       <Image
                         src={buildMediaUrl(review.media)}
-                        alt={review.media.name || review.name}
+                        // Both sides of the chain are optional in the API payload,
+                        // so without a literal tail `alt` resolves to undefined.
+                        alt={review.media.name || review.name || 'Review image'}
                         width={600}
                         height={400}
                         className="w-full h-auto"

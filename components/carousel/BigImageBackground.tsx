@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useRef, useState, useEffect } from 'react'
+import { LazyVideo } from '@/components/media/LazyVideo'
 import type { SectionProps } from '@/components/sections/registry'
 import { buildMediaUrl, buildBackgroundUrl } from '@/lib/utils/media'
 import { useOrgStore } from '@/store/orgStore'
@@ -72,6 +73,7 @@ export function BigImageBackground({
             src={bgUrl}
             alt={headline || 'Background image'}
             fill
+            sizes="100vw"
             className="object-cover object-top-left brightness-50"
             priority
           />
@@ -85,6 +87,7 @@ export function BigImageBackground({
             src={bgUrl}
             alt={headline || 'Main background image'}
             fill
+            sizes="100vw"
             className="object-cover object-top-left z-0 hidden md:block"
             priority
           />
@@ -149,22 +152,19 @@ export function BigImageBackground({
                         priority
                       />
                     ) : shouldLoadVideo ? (
-                      <video
+                      <LazyVideo
                         ref={videoRef}
+                        src={mediaUrl}
                         aria-label={headline || 'Video content'}
                         width={1000}
                         height={712}
                         style={{ aspectRatio: videoAspectRatio }}
-                        preload="none"
-                        autoPlay
                         loop
                         muted
                         playsInline
                         className="w-full h-auto block object-contain object-center"
                         onLoadedMetadata={onVideoMeta}
-                      >
-                        <source src={mediaUrl} type="video/mp4" />
-                      </video>
+                      />
                     ) : (
                       <div
                         className="w-full bg-black/30"

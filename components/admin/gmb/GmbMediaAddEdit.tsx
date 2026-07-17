@@ -102,7 +102,7 @@ export function GmbMediaAddEdit() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <img src={entry.preview} alt={entry.file.name}
+                    <img src={entry.preview} alt={entry.file.name || 'Upload preview'}
                       className="w-full aspect-square object-cover rounded border" />
                   </div>
                   <div>

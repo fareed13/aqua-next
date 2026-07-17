@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useOrgStore } from '@/store/orgStore'
+import { useOrgStore, useOrgServices } from '@/store/orgStore'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -53,7 +53,7 @@ interface VirtualScheduleEditProps {
 }
 
 export function VirtualScheduleEdit({ popup, toggleEditPopup, schedule, selectedLocationId }: VirtualScheduleEditProps) {
-  const services = useOrgStore(s => s.organization?.services ?? [])
+  const services = useOrgServices()
   const { postSecure, putSecure } = useSecureCalls()
 
   const isEdit = !!schedule?.id

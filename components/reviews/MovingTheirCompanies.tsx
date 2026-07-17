@@ -47,8 +47,9 @@ export function MovingTheirCompanies(_props: SectionProps) {
                 <div className="relative w-full aspect-video">
                   <Image
                     src={program.img}
-                    alt={program.text}
+                    alt={program.text || 'Program image'}
                     fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-cover"
                     loading="lazy"
                   />

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { useOrgStore } from '@/store/orgStore'
+import { useOrgStore, useOrgServices } from '@/store/orgStore'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
 
 interface FaqAddEditProps {
@@ -15,7 +15,7 @@ const TOPIC_OPTIONS = ['General', 'Membership', 'Schedule', 'Billing', 'Classes'
 export function FaqAddEdit({ faqId }: FaqAddEditProps) {
   const router = useRouter()
   const { isAdminLoggedIn } = useAuth()
-  const services = useOrgStore(s => s.organization?.services ?? [])
+  const services = useOrgServices()
   const { getSecure, postSecure, putSecure } = useSecureCalls()
 
   const isNew = !faqId
