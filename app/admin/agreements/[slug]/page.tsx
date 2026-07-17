@@ -1,4 +1,5 @@
 import { LandingPageBanner } from '@/components/carousel/LandingPageBanner'
+import { AgreementsAddEdit } from '@/components/admin/agreements/AgreementsAddEdit'
 import type { Metadata } from 'next'
 
 interface PageProps {
@@ -16,14 +17,7 @@ export default async function AgreementEditPage({ params }: PageProps) {
   return (
     <div>
       <LandingPageBanner component="LandingPageBanner" headline="Agreements Add/Edit" />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white border rounded shadow-sm p-6">
-          <h2 className="text-xl font-bold mb-4">
-            {agreementId ? `Edit Agreement #${agreementId}` : 'New Agreement'}
-          </h2>
-          <p className="text-gray-500">AgreementsAddEdit component will be rendered here.</p>
-        </div>
-      </div>
+      <AgreementsAddEdit agreementId={agreementId} />
     </div>
   )
 }

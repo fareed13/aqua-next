@@ -18,11 +18,14 @@ export function gtagEvent(name: string, params: Params = {}) {
     const w = window as unknown as { gtag?: (...a: unknown[]) => void; dataLayer?: unknown[] }
     if (typeof w.gtag === 'function') {
       w.gtag('event', name, params)
+      console.log(`📊 [GA4 Success] window.gtag() triggered for event: "${name}"`, params);
     } else {
+      console.log(`⏳ [GA4 Fallback] window.gtag not ready. Queueing "${name}" into dataLayer.`, params);
       w.dataLayer = w.dataLayer || []
       w.dataLayer.push(['event', name, params])
     }
   } catch (e) {
+    console.error(`❌ [GA4 Error] "${name}" failed entirely:`, e)
     console.error(`Gtag ${name} invalid:`, e)
   }
 }

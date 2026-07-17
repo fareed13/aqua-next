@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSecureCalls } from '@/hooks/apiCalls/useApiCalls'
 import { formatDate } from '@/lib/utils/dateTime'
-import { CakeIcon } from 'lucide-react'
+import { CakeIcon, User, Mail, Cake, Search } from 'lucide-react'
+import { MobileCard } from '@/components/customers/MobileCard'
 
 export function BirthdayReport() {
   const router = useRouter()
@@ -51,30 +52,33 @@ export function BirthdayReport() {
             <p className="text-sm text-white/70 mb-0">Track upcoming customer birthdays</p>
           </div>
         </div>
-        <input
-          type="text"
-          placeholder="Search customers..."
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(1) }}
-          className="border rounded px-3 py-2 text-sm w-full sm:w-72"
-        />
+        <div className="relative w-full sm:w-64">
+          <Search size={20} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black/50" />
+          <input
+            type="text"
+            placeholder="Search customers..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(1) }}
+            className="w-full rounded-md border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-base outline-none"
+          />
+        </div>
       </div>
 
       <div className="bg-white rounded shadow p-4 mb-4">
-        <div className="flex flex-wrap gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div>
             <label className="block text-sm font-medium mb-1">Days span</label>
             <input
               type="number"
               value={days}
               onChange={e => setDays(Number(e.target.value))}
-              className="border rounded px-3 py-2 text-sm w-32"
+              className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
           <button
             onClick={() => { setPage(1); fetchData() }}
             disabled={loading}
-            className="bg-blue-600 text-white px-6 py-2 rounded text-sm disabled:opacity-50"
+            className="h-[42px] rounded bg-[#124e66] text-white px-6 text-sm font-medium disabled:opacity-50"
           >
             {loading ? 'Loading…' : 'Apply Filter'}
           </button>
@@ -84,30 +88,47 @@ export function BirthdayReport() {
         )}
       </div>
 
-      <div className="bg-white rounded shadow overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              {['First Name', 'Last Name', 'Email', 'Birth Date'].map(h => (
-                <th key={h} className="px-4 py-3 text-left font-medium text-gray-600">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={4} className="text-center py-8 text-gray-400">Loading…</td></tr>
-            ) : pageItems.length === 0 ? (
-              <tr><td colSpan={4} className="text-center py-8 text-gray-400">No results</td></tr>
-            ) : pageItems.map((c, i) => (
-              <tr key={i} className="border-t hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/customers/${c.id}`)}>
-                <td className="px-4 py-3">{c.first_name}</td>
-                <td className="px-4 py-3">{c.last_name}</td>
-                <td className="px-4 py-3">{c.email}</td>
-                <td className="px-4 py-3">{c.birthday ? formatDate(c.birthday, 'DD MMM') : ''}</td>
+      <div className="bg-white rounded shadow">
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                {['First Name', 'Last Name', 'Email', 'Birth Date'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left font-medium text-gray-600">{h}</th>
+                ))}
               </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={4} className="text-center py-8 text-gray-400">Loading…</td></tr>
+              ) : pageItems.length === 0 ? (
+                <tr><td colSpan={4} className="text-center py-8 text-gray-400">No results</td></tr>
+              ) : pageItems.map((c, i) => (
+                <tr key={i} className="border-t hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/customers/${c.id}`)}>
+                  <td className="px-4 py-3">{c.first_name}</td>
+                  <td className="px-4 py-3">{c.last_name}</td>
+                  <td className="px-4 py-3">{c.email}</td>
+                  <td className="px-4 py-3">{c.birthday ? formatDate(c.birthday, 'DD MMM') : ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="md:hidden space-y-3 p-3">
+          {loading ? <p className="py-6 text-center text-gray-400">Loading…</p>
+            : pageItems.length === 0 ? <p className="py-6 text-center text-gray-400">No results</p>
+            : pageItems.map((c, i) => (
+              <div key={i} onClick={() => router.push(`/customers/${c.id}`)}>
+                <MobileCard
+                  header={<><User size={18} className="text-[#6D6D6D]" /><span className="font-medium">{c.first_name} {c.last_name}</span></>}
+                  rows={[
+                    { icon: <Mail size={18} />, value: c.email },
+                    { icon: <Cake size={18} />, value: c.birthday ? formatDate(c.birthday, 'DD MMM') : '' },
+                  ]}
+                />
+              </div>
             ))}
-          </tbody>
-        </table>
+        </div>
         <div className="flex justify-between items-center px-4 py-3 border-t text-sm">
           <span className="text-gray-500">{filtered.length} total</span>
           <div className="flex gap-2">

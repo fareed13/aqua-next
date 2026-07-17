@@ -63,6 +63,7 @@ export const SECURE_ENDPOINTS = {
   GUIDED_FLOW: '/organization/templates/',
   GOOGLE_ADS: '/ads/google-ads/',
   GIFT_CARD: '/giftcard/',
+  EVENT_PURCHASED: '/location/event/purchases/',
   FB_ADS: '/ads/',
   TARGET_AUDIENCE: '/ads/target-audience/',
   ADS_PREVIEW: '/ads/preview/',
