@@ -111,7 +111,7 @@ export function CustomerAddEdit({ contactId, spam }: CustomerAddEditProps) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 relative">
+    <div className=" mx-auto px-4 py-8 relative">
       {overlay && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60">
           <div className="w-16 h-16 border-4 border-[#124e66] border-t-transparent rounded-full animate-spin" />

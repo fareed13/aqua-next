@@ -555,7 +555,7 @@ export function CustomerList() {
         />
       )}
 
-      <div className="relative mx-auto max-w-[1400px] px-0 md:px-4 md:py-4">
+      <div className="relative mx-auto px-0 md:px-4 md:py-4">
         {/* ============================= MOBILE ============================= */}
         <div className="md:hidden">
           <div className="bg-[#124e66] px-3 pb-3 pt-3">
