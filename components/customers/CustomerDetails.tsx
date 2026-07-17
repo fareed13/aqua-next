@@ -298,7 +298,7 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
           <h1 className="text-lg font-bold">{contact ? 'Edit' : 'Add'} customer</h1>
           <div className="flex gap-2">
             <select
-              className="border rounded px-3 py-2 bg-gray-50"
+              className="rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]"
               value={customerAction ?? ''}
               onChange={e => setCustomerAction(e.target.value ? Number(e.target.value) : null)}
             >
@@ -313,25 +313,25 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
       <hr className="mb-6" />
 
       <form onSubmit={e => e.preventDefault()} className="space-y-4 mt-6">
-        {/* Family member section */}
-        <div className="flex flex-wrap gap-4 items-start">
-          <label className="flex items-center gap-2 cursor-pointer">
+        {/* Family member section — Nuxt lays this out as a full-width 6/3/3 row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-4 items-start">
+          <label className="md:col-span-2 flex items-center gap-2 cursor-pointer md:self-center">
             <input type="checkbox" checked={isRelated} onChange={e => onToggleRelated(e.target.checked)} className="accent-red-500 w-4 h-4" />
             <span className="text-sm">Does this contact have a family member at the school?</span>
           </label>
 
-          <div>
-            <label className="block text-xs font-medium mb-1">Related Contact</label>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium mb-1.5 text-gray-700">Related Contact</label>
             <input
               type="text"
               placeholder="Search contacts..."
-              className="border rounded px-3 py-2 text-sm mb-1 w-48"
+              className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base mb-2 focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]"
               value={contactSearch}
               onChange={e => setContactSearch(e.target.value)}
               disabled={!isRelated}
             />
             <select
-              className="border rounded px-3 py-2 bg-gray-50 w-48"
+              className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]"
               value={parentId ?? ''}
               onChange={e => onSelectParent(e.target.value ? Number(e.target.value) : null)}
               disabled={!isRelated}
@@ -343,10 +343,10 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium mb-1">Relationship with parent</label>
+          <div className="md:col-span-1">
+            <label className="block text-sm font-medium mb-1.5 text-gray-700">Relationship with parent</label>
             <select
-              className="border rounded px-3 py-2 bg-gray-50 w-48"
+              className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]"
               value={parentRelationship}
               onChange={e => setParentRelationship(e.target.value)}
               disabled={!isRelated}
@@ -357,73 +357,73 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+          <div className="space-y-5 self-start">
             <div>
-              <label className="block text-sm font-medium mb-1">First name *</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={firstName} onChange={e => setFirstName(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">First name *</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={firstName} onChange={e => setFirstName(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Last name *</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={lastName} onChange={e => setLastName(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Last name *</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={lastName} onChange={e => setLastName(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Middle name</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={middleName} onChange={e => setMiddleName(e.target.value)} />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Middle name</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={middleName} onChange={e => setMiddleName(e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Street *</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={street} onChange={e => setStreet(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Street *</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={street} onChange={e => setStreet(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">ZIP *</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={zipcode} onChange={e => setZipcode(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">ZIP *</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={zipcode} onChange={e => setZipcode(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">City *</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={city} onChange={e => setCity(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">City *</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={city} onChange={e => setCity(e.target.value)} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">State</label>
-              <select className="w-full border rounded px-3 py-2 bg-gray-50" value={stateId ?? ''} onChange={e => setStateId(e.target.value ? Number(e.target.value) : null)}>
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">State</label>
+              <select className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={stateId ?? ''} onChange={e => setStateId(e.target.value ? Number(e.target.value) : null)}>
                 <option value="">Select State</option>
                 {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-5 self-start">
             <div>
-              <label className="block text-sm font-medium mb-1">Phone *</label>
-              <input type="tel" className="w-full border rounded px-3 py-2 bg-gray-50" value={phone} onChange={e => setPhone(e.target.value)} required />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Phone *</label>
+              <input type="tel" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={phone} onChange={e => setPhone(e.target.value)} required />
             </div>
             {(orgStore?.organization?.show_custom_field) && (
               <div>
-                <label className="block text-sm font-medium mb-1">{orgStore?.organization?.customer_custom_field || 'Custom Field'}</label>
-                <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={customField} onChange={e => setCustomField(e.target.value)} />
+                <label className="block text-sm font-medium mb-1.5 text-gray-700">{orgStore?.organization?.customer_custom_field || 'Custom Field'}</label>
+                <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={customField} onChange={e => setCustomField(e.target.value)} />
               </div>
             )}
             {(orgStore?.organization?.show_reason_for_joining) && (
               <div>
-                <label className="block text-sm font-medium mb-1">Reason for Joining</label>
-                <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={reasonForJoining} onChange={e => setReasonForJoining(e.target.value)} />
+                <label className="block text-sm font-medium mb-1.5 text-gray-700">Reason for Joining</label>
+                <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={reasonForJoining} onChange={e => setReasonForJoining(e.target.value)} />
               </div>
             )}
             {!isRelated && (
               <div>
-                <label className="block text-sm font-medium mb-1">Email *</label>
-                <input type="email" className="w-full border rounded px-3 py-2 bg-gray-50" value={email} onChange={e => setEmail(e.target.value.toLowerCase())} required={!isRelated} />
+                <label className="block text-sm font-medium mb-1.5 text-gray-700">Email *</label>
+                <input type="email" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={email} onChange={e => setEmail(e.target.value.toLowerCase())} required={!isRelated} />
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium mb-1">Birthday</label>
-              <input type="date" className="w-full border rounded px-3 py-2 bg-gray-50" value={birthday} onChange={e => setBirthday(e.target.value)} />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Birthday</label>
+              <input type="date" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={birthday} onChange={e => setBirthday(e.target.value)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Select Tags</label>
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Select Tags</label>
               <select
                 multiple
-                className="w-full border rounded px-3 py-2 bg-gray-50 h-24"
+                className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2 text-base h-28 focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]"
                 value={tags.map(t => String(t.id))}
                 onChange={e => {
                   const selected = Array.from(e.target.selectedOptions).map(o => Number(o.value))
@@ -434,8 +434,8 @@ export function CustomerDetails({ contact, allContacts = [] }: CustomerDetailsPr
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Barcode</label>
-              <input type="text" className="w-full border rounded px-3 py-2 bg-gray-50" value={barcode} onChange={e => setBarcode(e.target.value)} />
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Barcode</label>
+              <input type="text" className="w-full rounded-md border border-gray-300 bg-[#f5f5f8] px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]" value={barcode} onChange={e => setBarcode(e.target.value)} />
             </div>
             <div className="flex gap-6 mt-2">
               <label className="flex items-center gap-2 cursor-pointer">

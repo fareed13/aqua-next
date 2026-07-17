@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { Package, Calendar, DollarSign } from 'lucide-react'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { MobileCard } from './MobileCard'
 
 interface Contact {
   id: number
@@ -87,29 +89,47 @@ export function CustomerPurchases({ contact }: CustomerPurchasesProps) {
       {loading ? (
         <div className="text-center py-8 text-gray-500">Loading...</div>
       ) : (
-        <div className="overflow-x-auto bg-white border rounded shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Plan name</th>
-                <th className="px-4 py-3 font-semibold">Purchased Date</th>
-                <th className="px-4 py-3 font-semibold">Price Charged</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedItems.map(item => (
-                <tr key={item.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3">{item.plan.name}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{formatDate(item.created_at)}</td>
-                  <td className="px-4 py-3">$ {item.price_charged}</td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto bg-white border rounded shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Plan name</th>
+                  <th className="px-4 py-3 font-semibold">Purchased Date</th>
+                  <th className="px-4 py-3 font-semibold">Price Charged</th>
                 </tr>
-              ))}
-              {pagedItems.length === 0 && (
-                <tr><td colSpan={3} className="px-4 py-8 text-center text-gray-500">No Purchases Found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {pagedItems.map(item => (
+                  <tr key={item.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-3">{item.plan.name}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{formatDate(item.created_at)}</td>
+                    <td className="px-4 py-3">$ {item.price_charged}</td>
+                  </tr>
+                ))}
+                {pagedItems.length === 0 && (
+                  <tr><td colSpan={3} className="px-4 py-8 text-center text-gray-500">No Purchases Found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card view */}
+          <div className="md:hidden space-y-3">
+            {pagedItems.map(item => (
+              <MobileCard
+                key={item.id}
+                header={<><Package size={18} className="text-[#6D6D6D]" /><span className="truncate">{item.plan.name}</span></>}
+                rows={[
+                  { icon: <Calendar size={18} />, value: formatDate(item.created_at) },
+                  { icon: <DollarSign size={18} />, value: `$ ${item.price_charged}` },
+                ]}
+              />
+            ))}
+            {pagedItems.length === 0 && <div className="py-8 text-center text-gray-500">No Purchases Found</div>}
+          </div>
+        </>
       )}
 
       {contactPurchases.length > 0 && (

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { FIELD_FULL } from './fieldStyles'
 
 interface Customer {
   id: number
@@ -79,9 +80,9 @@ export function SendSmsPopup({ smsDialog, customer, toggleDialog }: SendSmsPopup
         </div>
         <div className="px-6 py-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Select Type</label>
+            <label className="block text-sm font-medium mb-1.5 text-gray-700">Select Type</label>
             <select
-              className="w-full border rounded px-3 py-2"
+              className={FIELD_FULL}
               value={type}
               onChange={e => {
                 const val = e.target.value
@@ -98,10 +99,10 @@ export function SendSmsPopup({ smsDialog, customer, toggleDialog }: SendSmsPopup
 
           {type === 'email' && (
             <div>
-              <label className="block text-sm font-medium mb-1">Subject *</label>
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Subject *</label>
               <input
                 type="text"
-                className="w-full border rounded px-3 py-2"
+                className={FIELD_FULL}
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
                 required
@@ -110,9 +111,9 @@ export function SendSmsPopup({ smsDialog, customer, toggleDialog }: SendSmsPopup
           )}
 
           <div>
-            <label className="block text-sm font-medium mb-1">Content *</label>
+            <label className="block text-sm font-medium mb-1.5 text-gray-700">Content *</label>
             <textarea
-              className="w-full border rounded px-3 py-2"
+              className={FIELD_FULL}
               rows={4}
               value={message}
               onChange={e => setMessage(e.target.value)}

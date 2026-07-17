@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { User, Calendar, FileText, BadgeCheck, Trash2 } from 'lucide-react'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { FIELD } from './fieldStyles'
+import { MobileCard } from './MobileCard'
 import { useOrgStore } from '@/store/orgStore'
 import { SignAgreement } from './SignAgreement'
 
@@ -212,7 +215,7 @@ export function CustomerAgreements({ contact }: CustomerAgreementsProps) {
         <h1 className="text-lg font-bold">{contact ? `${contact.first_name}'s` : ''} Agreements</h1>
         <div className="flex gap-2 flex-wrap">
           <select
-            className="border rounded px-3 py-2 bg-gray-50"
+            className={`${FIELD} min-w-[220px]`}
             value={selectedAgreement ?? ''}
             onChange={e => setSelectedAgreement(e.target.value ? Number(e.target.value) : null)}
           >
@@ -231,40 +234,61 @@ export function CustomerAgreements({ contact }: CustomerAgreementsProps) {
       {loading ? (
         <div className="text-center py-8 text-gray-500">Loading...</div>
       ) : (
-        <div className="overflow-x-auto bg-white border rounded shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Contact</th>
-                <th className="px-4 py-3 font-semibold">Created at</th>
-                <th className="px-4 py-3 font-semibold">Agreement</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedAgreements.map(item => (
-                <tr key={item.id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => openAgreement(item)}>
-                  <td className="px-4 py-3">{item.contact.first_name} {item.contact.last_name}</td>
-                  <td className="px-4 py-3">{formatDate(item.updated_at, 'YYYY-MM-DD - (hh:mm A)')}</td>
-                  <td className="px-4 py-3">{item.agreement.name}</td>
-                  <td className="px-4 py-3">{item.status ?? 'unsigned'}</td>
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => { setSelectedCusAgreement(item); setDeletePopup(true) }}
-                      className="text-red-600 hover:text-red-800 text-xs"
-                    >
-                      Delete
-                    </button>
-                  </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto bg-white border rounded shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Contact</th>
+                  <th className="px-4 py-3 font-semibold">Created at</th>
+                  <th className="px-4 py-3 font-semibold">Agreement</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold">Actions</th>
                 </tr>
-              ))}
-              {pagedAgreements.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No Agreements Found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {pagedAgreements.map(item => (
+                  <tr key={item.id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => openAgreement(item)}>
+                    <td className="px-4 py-3">{item.contact.first_name} {item.contact.last_name}</td>
+                    <td className="px-4 py-3">{formatDate(item.updated_at, 'YYYY-MM-DD - (hh:mm A)')}</td>
+                    <td className="px-4 py-3">{item.agreement.name}</td>
+                    <td className="px-4 py-3">{item.status ?? 'unsigned'}</td>
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => { setSelectedCusAgreement(item); setDeletePopup(true) }}
+                        className="text-red-600 hover:text-red-800 text-xs"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {pagedAgreements.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No Agreements Found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card view */}
+          <div className="md:hidden space-y-3">
+            {pagedAgreements.map(item => (
+              <div key={item.id} onClick={() => openAgreement(item)}>
+                <MobileCard
+                  header={<><User size={18} className="text-[#6D6D6D]" /><span className="truncate">{item.contact.first_name} {item.contact.last_name}</span></>}
+                  action={<button onClick={e => { e.stopPropagation(); setSelectedCusAgreement(item); setDeletePopup(true) }} aria-label="Delete" className="text-red-600"><Trash2 size={18} /></button>}
+                  rows={[
+                    { icon: <Calendar size={18} />, value: formatDate(item.updated_at, 'YYYY-MM-DD - (hh:mm A)') },
+                    { icon: <FileText size={18} />, value: item.agreement.name },
+                    { icon: <BadgeCheck size={18} />, value: item.status ?? 'unsigned' },
+                  ]}
+                />
+              </div>
+            ))}
+            {pagedAgreements.length === 0 && <div className="py-8 text-center text-gray-500">No Agreements Found</div>}
+          </div>
+        </>
       )}
 
       {customerAgreements.length > 0 && (

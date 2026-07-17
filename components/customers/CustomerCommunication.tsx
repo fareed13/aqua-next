@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { Calendar } from 'lucide-react'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { FIELD, FIELD_FULL } from './fieldStyles'
+import { MobileCard } from './MobileCard'
 
 interface Contact {
   id: number
@@ -164,9 +167,9 @@ export function CustomerCommunication({ contact, allContacts }: CustomerCommunic
             <h2 className="text-base font-semibold mb-4">Send Message</h2>
 
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">Select Type</label>
+              <label className="block text-sm font-medium mb-1.5 text-gray-700">Select Type</label>
               <select
-                className="w-full md:w-64 border rounded px-3 py-2 bg-gray-50"
+                className={`${FIELD} w-full md:w-64`}
                 value={selectedType}
                 onChange={e => setSelectedType(e.target.value)}
               >
@@ -179,10 +182,10 @@ export function CustomerCommunication({ contact, allContacts }: CustomerCommunic
 
             {selectedType && (
               <div className="mb-3">
-                <label className="block text-sm font-medium mb-1">To:</label>
+                <label className="block text-sm font-medium mb-1.5 text-gray-700">To:</label>
                 <input
                   type="text"
-                  className="w-full md:w-64 border rounded px-3 py-2 bg-gray-100"
+                  className={`${FIELD} w-full md:w-64`}
                   value={selectedType === 'email' ? contact.email : contact.phone}
                   readOnly
                   disabled
@@ -192,10 +195,10 @@ export function CustomerCommunication({ contact, allContacts }: CustomerCommunic
 
             {selectedType === 'email' && (
               <div className="mb-3">
-                <label className="block text-sm font-medium mb-1">Subject *</label>
+                <label className="block text-sm font-medium mb-1.5 text-gray-700">Subject *</label>
                 <input
                   type="text"
-                  className="w-full md:w-64 border rounded px-3 py-2 bg-gray-50"
+                  className={`${FIELD} w-full md:w-64`}
                   value={subject}
                   onChange={e => setSubject(e.target.value)}
                 />
@@ -204,9 +207,9 @@ export function CustomerCommunication({ contact, allContacts }: CustomerCommunic
 
             {selectedType && (
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Body *</label>
+                <label className="block text-sm font-medium mb-1.5 text-gray-700">Body *</label>
                 <textarea
-                  className="w-full border rounded px-3 py-2 bg-gray-50"
+                  className={FIELD_FULL}
                   rows={8}
                   value={body}
                   onChange={e => setBody(e.target.value)}
@@ -232,7 +235,7 @@ export function CustomerCommunication({ contact, allContacts }: CustomerCommunic
 
       <div className="mb-4">
         <select
-          className="border rounded px-3 py-2 bg-gray-50 w-full md:w-64"
+          className={`${FIELD} w-full md:w-64`}
           value={selectedFilter}
           onChange={e => { setSelectedFilter(e.target.value); setPage(1) }}
         >
@@ -245,39 +248,63 @@ export function CustomerCommunication({ contact, allContacts }: CustomerCommunic
       {loading ? (
         <div className="text-center py-8 text-gray-500">Loading...</div>
       ) : (
-        <div className="overflow-x-auto bg-white border rounded shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Subject</th>
-                <th className="px-4 py-3 font-semibold">Body</th>
-                <th className="px-4 py-3 font-semibold">Created at</th>
-                <th className="px-4 py-3 font-semibold">Type</th>
-                <th className="px-4 py-3 font-semibold">Direction</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedItems.map(item => (
-                <tr key={item.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3">{item.subject ?? ''}</td>
-                  <td className="px-4 py-3 max-w-xs">
-                    <span dangerouslySetInnerHTML={{ __html: item.body }} />
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">{formatDate(item.created_at)}</td>
-                  <td className="px-4 py-3">{item.type}</td>
-                  <td className="px-4 py-3">
-                    <span style={{ color: item.sent_by_location ? '#4caf50' : '#ff9800', fontSize: 20 }}>
-                      {item.sent_by_location ? '↗' : '↙'}
-                    </span>
-                  </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto bg-white border rounded shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Subject</th>
+                  <th className="px-4 py-3 font-semibold">Body</th>
+                  <th className="px-4 py-3 font-semibold">Created at</th>
+                  <th className="px-4 py-3 font-semibold">Type</th>
+                  <th className="px-4 py-3 font-semibold">Direction</th>
                 </tr>
-              ))}
-              {pagedItems.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No Communications Found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {pagedItems.map(item => (
+                  <tr key={item.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-3">{item.subject ?? ''}</td>
+                    <td className="px-4 py-3 max-w-xs">
+                      <span dangerouslySetInnerHTML={{ __html: item.body }} />
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">{formatDate(item.created_at)}</td>
+                    <td className="px-4 py-3">{item.type}</td>
+                    <td className="px-4 py-3">
+                      <span style={{ color: item.sent_by_location ? '#4caf50' : '#ff9800', fontSize: 20 }}>
+                        {item.sent_by_location ? '↗' : '↙'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {pagedItems.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No Communications Found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card view */}
+          <div className="md:hidden space-y-3">
+            {pagedItems.map(item => (
+              <MobileCard
+                key={item.id}
+                header={
+                  <>
+                    <span className="rounded bg-gray-100 px-2 py-0.5 text-xs uppercase">{item.type}</span>
+                    <span className="truncate font-medium">{item.subject || '—'}</span>
+                  </>
+                }
+                action={<span style={{ color: item.sent_by_location ? '#4caf50' : '#ff9800', fontSize: 20 }}>{item.sent_by_location ? '↗' : '↙'}</span>}
+                rows={[
+                  { value: <span className="text-gray-700 line-clamp-3" dangerouslySetInnerHTML={{ __html: item.body }} /> },
+                  { icon: <Calendar size={18} />, value: formatDate(item.created_at) },
+                ]}
+              />
+            ))}
+            {pagedItems.length === 0 && <div className="py-8 text-center text-gray-500">No Communications Found</div>}
+          </div>
+        </>
       )}
 
       {filteredCommunications.length > 0 && (

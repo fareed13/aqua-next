@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { BookOpen, Calendar, Clock, Trash2 } from 'lucide-react'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { MobileCard } from './MobileCard'
 
 interface Contact {
   id: number
@@ -121,38 +123,57 @@ export function CustomerClasses({ contact }: CustomerClassesProps) {
       {loading ? (
         <div className="text-center py-8 text-gray-500">Loading...</div>
       ) : (
-        <div className="overflow-x-auto bg-white border rounded shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Class Name</th>
-                <th className="px-4 py-3 font-semibold">Class Date</th>
-                <th className="px-4 py-3 font-semibold">Class Timing</th>
-                <th className="px-4 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedItems.map(item => (
-                <tr key={item.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3">{item.schedule.name}</td>
-                  <td className="px-4 py-3">{formatDate(item.class_date)}</td>
-                  <td className="px-4 py-3">{item.schedule.pretty_start_time} to {item.schedule.pretty_end_time}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => { setSelectedClass(item); setDeletePopup(true) }}
-                      className="text-red-600 hover:text-red-800 text-xs"
-                    >
-                      Delete
-                    </button>
-                  </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto bg-white border rounded shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Class Name</th>
+                  <th className="px-4 py-3 font-semibold">Class Date</th>
+                  <th className="px-4 py-3 font-semibold">Class Timing</th>
+                  <th className="px-4 py-3 font-semibold">Actions</th>
                 </tr>
-              ))}
-              {pagedItems.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-500">No Classes Found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {pagedItems.map(item => (
+                  <tr key={item.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-3">{item.schedule.name}</td>
+                    <td className="px-4 py-3">{formatDate(item.class_date)}</td>
+                    <td className="px-4 py-3">{item.schedule.pretty_start_time} to {item.schedule.pretty_end_time}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => { setSelectedClass(item); setDeletePopup(true) }}
+                        className="text-red-600 hover:text-red-800 text-xs"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {pagedItems.length === 0 && (
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-500">No Classes Found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card view */}
+          <div className="md:hidden space-y-3">
+            {pagedItems.map(item => (
+              <MobileCard
+                key={item.id}
+                header={<><BookOpen size={18} className="text-[#6D6D6D]" /><span className="truncate">{item.schedule.name}</span></>}
+                action={<button onClick={() => { setSelectedClass(item); setDeletePopup(true) }} aria-label="Delete" className="text-red-600"><Trash2 size={18} /></button>}
+                rows={[
+                  { icon: <Calendar size={18} />, value: formatDate(item.class_date) },
+                  { icon: <Clock size={18} />, value: `${item.schedule.pretty_start_time} to ${item.schedule.pretty_end_time}` },
+                ]}
+              />
+            ))}
+            {pagedItems.length === 0 && <div className="py-8 text-center text-gray-500">No Classes Found</div>}
+          </div>
+        </>
       )}
 
       {reservedClasses.length > 0 && (
