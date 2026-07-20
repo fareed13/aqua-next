@@ -64,14 +64,21 @@ export function NewMemberReport() {
         </div>
       </div>
 
-      <div className="bg-white rounded shadow p-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium mb-1">Days</label>
-          <input type="number" value={days} onChange={e => setDays(Number(e.target.value))} className="w-full border rounded px-3 py-2 text-sm" />
+      <div className="bg-[#f5f5f5] rounded-lg p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+          <div>
+            <label className="block text-sm font-medium mb-1">Days</label>
+            <input type="number" value={days} onChange={e => setDays(Number(e.target.value))} className="w-full border rounded px-3 py-2 text-sm" />
+          </div>
+          <button onClick={() => { setPage(1); fetchData() }} disabled={loading} className="justify-self-start rounded bg-[#1565C0] px-6 h-10 text-sm font-medium uppercase tracking-wide text-white shadow-sm hover:bg-[#1257a8] disabled:opacity-50">
+            {loading ? 'Loading…' : 'Apply Filter'}
+          </button>
         </div>
-        <button onClick={() => { setPage(1); fetchData() }} disabled={loading} className="h-[42px] rounded bg-[#124e66] text-white px-6 text-sm font-medium disabled:opacity-50">
-          {loading ? 'Loading…' : 'Apply Filter'}
-        </button>
+        {customers.length > 0 && (
+          <p className="text-center mt-4 mb-0 text-base">
+            {customers.length} {customers.length > 1 ? 'Members' : 'Member'} Joined in last {days} {days > 1 ? 'Days' : 'Day'}
+          </p>
+        )}
       </div>
 
       <div className="bg-white rounded shadow">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useOrgStore } from '@/store/orgStore'
 import {
   formatDate, addDays, addMonths, addYears,
@@ -127,16 +127,23 @@ export function useAnalytics() {
     setCustom(false)
   }, [activeItem, selectedDateRange])
 
+  // Nuxt onMounted: calculateDays('Last90Days') then set range_prop/selected_date_range
+  // from the resulting start/end. Done once, synchronously w.r.t. the computed values,
+  // so the initial range fetch fires (setState is async, so we compute the values here
+  // rather than reading startDate/endDate right after calculateDays()).
+  const didInit = useRef(false)
   useEffect(() => {
-    calculateDays('Last90Days')
-  }, [calculateDays])
-
-  useEffect(() => {
-    if (startDate && endDate) {
-      setRangeProp({ start_date: startDate, end_date: endDate })
-      setSelectedDateRange(`${startDate} - ${endDate}`)
-    }
-  }, [])
+    if (didInit.current) return
+    didInit.current = true
+    const sd = formatDate(addDays(new Date(), -DAYS_RANGE.Last90Days))
+    const ed = formatDate(addDays(new Date(todayStr), -1))
+    setStartDate(sd)
+    setEndDate(ed)
+    setSelectedOption('Last90Days')
+    setDateRange(`${sd} - ${ed}`)
+    setRangeProp({ start_date: sd, end_date: ed })
+    setSelectedDateRange(`${sd} - ${ed}`)
+  }, [todayStr])
 
   return {
     active, setActive, activeItem, thisWeek, lastWeek,
