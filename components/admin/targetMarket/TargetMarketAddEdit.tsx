@@ -1,14 +1,69 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { Search, X, Check, Save, FileText } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
-import { useOrgStore, useOrgServices } from '@/store/orgStore'
+import { useOrgServices } from '@/store/orgStore'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
+import { MultiSelectChips } from '@/components/customers/MultiSelectChips'
 
-interface TargetMarketAddEditProps {
-  audienceId?: string
+/** An interest/targeting option — persisted as an object (matches Nuxt `return-object`). */
+export interface Interest {
+  id: number
+  name: string
 }
+
+/** A family-status option coming from FAMILY_STATUS. */
+export interface FamilyStatusOption {
+  id: number
+  name: string
+}
+
+/** A target audience record from AUDIENCE (/ads/target-audience/). */
+// The API returns chip fields (esp. interests) as EITHER an array OR an object map keyed by id.
+// React's .map()/array ops throw on objects, so normalize to an array everywhere.
+function toArr<T>(v: unknown): T[] {
+  if (Array.isArray(v)) return v as T[]
+  if (v && typeof v === 'object') return Object.values(v as Record<string, T>)
+  return []
+}
+
+export interface Audience {
+  id: number
+  name: string
+  service: { id: number; name: string } | null
+  miles_radius: number | null
+  min_age: number | null
+  max_age: number | null
+  genders: string[] | null
+  education_statuses: string[] | null
+  family_statuses: number[] | null
+  interests: Interest[]
+  is_global?: boolean
+}
+
+export interface TargetMarketAddEditProps {
+  /** Audience id to edit; omit/null for "Add" mode. Accepts string (route slug) or number. */
+  audienceId?: string | number | null
+  /**
+   * Set when hosted inside FbAdBuilder (Nuxt `from_builder`). Marks the component as
+   * embedded so it never routes away on save/cancel/error.
+   */
+  fromBuilder?: boolean
+  /**
+   * Called after a successful create/update (Nuxt `updateAuddience`). Receives the created
+   * record on create, `undefined` on update. When provided the component returns to the
+   * caller instead of routing to /admin/all-settings.
+   */
+  onSaved?: (audience?: Audience) => void
+  /** Called when the user cancels while embedded. Falls back to routing when omitted. */
+  onCancel?: () => void
+}
+
+// Nuxt marks the audience "global" when its service is the reserved global service (id 188).
+const GLOBAL_SERVICE_ID = 188
 
 const GENDER_OPTIONS = [
   { name: 'Male', value: '1' },
@@ -31,222 +86,460 @@ const EDUCATION_OPTIONS = [
   { name: 'Some High School', value: '13' },
 ]
 
-export function TargetMarketAddEdit({ audienceId }: TargetMarketAddEditProps) {
+const LABEL = 'block text-sm font-medium mb-1.5 text-gray-700'
+const FIELD =
+  'w-full rounded-md border border-gray-300 bg-white px-3.5 py-2.5 text-base focus:border-[#124e66] focus:outline-none focus:ring-1 focus:ring-[#124e66]'
+
+export function TargetMarketAddEdit({
+  audienceId,
+  fromBuilder = false,
+  onSaved,
+  onCancel,
+}: TargetMarketAddEditProps) {
   const router = useRouter()
   const { isAdminLoggedIn } = useAuth()
   const services = useOrgServices()
   const { getSecure, postSecure, putSecure } = useSecureCalls()
 
-  const isNew = !audienceId
-  const [loading, setLoading] = useState(false)
-  const [id, setId] = useState<number | null>(null)
-  const [form, setForm] = useState({
-    name: '',
-    miles_radius: '' as number | '',
-    min_age: '' as number | '',
-    max_age: '' as number | '',
-    genders: [] as string[],
-    education_statuses: [] as string[],
-    family_statuses: [] as number[],
-    selectedInterests: [] as any[],
-    service_id: '' as number | '',
-    is_global: false,
-  })
-  const [familyStatusOptions, setFamilyStatusOptions] = useState<any[]>([])
-  const [interests, setInterests] = useState<any[]>([])
+  const embedded = fromBuilder || !!onSaved || !!onCancel
+  const editMode = audienceId != null && audienceId !== ''
 
-  useEffect(() => {
-    if (!isAdminLoggedIn()) { router.push('/login'); return }
-    init()
-  }, [])
+  const [overlay, setOverlay] = useState(false)
+  const [id, setId] = useState<number | null>(null)
+  const [name, setName] = useState('')
+  const [milesRadius, setMilesRadius] = useState<number | ''>('')
+  const [minAge, setMinAge] = useState<number | ''>('')
+  const [maxAge, setMaxAge] = useState<number | ''>('')
+  const [genders, setGenders] = useState<string[]>([])
+  const [educationStatuses, setEducationStatuses] = useState<string[]>([])
+  const [familyStatuses, setFamilyStatuses] = useState<number[]>([])
+  const [selectedInterests, setSelectedInterests] = useState<Interest[]>([])
+  const [serviceId, setServiceId] = useState<number | ''>('')
+  const [isGlobal, setIsGlobal] = useState(false)
+
+  const [familyStatusOptions, setFamilyStatusOptions] = useState<FamilyStatusOption[]>([])
+  const [interests, setInterests] = useState<Interest[]>([])
 
   const init = async () => {
     try {
-      setLoading(true)
+      setOverlay(true)
       const [fsRes, intRes] = await Promise.all([
-        getSecure<any[]>(SECURE_ENDPOINTS.FAMILY_STATUS),
-        getSecure<any[]>(SECURE_ENDPOINTS.INTERESTS),
+        getSecure<FamilyStatusOption[]>(SECURE_ENDPOINTS.FAMILY_STATUS),
+        getSecure<Interest[]>(SECURE_ENDPOINTS.INTERESTS),
       ])
-      setFamilyStatusOptions(fsRes ?? [])
-      setInterests(intRes ?? [])
+      setFamilyStatusOptions(Array.isArray(fsRes) ? fsRes : [])
+      setInterests(Array.isArray(intRes) ? intRes : [])
 
-      if (!isNew && audienceId) {
-        const res = await getSecure<any[]>(SECURE_ENDPOINTS.AUDIENCE, { id: audienceId })
-        const a = Array.isArray(res) ? res[0] : res
+      if (editMode) {
+        const res = await getSecure<Audience[]>(SECURE_ENDPOINTS.AUDIENCE, {
+          id: String(audienceId),
+        })
+        const a = Array.isArray(res) ? res[0] : (res as Audience | undefined)
         if (a) {
           setId(a.id)
-          setForm({
-            name: a.name ?? '',
-            miles_radius: a.miles_radius ?? '',
-            min_age: a.min_age ?? '',
-            max_age: a.max_age ?? '',
-            genders: a.genders ?? [],
-            education_statuses: a.education_statuses ?? [],
-            family_statuses: a.family_statuses ?? [],
-            selectedInterests: Object.keys(a.interests ?? {}).length ? a.interests : [],
-            service_id: a.service?.id ?? '',
-            is_global: !a.service,
-          })
+          setName(a.name ?? '')
+          setMilesRadius(a.miles_radius ?? '')
+          setMinAge(a.min_age ?? '')
+          setMaxAge(a.max_age ?? '')
+          setGenders(toArr<string>(a.genders))
+          setEducationStatuses(toArr<string>(a.education_statuses))
+          setFamilyStatuses(toArr<number>(a.family_statuses))
+          setSelectedInterests(toArr<Interest>(a.interests))
+          const svcId = a.service ? a.service.id : null
+          setServiceId(svcId ?? '')
+          setIsGlobal(svcId === GLOBAL_SERVICE_ID)
         }
       }
-    } catch { router.push('/admin/all-settings') }
-    finally { setLoading(false) }
+    } catch (err) {
+      console.error(err)
+      if (!embedded) router.push('/admin/all-settings')
+    } finally {
+      setOverlay(false)
+    }
   }
 
-  const toggleMulti = <T,>(field: keyof typeof form, value: T) => {
-    setForm(prev => {
-      const arr = prev[field] as T[]
-      if (arr.includes(value)) return { ...prev, [field]: arr.filter(v => v !== value) }
-      return { ...prev, [field]: [...arr, value] }
-    })
+  useEffect(() => {
+    if (!isAdminLoggedIn()) {
+      if (!embedded) router.push('/login')
+      return
+    }
+    void init()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audienceId])
+
+  const validate = (): boolean => {
+    if (!name.trim()) return false
+    if (!isGlobal && !serviceId) return false
+    return true
   }
 
-  const toggleInterest = (interest: any) => {
-    setForm(prev => {
-      const arr = prev.selectedInterests
-      if (arr.find((i: any) => i.id === interest.id)) {
-        return { ...prev, selectedInterests: arr.filter((i: any) => i.id !== interest.id) }
-      }
-      return { ...prev, selectedInterests: [...arr, interest] }
-    })
+  const buildPayload = () => ({
+    name,
+    miles_radius: milesRadius === '' ? null : milesRadius,
+    min_age: minAge === '' ? null : minAge,
+    max_age: maxAge === '' ? null : maxAge,
+    genders,
+    education_statuses: educationStatuses,
+    family_statuses: familyStatuses,
+    interests: selectedInterests,
+    service_id: isGlobal ? null : serviceId === '' ? null : serviceId,
+    is_global: isGlobal,
+  })
+
+  const finish = (created?: Audience) => {
+    if (onSaved) onSaved(created)
+    else router.push('/admin/all-settings')
   }
 
-  const handleSave = async () => {
-    if (!form.name || (!form.is_global && !form.service_id)) return
-    setLoading(true)
+  const create = async () => {
+    if (!validate()) {
+      toast.error('Please fill out the required fields', { duration: 15000 })
+      return
+    }
     try {
-      const payload = {
-        name: form.name,
-        miles_radius: form.miles_radius || null,
-        min_age: form.min_age || null,
-        max_age: form.max_age || null,
-        genders: form.genders,
-        education_statuses: form.education_statuses,
-        family_statuses: form.family_statuses,
-        interests: form.selectedInterests,
-        service_id: form.is_global ? null : form.service_id,
-        is_global: form.is_global,
-      }
-      if (isNew) {
-        await postSecure(SECURE_ENDPOINTS.AUDIENCE, payload)
-      } else {
-        await putSecure(SECURE_ENDPOINTS.AUDIENCE, { id, ...payload })
-      }
-      router.push('/admin/all-settings')
-    } catch { /* handled */ }
-    finally { setLoading(false) }
+      setOverlay(true)
+      const created = await postSecure<Audience>(SECURE_ENDPOINTS.AUDIENCE, buildPayload())
+      toast.success('Audience created successfully', { duration: 15000 })
+      finish(created)
+    } catch {
+      if (!embedded) router.push('/admin/all-settings')
+    } finally {
+      setOverlay(false)
+    }
   }
 
-  const MultiSelect = <T extends string | number>({
-    label, options, selected, onToggle, optionKey, optionLabel,
-  }: {
-    label: string
-    options: any[]
-    selected: T[]
-    onToggle: (v: T) => void
-    optionKey: string
-    optionLabel: string
-  }) => (
-    <div>
-      <label className="block text-sm font-medium mb-1">{label}</label>
-      <div className="flex flex-wrap gap-2 border rounded p-2 min-h-[40px]">
-        {options.map(opt => (
-          <button key={opt[optionKey]} type="button" onClick={() => onToggle(opt[optionKey])}
-            className={`px-2 py-0.5 rounded-full text-sm border transition-colors ${
-              selected.includes(opt[optionKey])
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-700 border-gray-300'
-            }`}>
-            {opt[optionLabel]}
-          </button>
-        ))}
+  const update = async () => {
+    if (!validate()) {
+      toast.error('Please fill out the required fields', { duration: 15000 })
+      return
+    }
+    try {
+      setOverlay(true)
+      await putSecure(SECURE_ENDPOINTS.AUDIENCE, { id, ...buildPayload() })
+      toast.success('Audience Updated successfully', { duration: 15000 })
+      finish()
+    } catch {
+      if (!embedded) router.push('/admin/all-settings')
+    } finally {
+      setOverlay(false)
+    }
+  }
+
+  const cancel = () => {
+    if (onCancel) onCancel()
+    else router.push('/admin/all-settings')
+  }
+
+  return (
+    <div className={embedded ? 'p-4' : 'mx-auto max-w-4xl px-4 py-8'}>
+      {overlay && (
+        <div className="fixed inset-0 z-[99] flex items-center justify-center bg-white/60">
+          <div className="h-16 w-16 animate-spin rounded-full border-4 border-[#124e66] border-t-transparent" />
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-6 py-4 font-semibold text-gray-800">
+          <FileText size={20} className="text-[#124e66]" />
+          Target Market {editMode ? 'Edit' : 'Add'}
+        </div>
+
+        <div className="space-y-5 p-6">
+          {/* Basic information */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className={LABEL}>
+                Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                className={FIELD}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className={LABEL}>Radius (miles)</label>
+              <input
+                type="number"
+                className={FIELD}
+                value={milesRadius}
+                onChange={(e) => setMilesRadius(e.target.value === '' ? '' : Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          {/* Age range */}
+          <div>
+            <label className={LABEL}>Age Range</label>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <input
+                type="number"
+                min={18}
+                max={65}
+                placeholder="Minimum Age"
+                className={FIELD}
+                value={minAge}
+                onChange={(e) => setMinAge(e.target.value === '' ? '' : Number(e.target.value))}
+              />
+              <input
+                type="number"
+                min={18}
+                max={65}
+                placeholder="Maximum Age"
+                className={FIELD}
+                value={maxAge}
+                onChange={(e) => setMaxAge(e.target.value === '' ? '' : Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          {/* Demographics */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <ChipMultiSelect
+              label="Genders"
+              options={GENDER_OPTIONS}
+              selected={genders}
+              onToggle={(v) =>
+                setGenders((prev) =>
+                  prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
+                )
+              }
+            />
+            <ChipMultiSelect
+              label="Educations"
+              options={EDUCATION_OPTIONS}
+              selected={educationStatuses}
+              onToggle={(v) =>
+                setEducationStatuses((prev) =>
+                  prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
+                )
+              }
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className={LABEL}>Family Statuses</label>
+              <MultiSelectChips
+                options={familyStatusOptions}
+                value={familyStatuses}
+                onChange={setFamilyStatuses}
+                placeholder="Select family statuses"
+              />
+            </div>
+            <div>
+              <label className={LABEL}>Targeting Interests</label>
+              <SearchableInterestSelect
+                options={interests}
+                selected={selectedInterests}
+                onChange={setSelectedInterests}
+              />
+            </div>
+          </div>
+
+          {/* Service + global switch */}
+          <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-2">
+            {!isGlobal && (
+              <div>
+                <label className={LABEL}>
+                  Service <span className="text-red-500">*</span>
+                </label>
+                <select
+                  className={FIELD}
+                  value={serviceId}
+                  onChange={(e) => setServiceId(e.target.value ? Number(e.target.value) : '')}
+                >
+                  <option value="">Select service</option>
+                  {services.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <label className="flex cursor-pointer items-center gap-2 py-2">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isGlobal}
+                onClick={() => {
+                  setIsGlobal((g) => {
+                    if (!g) setServiceId('')
+                    return !g
+                  })
+                }}
+                className={`relative h-6 w-11 rounded-full transition-colors ${
+                  isGlobal ? 'bg-green-500' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                    isGlobal ? 'translate-x-5' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+              <span className="text-sm font-medium text-gray-700">Is Global?</span>
+            </label>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row">
+            <button
+              type="button"
+              onClick={editMode ? update : create}
+              disabled={overlay}
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-[#1565C0] px-6 py-2.5 font-medium text-white transition-colors hover:bg-[#0d47a1] disabled:opacity-50"
+            >
+              <Save size={18} />
+              {editMode ? 'Update' : 'Save'}
+            </button>
+            <button
+              type="button"
+              onClick={cancel}
+              className="rounded-md bg-gray-200 px-6 py-2.5 font-medium text-gray-700 hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
+}
+
+/** Short-list multi-select rendered as toggleable chips (genders, educations). */
+function ChipMultiSelect({
+  label,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string
+  options: { name: string; value: string }[]
+  selected: string[]
+  onToggle: (value: string) => void
+}) {
+  return (
+    <div>
+      <label className={LABEL}>{label}</label>
+      <div className="flex min-h-[50px] flex-wrap gap-2 rounded-md border border-gray-300 bg-white p-2">
+        {options.map((opt) => {
+          const active = selected.includes(opt.value)
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onToggle(opt.value)}
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[13px] transition-colors ${
+                active
+                  ? 'border-[#1565C0] bg-[#1565C0] text-white'
+                  : 'border-gray-300 bg-white text-gray-700 hover:border-[#1565C0]'
+              }`}
+            >
+              {active && <Check size={12} />}
+              {opt.name}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/** Searchable multi-select for interests (persisted as objects, matches Nuxt `return-object`). */
+function SearchableInterestSelect({
+  options,
+  selected,
+  onChange,
+}: {
+  options: Interest[]
+  selected: Interest[]
+  onChange: (next: Interest[]) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [])
+
+  const toggle = (interest: Interest) => {
+    if (selected.find((i) => i.id === interest.id)) {
+      onChange(selected.filter((i) => i.id !== interest.id))
+    } else {
+      onChange([...selected, interest])
+    }
+  }
+
+  const filtered = query
+    ? options.filter((o) => o.name?.toLowerCase().includes(query.toLowerCase()))
+    : options
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="bg-white border rounded shadow-sm p-6 space-y-5">
-        <h2 className="text-xl font-bold">Target Market {isNew ? 'Add' : 'Edit'}</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Name <span className="text-red-500">*</span></label>
-            <input type="text" className="w-full border rounded px-3 py-2"
-              value={form.name} onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Radius (miles)</label>
-            <input type="number" className="w-full border rounded px-3 py-2"
-              value={form.miles_radius} onChange={e => setForm(prev => ({ ...prev, miles_radius: Number(e.target.value) || '' }))} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Minimum Age (18–65)</label>
-            <input type="number" min={18} max={65} className="w-full border rounded px-3 py-2"
-              value={form.min_age} onChange={e => setForm(prev => ({ ...prev, min_age: Number(e.target.value) || '' }))} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Maximum Age (18–65)</label>
-            <input type="number" min={18} max={65} className="w-full border rounded px-3 py-2"
-              value={form.max_age} onChange={e => setForm(prev => ({ ...prev, max_age: Number(e.target.value) || '' }))} />
-          </div>
-        </div>
-
-        <MultiSelect label="Genders" options={GENDER_OPTIONS} selected={form.genders}
-          onToggle={v => toggleMulti('genders', v)} optionKey="value" optionLabel="name" />
-
-        <MultiSelect label="Educations" options={EDUCATION_OPTIONS} selected={form.education_statuses}
-          onToggle={v => toggleMulti('education_statuses', v)} optionKey="value" optionLabel="name" />
-
-        <MultiSelect label="Family Statuses" options={familyStatusOptions} selected={form.family_statuses}
-          onToggle={v => toggleMulti('family_statuses', v)} optionKey="id" optionLabel="name" />
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Targeting Interests</label>
-          <div className="flex flex-wrap gap-2 border rounded p-2 min-h-[40px]">
-            {interests.map((interest: any) => (
-              <button key={interest.id} type="button" onClick={() => toggleInterest(interest)}
-                className={`px-2 py-0.5 rounded-full text-sm border transition-colors ${
-                  form.selectedInterests.find((i: any) => i.id === interest.id)
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300'
-                }`}>
-                {interest.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-6 items-start">
-          {!form.is_global && (
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium mb-1">Service <span className="text-red-500">*</span></label>
-              <select className="w-full border rounded px-3 py-2"
-                value={form.service_id} onChange={e => setForm(prev => ({ ...prev, service_id: Number(e.target.value) || '' }))}>
-                <option value="">Select service</option>
-                {(services ?? []).map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
-          )}
-          <label className="flex items-center gap-2 cursor-pointer mt-6">
-            <input type="checkbox" checked={form.is_global}
-              onChange={e => setForm(prev => ({ ...prev, is_global: e.target.checked, service_id: '' }))} />
-            <span className="text-sm font-medium">Is Global?</span>
-          </label>
-        </div>
-
-        <div className="flex gap-4 pt-2">
-          <button onClick={handleSave} disabled={loading}
-            className="bg-blue-600 text-white px-6 py-2 rounded font-semibold disabled:opacity-50">
-            {loading ? 'Saving...' : isNew ? 'Save' : 'Update'}
-          </button>
-          <button onClick={() => router.push('/admin/all-settings')}
-            className="bg-gray-500 text-white px-6 py-2 rounded font-semibold">Cancel</button>
-        </div>
+    <div ref={ref} className="relative">
+      <div
+        onClick={() => setOpen((o) => !o)}
+        className="flex min-h-[50px] w-full cursor-pointer flex-wrap items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-2 text-[15px]"
+      >
+        {selected.length === 0 && <span className="text-gray-400">Select interests</span>}
+        {selected.map((o) => (
+          <span
+            key={o.id}
+            className="inline-flex items-center gap-1 rounded-full bg-[#e6edfd] px-2.5 py-0.5 text-[13px] text-[#2a4d9b]"
+          >
+            {o.name}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                toggle(o)
+              }}
+              aria-label={`Remove ${o.name}`}
+            >
+              <X size={13} />
+            </button>
+          </span>
+        ))}
       </div>
+
+      {open && (
+        <div className="absolute z-30 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+          <div className="flex items-center gap-2 border-b px-3 py-2">
+            <Search size={16} className="text-gray-400" />
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search interests..."
+              className="w-full text-sm outline-none"
+            />
+          </div>
+          <div className="max-h-60 overflow-y-auto">
+            {filtered.length === 0 && (
+              <p className="px-3 py-2 text-sm text-gray-400">No interests</p>
+            )}
+            {filtered.map((o) => {
+              const active = !!selected.find((i) => i.id === o.id)
+              return (
+                <label
+                  key={o.id}
+                  className="flex cursor-pointer items-center gap-2 px-3 py-2 text-[15px] hover:bg-[#eef2fb]"
+                >
+                  <input type="checkbox" checked={active} onChange={() => toggle(o)} />
+                  {o.name}
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

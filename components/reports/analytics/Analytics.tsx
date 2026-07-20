@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useOrgStore } from '@/store/orgStore'
+import { useState, useEffect, useCallback } from 'react'
+import { useAnalytics } from '@/hooks/admin/useAnalytics'
 import { useSecureCalls, SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
-import { formatDate, addDays, startOfMonth, endOfMonth, addMonths } from '@/lib/utils/dateTime'
 import { UsersChart } from './UsersChart'
 import { LeadsChart } from './LeadsChart'
 import { TrialChart } from './TrialChart'
@@ -12,83 +11,183 @@ import { UserPageChart } from './UserPageChart'
 import { UserAreaChart } from './UserAreaChart'
 import { ProgramChart } from './ProgramChart'
 
-const iso = (d: Date) => formatDate(d, 'YYYY-MM-DD')
-
-const PRESETS: { key: string; label: string; range: () => { from: string; to: string } }[] = [
-  { key: 'last7', label: 'Last 7 Days', range: () => ({ from: iso(addDays(new Date(), -6)), to: iso(new Date()) }) },
-  { key: 'last28', label: 'Last 28 Days', range: () => ({ from: iso(addDays(new Date(), -27)), to: iso(new Date()) }) },
-  { key: 'last30', label: 'Last 30 Days', range: () => ({ from: iso(addDays(new Date(), -29)), to: iso(new Date()) }) },
-  { key: 'last90', label: 'Last 90 Days', range: () => ({ from: iso(addDays(new Date(), -89)), to: iso(new Date()) }) },
-  { key: 'thisMonth', label: 'This Month', range: () => ({ from: iso(startOfMonth(new Date())), to: iso(new Date()) }) },
-  { key: 'lastMonth', label: 'Last Month', range: () => ({ from: iso(startOfMonth(addMonths(new Date(), -1))), to: iso(endOfMonth(addMonths(new Date(), -1))) }) },
-]
-
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <p className="mb-2 pl-3 text-sm font-semibold uppercase text-[#8a8a8a] sm:pl-0">{children}</p>
+  <p className="mb-3 pl-3 text-sm font-semibold uppercase text-[#8a8a8a] sm:pl-0">{children}</p>
 )
 
-/** Nuxt Analytics — Dashboard container: date-range filter + all analytics charts (ANALYTICS_ALL). */
+/** Nuxt Analytics (components/reports/analytics/Analytics.vue) — date-range dialog filter + all analytics charts. */
 export function Analytics() {
-  const domain = useOrgStore((s) => s.domain)
+  const {
+    domain, items, custom, dialog, setDialog,
+    selectedDateRange, currentSetOption, selectedOption, dateRange,
+    startDate, endDate, setStartDate, setEndDate,
+    rangeProp, dateMeasurement, changProps, cleanUp,
+  } = useAnalytics()
   const { getSecure } = useSecureCalls()
 
-  const [preset, setPreset] = useState('last90')
-  const [custom, setCustom] = useState<{ from: string; to: string } | null>(null)
   const [analytics, setAnalytics] = useState<Record<string, any> | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [overlay, setOverlay] = useState(false)
+  const [openGroup, setOpenGroup] = useState<string | null>(null)
 
-  const range = useMemo(() => {
-    if (custom?.from && custom?.to) return custom
-    return (PRESETS.find((p) => p.key === preset) ?? PRESETS[3]).range()
-  }, [preset, custom])
-  const label = custom ? `${custom.from} - ${custom.to}` : (PRESETS.find((p) => p.key === preset)?.label ?? '')
-
-  const fetchAll = useCallback(async () => {
-    setLoading(true)
+  const getUsersData = useCallback(async () => {
+    if (!rangeProp.start_date || !rangeProp.end_date) return
     try {
-      const res = await getSecure<Record<string, any>>(SECURE_ENDPOINTS.ANALYTICS_ALL, { domain, from: range.from, to: range.to })
+      setOverlay(true)
+      const res = await getSecure<Record<string, any>>(SECURE_ENDPOINTS.ANALYTICS_ALL, {
+        domain, from: rangeProp.start_date, to: rangeProp.end_date,
+      })
       setAnalytics(res ?? {})
-    } catch { /* ignore */ } finally { setLoading(false) }
-  }, [getSecure, domain, range.from, range.to])
+    } catch { /* ignore */ } finally { setOverlay(false) }
+  }, [getSecure, domain, rangeProp.start_date, rangeProp.end_date])
 
-  useEffect(() => { fetchAll() }, [fetchAll])
+  // Nuxt: watch(range_prop, () => get_users_data())
+  useEffect(() => { getUsersData() }, [getUsersData])
+
+  const chipLabel = currentSetOption || selectedOption
 
   return (
-    <div className="relative min-h-full bg-[#f8fafc]">
-      {loading && (
+    <div className="relative">
+      {overlay && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/60">
-          <div className="h-14 w-14 animate-spin rounded-full border-4 border-[#124e66] border-t-transparent" />
+          <div className="h-16 w-16 animate-spin rounded-full border-4 border-[#124e66] border-t-transparent" />
         </div>
       )}
 
-      <div className="flex flex-col gap-3 bg-[#124e66] p-5 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-xl font-medium text-white md:text-2xl">Dashboard: <span className="text-white/80">{label}</span></h1>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <select value={custom ? '' : preset} onChange={(e) => { setCustom(null); setPreset(e.target.value) }} className="rounded-md bg-white px-3 py-2 text-sm">
-            {PRESETS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-          </select>
-          <div className="flex items-center gap-2">
-            <input type="date" value={custom?.from ?? ''} onChange={(e) => setCustom((c) => ({ from: e.target.value, to: c?.to ?? e.target.value }))} className="rounded-md bg-white px-2 py-2 text-sm" />
-            <span className="text-white/70">–</span>
-            <input type="date" value={custom?.to ?? ''} onChange={(e) => setCustom((c) => ({ from: c?.from ?? e.target.value, to: e.target.value }))} className="rounded-md bg-white px-2 py-2 text-sm" />
-          </div>
+      {/* Date-range filter row */}
+      <div className="flex flex-col items-stretch gap-2 px-2 md:flex-row md:items-center md:justify-between">
+        <h4 className="text-lg font-semibold">Dashboard:</h4>
+        <div className="flex flex-col items-stretch gap-2 md:flex-row md:items-center md:justify-end">
+          <span className="mx-2 inline-flex items-center self-start rounded-lg bg-gray-100 px-3 py-1 text-sm text-gray-700 md:self-auto">
+            {chipLabel}
+          </span>
+          <input
+            type="text"
+            readOnly
+            value={selectedDateRange}
+            onClick={() => setDialog(true)}
+            placeholder="Date range"
+            className="w-full cursor-pointer border-b border-gray-400 bg-transparent px-1 py-2 text-sm outline-none md:w-56"
+          />
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1400px] space-y-6 px-4 py-6">
-        <div><UsersChart analytics={analytics ?? undefined} date_range={label} /></div>
+      {/* Date-range dialog */}
+      {dialog && (
+        <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/30 p-4 pt-20" onClick={cleanUp}>
+          <div className="flex max-h-[80vh] w-full max-w-[300px] flex-col rounded bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b px-4 py-2 text-center text-[1.1rem] font-semibold">{dateRange}</div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div><Label>Total leads by date:</Label><LeadsChart analytics={analytics ?? undefined} date_range={label} /></div>
-          <div><Label>Total Trials by date:</Label><TrialChart analytics={analytics ?? undefined} date_range={label} /></div>
+            <div className="flex-1 overflow-y-auto px-1 py-1">
+              {!custom ? (
+                <ul className="text-sm">
+                  {items.map((item) => (
+                    <li key={item.title}>
+                      {!item.subList ? (
+                        <button
+                          type="button"
+                          onClick={() => dateMeasurement(item.title)}
+                          className="block w-full min-h-[35px] px-4 py-2 text-left hover:bg-gray-100"
+                        >
+                          {item.title}
+                        </button>
+                      ) : (
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenGroup((g) => (g === item.title ? null : item.title))
+                              dateMeasurement(item.title)
+                            }}
+                            className="flex w-full min-h-[35px] items-center justify-between px-4 py-2 text-left hover:bg-gray-100"
+                          >
+                            <span>{item.title}</span>
+                            <span className="text-gray-500">{openGroup === item.title ? '▲' : '▼'}</span>
+                          </button>
+                          {openGroup === item.title && (
+                            <ul>
+                              {item.subList.map((child) => (
+                                <li key={child.title}>
+                                  <button
+                                    type="button"
+                                    onClick={() => dateMeasurement(child.title)}
+                                    className="block w-full min-h-[35px] px-8 py-2 text-left hover:bg-gray-100"
+                                  >
+                                    {child.title}
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="space-y-3 px-3 py-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600">Start date</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      max={endDate || undefined}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="mt-1 w-full rounded border px-2 py-1.5 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600">End date</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      min={startDate || undefined}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="mt-1 w-full rounded border px-2 py-1.5 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t px-3 py-2 text-sm">
+              {custom && (
+                <button type="button" onClick={() => dateMeasurement('Custom')} className="px-3 py-1 font-medium uppercase text-[#1565C0] hover:bg-blue-50 rounded">
+                  Back
+                </button>
+              )}
+              <button type="button" onClick={cleanUp} className="px-3 py-1 font-medium uppercase text-[#1565C0] hover:bg-blue-50 rounded">
+                Cancel
+              </button>
+              <button type="button" onClick={changProps} className="px-3 py-1 font-medium uppercase text-[#1565C0] hover:bg-blue-50 rounded">
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Charts */}
+      <div className="relative z-[1] mx-auto max-w-[1400px] px-4 py-2">
+        <div className="mb-2">
+          <UsersChart analytics={analytics ?? undefined} date_range={selectedDateRange} />
         </div>
 
-        <div><Label>Leads And Purchases by Source:</Label><LeadAndPurchaseChart analytics={analytics ?? undefined} date_range={label} /></div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div><Label>Total leads by date:</Label><LeadsChart analytics={analytics ?? undefined} date_range={selectedDateRange} /></div>
+          <div><Label>Total Trials by date:</Label><TrialChart analytics={analytics ?? undefined} date_range={selectedDateRange} /></div>
+        </div>
 
+        <div className="mt-4">
+          <Label>Leads And Purchases by Source:</Label>
+          <LeadAndPurchaseChart analytics={analytics ?? undefined} date_range={selectedDateRange} />
+        </div>
+      </div>
+
+      <div className="relative z-[1] mx-auto max-w-[1400px] px-4 py-2">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <div><Label>Which pages are visited most often?</Label><UserPageChart analytics={analytics ?? undefined} date_range={label} /></div>
-          <div><Label>Which area have the most users?</Label><UserAreaChart analytics={analytics ?? undefined} date_range={label} /></div>
-          <div><Label>Which programs are visited most often?</Label><ProgramChart analytics={analytics ?? undefined} date_range={label} /></div>
+          <div><Label>Which pages are visited most often?</Label><UserPageChart analytics={analytics ?? undefined} date_range={selectedDateRange} /></div>
+          <div><Label>Which area have the most users?</Label><UserAreaChart analytics={analytics ?? undefined} date_range={selectedDateRange} /></div>
+          <div><Label>Which programs are visited most often?</Label><ProgramChart analytics={analytics ?? undefined} date_range={selectedDateRange} /></div>
         </div>
       </div>
     </div>

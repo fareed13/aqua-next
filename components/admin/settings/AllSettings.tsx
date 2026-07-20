@@ -38,9 +38,14 @@ const NoShowReport = dynamic(() => import('@/components/reports/NoShow').then((m
 const NewMemberReport = dynamic(() => import('@/components/reports/NewMember').then((m) => m.NewMemberReport), { ssr: false })
 const RenewalReport = dynamic(() => import('@/components/reports/RenewalReport').then((m) => m.RenewalReport), { ssr: false })
 const BirthdayReport = dynamic(() => import('@/components/reports/Birthday').then((m) => m.BirthdayReport), { ssr: false })
-// const KeywordsRanking = dynamic(() => import('@/components/admin/keywords/KeywordsRanking').then((m) => m.KeywordsRanking), { ssr: false })
+const KeywordsRanking = dynamic(() => import('@/components/admin/keywords/KeywordsRanking').then((m) => m.KeywordsRanking), { ssr: false })
 const AbbiLeadsReport = dynamic(() => import('@/components/reports/abbiLeads/AbbiLeadsReport').then((m) => m.AbbiLeadsReport), { ssr: false })
-// const AnalyticsReport = dynamic(() => import('@/components/reports/analytics/Analytics').then((m) => m.Analytics), { ssr: false })
+const AnalyticsReport = dynamic(() => import('@/components/reports/analytics/Analytics').then((m) => m.Analytics), { ssr: false })
+const FacebookAdsList = dynamic(() => import('@/components/admin/facebookAds/FacebookAdsList').then((m) => m.FacebookAdsList), { ssr: false })
+const FbAdBuilder = dynamic(() => import('@/components/admin/facebookAds/FbAdBuilder').then((m) => m.FbAdBuilder), { ssr: false })
+const GoogleAdsList = dynamic(() => import('@/components/admin/googleAds/GoogleAdsList').then((m) => m.GoogleAdsList), { ssr: false })
+const AdLibraryList = dynamic(() => import('@/components/admin/adLibrary/AdLibraryList').then((m) => m.AdLibraryList), { ssr: false })
+const TargetMarketList = dynamic(() => import('@/components/admin/targetMarket/TargetMarketList').then((m) => m.TargetMarketList), { ssr: false })
 
 export function AllSettings() {
   const organization = useOrgStore(s => s.organization)
@@ -50,6 +55,12 @@ export function AllSettings() {
   const [openSection, setOpenSection] = useState<number | null>(101)
   const [openChild, setOpenChild] = useState<number | null>(null)
   const [search, setSearch] = useState('')
+  // isSuperAdminLoggedIn() reads the client-only auth cookie, so it is false during SSR and
+  // (for a super-admin) true on the client — rendering a different menu tree on each side and
+  // causing a hydration mismatch. Gate it behind `mounted`: the first client render matches the
+  // server (non-super-admin view), then the real check applies after hydration. See [[auth-hydration-mismatch]].
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
   // The site nav is itself `sticky top-0`; stick the search bar directly BELOW it
   // (Nuxt reads #top_navbar height and offsets the same way) so it doesn't hide behind it.
   const [stickyTop, setStickyTop] = useState(85)
@@ -67,7 +78,7 @@ export function AllSettings() {
 
   const sections = useMemo(() => {
     let list = [...SETTINGS_SECTIONS]
-    if (!isSuperAdminLoggedIn()) {
+    if (!(mounted && isSuperAdminLoggedIn())) {
       list = list.map(section => {
         const s = { ...section, items: [...section.items] }
         if (s.title === 'Business Essentials') {
@@ -102,7 +113,7 @@ export function AllSettings() {
       }))
     }
     return list
-  }, [isSuperAdminLoggedIn, organization?.chatbot_enabled])
+  }, [mounted, isSuperAdminLoggedIn, organization?.chatbot_enabled])
 
   const searchableTitles = useMemo(() => {
     const titles: Array<{ id: number; nestedId?: number; title: string; description?: string }> = []
@@ -163,14 +174,19 @@ export function AllSettings() {
     if (id === 203) return <PaymentIntegrations />
     if (id === 204) return <RefundPolicy />
     if (id === 205) return <ReceiptEditor field="booking_receipt" title="Booking Receipt" subtitle="Manage organization booking receipt" errorLabel="Booking Receipt" />
-    if (id === 3011) return "<KeywordsRanking />"
+    if (id === 3011) return <KeywordsRanking />
     if (id === 3012) return <LastFifteenDay />
     if (id === 3013) return <NoShowReport />
     if (id === 3014) return <NewMemberReport />
     if (id === 3015) return <RenewalReport />
     if (id === 3016) return <BirthdayReport />
     if (id === 3017) return <AbbiLeadsReport />
-    if (id === 3018) return "<AnalyticsReport />"
+    if (id === 3018) return organization?.is_analytics_enabled ? <AnalyticsReport /> : null
+    if (id === 3021) return <FacebookAdsList />
+    if (id === 3022) return <FbAdBuilder />
+    if (id === 3023) return <GoogleAdsList />
+    if (id === 3024) return <AdLibraryList />
+    if (id === 3025) return <TargetMarketList />
     if (id === 4018) return <PdfList />
     return (
       <div className="flex min-h-[120px] items-center justify-center text-sm text-gray-400">

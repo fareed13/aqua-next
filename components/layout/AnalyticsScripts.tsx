@@ -35,7 +35,6 @@ export function AnalyticsScripts() {
   useEffect(() => {
     const gtmId = organization?.gtm_container_id
     if (!gtmId) return
-
     window.dataLayer = window.dataLayer || []
 
     const load = () => {
@@ -67,20 +66,18 @@ export function AnalyticsScripts() {
     document.readyState === 'complete' ? schedule() : window.addEventListener('load', schedule, { once: true })
   }, [organization?.gtm_container_id])
 
-  // Google Analytics (gtag)
+  // Google Analytics (gtag) — mirrors Nuxt plugins/09.gtag.client.js
   useEffect(() => {
     const gtagIds = (organization?.gtag ?? []).filter(Boolean)
     if (!gtagIds.length) return
 
-    const gtag = (...args: unknown[]) => {
-      window.dataLayer = window.dataLayer || []
-      window.dataLayer.push(args)
-    }
-
     const load = async () => {
       window.dataLayer = window.dataLayer || []
+      // gtag.js expects command pushes to be the `arguments` object (not a plain array),
+      // otherwise `gtag('config', …)` may not register the tag — match Nuxt's stub exactly.
       if (!window.gtag) {
-        window.gtag = (...args: unknown[]) => { window.dataLayer.push(args) }
+        // eslint-disable-next-line prefer-rest-params
+        window.gtag = function gtag() { window.dataLayer.push(arguments) } as (...args: unknown[]) => void
       }
       window.gtag('js', new Date())
 
@@ -95,8 +92,13 @@ export function AnalyticsScripts() {
         })
       }
 
+      // Configure every measurement id (primary first, then the rest), like Nuxt.
       gtagIds.forEach(id => {
-        gtag('config', id, { send_page_view: true, cookie_flags: 'SameSite=None;Secure' })
+        window.gtag('config', id, {
+          send_page_view: true,
+          anonymize_ip: false,
+          cookie_flags: 'SameSite=None;Secure',
+        })
       })
     }
 
