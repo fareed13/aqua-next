@@ -7,6 +7,7 @@ import { Message } from './Message'
 import { useOrgStore } from '@/store/orgStore'
 import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls'
 import { getRecaptchaAuthHeader } from '@/lib/utils/recaptchaAuth'
+import { fireChatLeadCaptured } from '@/lib/utils/analyticsEvents'
 
 
 interface ChatMessage {
@@ -76,6 +77,14 @@ export function ChatContainer() {
         ...prev,
         { sender: 'Bot', text: res.response_for_client, avatar: avatarLogo, isliked: null },
       ])
+
+      // Chatbot lead capture: once the user confirms "Yes", the backend returns
+      // data_collected===1 with the collected lead_values. Fire chat_lead_captured
+      // then (mirrors Nuxt ChatContainer.vue submitChatbotLead).
+      if (res.data_collected === 1 && res.lead_values && Object.keys(res.lead_values).length > 0) {
+        fireChatLeadCaptured(res.lead_values.email)
+      }
+
       scrollToBottom()
     } catch (e) {
       console.error(e)

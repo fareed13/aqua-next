@@ -14,6 +14,18 @@ const SIZE_MAP: Record<string, number> = {
 
 const VIDEO_EXTS = new Set(['mp4', 'webm'])
 
+// CloudFront only generates a fixed grid of image derivatives — these exact
+// widths (they mirror the Nuxt named sizes plus the 1000 video width). Any other
+// width (400, 600, 800, …) returns 403, and next/image's server-side fetch of a
+// 403 source renders a broken image. Callers that pass a raw pixel number get
+// snapped UP to the nearest generated width (capped at the largest) so the source
+// always exists. Named sizes already land on the grid, so they're unaffected.
+const AVAILABLE_WIDTHS = [350, 700, 900, 1000, 1200, 1440]
+
+function snapToAvailableWidth(px: number): number {
+  return AVAILABLE_WIDTHS.find(w => w >= px) ?? AVAILABLE_WIDTHS[AVAILABLE_WIDTHS.length - 1]
+}
+
 /** True when the media is a video, so callers can keep it away from <Image>. */
 export function isVideoMedia(media: Media | null | undefined): boolean {
   if (!media) return false
@@ -27,9 +39,11 @@ export function buildMediaUrl(
   if (!media) return ''
   const id = media.uuid ?? media.name
   if (!id) return ''
-  const px = typeof size === 'string' ? (SIZE_MAP[size] ?? 350) : size
   // Videos live on a separate CDN (Nuxt: AMAZONAWS_VIDEO_URL)
   const isVideo = VIDEO_EXTS.has(media.extension?.toLowerCase() ?? '') || media.type === 'video'
+  const rawPx = typeof size === 'string' ? (SIZE_MAP[size] ?? 350) : size
+  // Only image derivatives are pre-generated on the grid; leave video widths as-is.
+  const px = isVideo ? rawPx : snapToAvailableWidth(rawPx)
   const base = isVideo ? VIDEO_URL : MEDIA_URL
   return `${base}/${id}_${px}.${media.extension}`
 }

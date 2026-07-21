@@ -366,7 +366,13 @@ export function SectionEdit({ target, targetId, sectionIndex, onClose, onSaved }
     try {
       const response = await putSecure(TARGET_ENDPOINTS[target], { id: targetId, content })
       if (response !== undefined) {
-        toast.success(isUpdate ? 'Section Updated Successfully' : 'Section added Successfully', { duration: 5000 })
+        // The public pages are statically built, so a saved section only becomes
+        // visible after the next deployment — say so to avoid the "why isn't it
+        // showing / why did it show" confusion. See EditableSections (no optimistic update).
+        toast.success(
+          `${isUpdate ? 'Section updated' : 'Section added'}. It will appear on the site after the next deployment.`,
+          { duration: 6000 },
+        )
       }
       onSaved?.(content as ComponentContent[])
       onClose()

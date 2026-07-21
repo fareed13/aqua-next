@@ -12,6 +12,7 @@ import { getRecaptchaAuthHeader, storeRecaptchaToken, markRecaptchaVerified, cle
 // import { useValidation } from '@/hooks/useValidation'
 import { toast } from 'sonner'
 import { parseApiError } from '@/lib/utils/parseApiError'
+import { fireLeadSubmit } from '@/lib/utils/analyticsEvents'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { MapPin, ChevronDown } from 'lucide-react'
@@ -269,6 +270,7 @@ export function Checkout() {
           sms_opt_in: smsOptIn,
           custom_field: customField || undefined,
           reason_for_joining: reasonForJoining || undefined,
+          lead_origin: 'digital',
         },
         authHeader,
       )
@@ -281,6 +283,9 @@ export function Checkout() {
       setStudents([{ first_name: firstname, last_name: lastname }])
       // Share customer data globally so other hook instances (step 2/3) can read it
       setCheckoutCustomer({ email, phone: mobile, firstName: firstname, lastName: lastname })
+
+      // lead_submit — Step 1 completion (mirrors Nuxt Checkout.vue)
+      fireLeadSubmit(email)
 
       const is_booking_enabled = org.is_booking_enabled
       const selectedPlan = useUiStore.getState().selectedPlan

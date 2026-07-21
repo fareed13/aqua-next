@@ -90,3 +90,44 @@ export function fireCallClick() {
   fbTrack('call_click')
   gtagEvent('call_click', {})
 }
+
+// chat_lead_captured — chatbot "Yes" confirmation (Nuxt ChatContainer.vue submitChatbotLead).
+// Note the per-channel name differences, kept identical to Nuxt.
+export function fireChatLeadCaptured(email: string) {
+  abbiEvent('LEAD', { email })            // Nuxt: leadAndPurchaseEvent('LEAD', { email })
+  fbTrack('Lead')                          // Nuxt: fbq('track', 'Lead')  — no params
+  gtagEvent('chat_lead_captured', {})      // Nuxt: $gtag('event', 'chat_lead_captured', {})
+  reportConversion()                       // Nuxt: $gtag_report_conversion()
+}
+
+// lead_submit — stepper Step 1 completion (Nuxt Checkout.vue) and the InteractiveVideo
+// lead form (Nuxt InteractiveVideo.vue) — identical fan-out in both.
+export function fireLeadSubmit(email: string) {
+  abbiEvent('LEAD', { email })            // Nuxt: leadAndPurchaseEvent('LEAD', { email })
+  fbTrack('Lead')                          // Nuxt: fbq('track', 'Lead')  — no params
+  gtagEvent('lead_submit', {})             // Nuxt: $gtag('event', 'lead_submit', {})
+  reportConversion()                       // Nuxt: $gtag_report_conversion()
+}
+
+// purchase — Step 2 payment confirm on the CUSTOMER_PURCHASE path (Nuxt useCheckoutDetails.js).
+// fbq deliberately tracks 'Lead' (not 'Purchase'), matching Nuxt exactly.
+export function firePurchase({ price, email, service }: { price: number; email: string; service: unknown }) {
+  gtagEvent('purchase', { currency: 'USD', value: price })   // Nuxt: $gtag('event','purchase',{currency,value})
+  reportPurchase(price)                                       // Nuxt: $gtag_report_purchase(pricePayed)
+  abbiEvent('PURCHASE', { price, email, service })            // Nuxt: leadAndPurchaseEvent('PURCHASE', {...})
+  fbTrack('Lead', { value: price, currency: 'USD' })          // Nuxt: fbq('track','Lead',{value,currency})
+}
+
+// enrollment — extra GA4-only event fired ONLY when active_payment_method === 'aquila'
+// (in addition to purchase). Nuxt useCheckoutDetails.js.
+export function fireEnrollment({ price, email, service }: { price: number; email: string; service: unknown }) {
+  gtagEvent('enrollment', { currency: 'USD', value: price, service, email })
+}
+
+// trial_booked — appointment booking Step 3 completion (Nuxt AppointmentBooking.vue).
+// Three channels only — Nuxt fires no Google Ads conversion here.
+export function fireTrialBooked(customerId: number) {
+  abbiEvent('trial_booked', { customer_id: customerId })   // Nuxt: leadAndPurchaseEvent('trial_booked', {customer_id})
+  fbTrack('trial_booked')                                   // Nuxt: fbq('track', 'trial_booked')  — no params
+  gtagEvent('trial_booked', {})                             // Nuxt: $gtag('event', 'trial_booked', {})
+}

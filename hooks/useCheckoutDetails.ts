@@ -13,6 +13,7 @@ import { getRecaptchaAuthHeader } from '@/lib/utils/recaptchaAuth'
 import type { Service, ServicePlan, Location } from '@/types/api'
 import { toast } from 'sonner'
 import { parseApiError } from '@/lib/utils/parseApiError'
+import { firePurchase, fireEnrollment } from '@/lib/utils/analyticsEvents'
 
 function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null
@@ -703,6 +704,17 @@ export function useCheckoutDetails() {
       } else {
         await postPublicProtected(NON_SECURE_ENDPOINTS.CUSTOMER_PURCHASE, data, authHeader)
         toast.success('Payment confirmed')
+
+        // purchase — Step 2 completion on the CUSTOMER_PURCHASE path (mirrors Nuxt
+        // useCheckoutDetails.js). The event-purchase branch above intentionally does
+        // NOT fire this, matching Nuxt.
+        const pricePayed = setPrice()
+        firePurchase({ price: pricePayed, email: resolvedEmail, service: selectedClass })
+        // enrollment — extra GA4-only event, ONLY when the payment method is aquila.
+        if (method === 'aquila') {
+          fireEnrollment({ price: pricePayed, email: resolvedEmail, service: selectedClass })
+        }
+
         changeStep(isBookingEnabled ? 3 : 4)
       }
     } catch (err) {
