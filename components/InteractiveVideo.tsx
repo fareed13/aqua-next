@@ -10,6 +10,7 @@ import { useOrgStore } from '@/store/orgStore';
 import { useInterestedServices } from '@/hooks/useInterestedServices';
 import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApiCalls';
 import { getRecaptchaAuthHeader } from '@/lib/utils/recaptchaAuth';
+import { fireLeadSubmit } from '@/lib/utils/analyticsEvents';
 
 interface InteractiveProgram {
   service: number;
@@ -151,9 +152,12 @@ export function InteractiveVideo({ interactiveVideo }: InteractiveVideoProps) {
           sms_opt_in: smsOptIn,
           custom_field: customField || undefined,
           reason_for_joining: reasonForJoining || undefined,
+          lead_origin: 'digital',
         },
         authHeader,
       );
+      // lead_submit — mirrors Nuxt InteractiveVideo.vue (identical fan-out to Checkout)
+      fireLeadSubmit(email);
       toast.success('Lead submitted successfully');
       setShowForm(false);
       setFirstName(''); setLastName(''); setEmail(''); setPhone('');

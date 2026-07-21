@@ -7,6 +7,7 @@ import { useNonSecureCalls, NON_SECURE_ENDPOINTS } from '@/hooks/apiCalls/useApi
 import { toast } from 'sonner'
 import { parseApiError } from '@/lib/utils/parseApiError'
 import { getRecaptchaAuthHeader } from '@/lib/utils/recaptchaAuth'
+import { fireTrialBooked } from '@/lib/utils/analyticsEvents'
 
 interface Props {
   customerId: number
@@ -250,6 +251,7 @@ export function AppointmentBooking({ customerId, changeStep, selectedLocation }:
         authHeader
       )
       toast.success('Appointment booked successfully')
+      fireTrialBooked(customerId)
       changeStep(4)
     } catch (err) {
       toast.error(parseApiError(err))

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
@@ -59,16 +59,18 @@ export function EditableSections({ target, targetId, sections: initialSections, 
     setEditorOpen(true)
   }
 
-  const handleSaved = useCallback((content: ComponentContent[]) => {
-    setSections(content)
-  }, [])
+  // Intentionally do NOT update the rendered `sections` after a save/reorder.
+  // The public pages are statically built (serverInit uses `force-cache`, no
+  // revalidation), so content only goes live on the next deployment. Reflecting
+  // an edit optimistically here would show the admin a section that isn't yet on
+  // the live site — the confusing "it appeared before deploy" behaviour. The PUT
+  // still persists to the backend; the change surfaces after the site is rebuilt.
 
   const reorderSave = async (content: any[]) => {
     setOrderSaving(true)
     try {
       await putSecure(TARGET_ENDPOINTS[target], { id: targetId, content })
-      toast.success('Sections Reordered Successfully', { duration: 5000 })
-      setSections(content as ComponentContent[])
+      toast.success('Sections reordered. It will appear on the site after the next deployment.', { duration: 6000 })
       setOrderPopup(false)
     } catch {
       toast.error('Failed to reorder sections. Please try again.', { duration: 5000 })
@@ -131,7 +133,6 @@ export function EditableSections({ target, targetId, sections: initialSections, 
           targetId={targetId}
           sectionIndex={selectedIndex}
           onClose={() => setEditorOpen(false)}
-          onSaved={handleSaved}
         />
       )}
 

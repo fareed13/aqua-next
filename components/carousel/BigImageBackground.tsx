@@ -23,9 +23,11 @@ export function BigImageBackground({
 
   const bulletList = Array.isArray(bullets) ? bullets : bullets ? [bullets] : []
 
-  // backgroundImage is stored as "uuid.extension" string — use buildBackgroundUrl (size 1000)
-  const bgUrl = buildBackgroundUrl(backgroundImage) ||
-    (media && media.length > 0 && media[0].extension !== 'mp4' ? buildMediaUrl(media[0], 'large') : '')
+  // backgroundImage is stored as "uuid.extension" string — use buildBackgroundUrl (size 1000).
+  // Mirror Nuxt getBackgroundUrl(): the background is driven ONLY by backgroundImage.
+  // Do NOT fall back to media[0] — media[0] is the right/front image; using it here
+  // makes a selected media image double as the full-bleed background.
+  const bgUrl = buildBackgroundUrl(backgroundImage)
 
   // Right-side media: first media item that is an image, or the video
   const rightMedia = media && media.length > 0 ? media[0] : null
@@ -144,7 +146,7 @@ export function BigImageBackground({
                   >
                     {!isVideo ? (
                       <Image
-                        src={buildMediaUrl(rightMedia, 800)}
+                        src={buildMediaUrl(rightMedia, 'medium')}
                         alt={headline || 'Media content'}
                         width={600}
                         height={427}
